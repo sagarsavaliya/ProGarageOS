@@ -7,31 +7,15 @@ use Illuminate\Support\Facades\Log;
 
 class WhatsAppService
 {
-    private string $baseUrl;
-    private string $token;
-    private string $phoneNumberId;
-    private string $apiVersion;
-
-    public function __construct()
-    {
-        $this->token         = config('whatsapp.token');
-        $this->phoneNumberId = config('whatsapp.phone_number_id');
-        $this->apiVersion    = config('whatsapp.api_version', 'v20.0');
-        $this->baseUrl       = config('whatsapp.base_url', 'https://graph.facebook.com');
-    }
-
     /**
      * Send OTP to a customer via WhatsApp authentication template.
-     *
-     * The template must be of category "Authentication" on Meta Business Manager.
-     * It receives one body parameter (the OTP code) and optionally a copy-code button.
      */
-    public function sendOtp(string $phone, string $otp): bool
+    public function sendOtp(string $phone, string $otp, ?int $tenantId = null): bool
     {
-        $template = config('whatsapp.templates.otp', 'pro_garage_otp');
-        $language = config('whatsapp.template_language', 'en');
+        $config   = WhatsAppConfigResolver::resolve($tenantId);
+        $template = $config['templates']['otp'] ?? 'pro_garage_otp';
+        $language = $config['template_language'] ?? 'en';
 
-        // Authentication templates send OTP in both body and button (copy-code)
         $payload = [
             'messaging_product' => 'whatsapp',
             'to'                => $this->normalizePhone($phone),
@@ -58,15 +42,19 @@ class WhatsAppService
             ],
         ];
 
-        return $this->sendMessage($payload, "OTP to {$phone}");
+        return $this->sendMessage($payload, "OTP to {$phone}", $config);
     }
 
-    /**
-     * Send a job status update notification.
-     */
-    public function sendJobStatusUpdate(string $phone, string $customerName, string $jobNumber, string $status, string $vehicleInfo): bool
-    {
-        $template = config('whatsapp.templates.job_status', 'job_status_update');
+    public function sendJobStatusUpdate(
+        string $phone,
+        string $customerName,
+        string $jobNumber,
+        string $status,
+        string $vehicleInfo,
+        ?int $tenantId = null
+    ): bool {
+        $config   = WhatsAppConfigResolver::resolve($tenantId);
+        $template = $config['templates']['job_status'] ?? 'job_status_update';
 
         $payload = [
             'messaging_product' => 'whatsapp',
@@ -74,7 +62,7 @@ class WhatsAppService
             'type'              => 'template',
             'template'          => [
                 'name'       => $template,
-                'language'   => ['code' => config('whatsapp.template_language', 'en')],
+                'language'   => ['code' => $config['template_language'] ?? 'en'],
                 'components' => [
                     [
                         'type'       => 'body',
@@ -89,15 +77,19 @@ class WhatsAppService
             ],
         ];
 
-        return $this->sendMessage($payload, "Job status update to {$phone}");
+        return $this->sendMessage($payload, "Job status update to {$phone}", $config);
     }
 
-    /**
-     * Send an invoice ready notification with PDF link.
-     */
-    public function sendInvoiceReady(string $phone, string $customerName, string $invoiceNumber, string $amount, string $pdfUrl = null): bool
-    {
-        $template = config('whatsapp.templates.invoice_ready', 'invoice_ready');
+    public function sendInvoiceReady(
+        string $phone,
+        string $customerName,
+        string $invoiceNumber,
+        string $amount,
+        ?string $pdfUrl = null,
+        ?int $tenantId = null
+    ): bool {
+        $config   = WhatsAppConfigResolver::resolve($tenantId);
+        $template = $config['templates']['invoice_ready'] ?? 'invoice_ready';
 
         $components = [
             [
@@ -110,7 +102,6 @@ class WhatsAppService
             ],
         ];
 
-        // Attach PDF as document header if URL provided
         if ($pdfUrl) {
             array_unshift($components, [
                 'type'       => 'header',
@@ -132,20 +123,24 @@ class WhatsAppService
             'type'              => 'template',
             'template'          => [
                 'name'       => $template,
-                'language'   => ['code' => config('whatsapp.template_language', 'en')],
+                'language'   => ['code' => $config['template_language'] ?? 'en'],
                 'components' => $components,
             ],
         ];
 
-        return $this->sendMessage($payload, "Invoice ready to {$phone}");
+        return $this->sendMessage($payload, "Invoice ready to {$phone}", $config);
     }
 
-    /**
-     * Send a payment receipt notification.
-     */
-    public function sendPaymentReceipt(string $phone, string $customerName, string $amount, string $method, string $invoiceNumber): bool
-    {
-        $template = config('whatsapp.templates.payment_receipt', 'payment_receipt');
+    public function sendPaymentReceipt(
+        string $phone,
+        string $customerName,
+        string $amount,
+        string $method,
+        string $invoiceNumber,
+        ?int $tenantId = null
+    ): bool {
+        $config   = WhatsAppConfigResolver::resolve($tenantId);
+        $template = $config['templates']['payment_receipt'] ?? 'payment_receipt';
 
         $payload = [
             'messaging_product' => 'whatsapp',
@@ -153,7 +148,7 @@ class WhatsAppService
             'type'              => 'template',
             'template'          => [
                 'name'       => $template,
-                'language'   => ['code' => config('whatsapp.template_language', 'en')],
+                'language'   => ['code' => $config['template_language'] ?? 'en'],
                 'components' => [
                     [
                         'type'       => 'body',
@@ -168,15 +163,19 @@ class WhatsAppService
             ],
         ];
 
-        return $this->sendMessage($payload, "Payment receipt to {$phone}");
+        return $this->sendMessage($payload, "Payment receipt to {$phone}", $config);
     }
 
-    /**
-     * Send an appointment reminder.
-     */
-    public function sendAppointmentReminder(string $phone, string $customerName, string $date, string $time, string $vehicleInfo): bool
-    {
-        $template = config('whatsapp.templates.appointment', 'appointment_reminder');
+    public function sendAppointmentReminder(
+        string $phone,
+        string $customerName,
+        string $date,
+        string $time,
+        string $vehicleInfo,
+        ?int $tenantId = null
+    ): bool {
+        $config   = WhatsAppConfigResolver::resolve($tenantId);
+        $template = $config['templates']['appointment'] ?? 'appointment_reminder';
 
         $payload = [
             'messaging_product' => 'whatsapp',
@@ -184,7 +183,7 @@ class WhatsAppService
             'type'              => 'template',
             'template'          => [
                 'name'       => $template,
-                'language'   => ['code' => config('whatsapp.template_language', 'en')],
+                'language'   => ['code' => $config['template_language'] ?? 'en'],
                 'components' => [
                     [
                         'type'       => 'body',
@@ -199,24 +198,59 @@ class WhatsAppService
             ],
         ];
 
-        return $this->sendMessage($payload, "Appointment reminder to {$phone}");
+        return $this->sendMessage($payload, "Appointment reminder to {$phone}", $config);
     }
 
     /**
-     * Core send method — posts to Meta Cloud API.
+     * Verify credentials by fetching phone number metadata from Meta.
      */
-    private function sendMessage(array $payload, string $context = ''): bool
+    public function testConnection(?int $tenantId = null): array
     {
-        $url = "{$this->baseUrl}/{$this->apiVersion}/{$this->phoneNumberId}/messages";
+        $config = WhatsAppConfigResolver::resolve($tenantId);
+
+        if (empty($config['token']) || empty($config['phone_number_id'])) {
+            return ['ok' => false, 'message' => 'WhatsApp credentials are incomplete.'];
+        }
 
         try {
-            $response = Http::withToken($this->token)
+            $url      = "{$config['base_url']}/{$config['api_version']}/{$config['phone_number_id']}";
+            $response = Http::withToken($config['token'])->timeout(10)->get($url);
+
+            if ($response->successful()) {
+                return [
+                    'ok'      => true,
+                    'message' => 'WhatsApp connection successful.',
+                    'source'  => $config['source'],
+                ];
+            }
+
+            return [
+                'ok'      => false,
+                'message' => $response->json('error.message') ?? 'Meta API rejected the credentials.',
+            ];
+        } catch (\Exception $e) {
+            return ['ok' => false, 'message' => 'Could not reach Meta WhatsApp API.'];
+        }
+    }
+
+    private function sendMessage(array $payload, string $context, array $config): bool
+    {
+        if (empty($config['token']) || empty($config['phone_number_id'])) {
+            Log::warning("WhatsApp skipped — not configured ({$context})");
+            return false;
+        }
+
+        $url = "{$config['base_url']}/{$config['api_version']}/{$config['phone_number_id']}/messages";
+
+        try {
+            $response = Http::withToken($config['token'])
                 ->timeout(10)
                 ->post($url, $payload);
 
             if ($response->successful()) {
                 Log::info("WhatsApp message sent: {$context}", [
                     'message_id' => $response->json('messages.0.id'),
+                    'source'     => $config['source'] ?? 'platform',
                 ]);
                 return true;
             }
@@ -226,7 +260,6 @@ class WhatsAppService
                 'response' => $response->json(),
             ]);
             return false;
-
         } catch (\Exception $e) {
             Log::error("WhatsApp send failed: {$context}", [
                 'error' => $e->getMessage(),
@@ -235,25 +268,18 @@ class WhatsAppService
         }
     }
 
-    /**
-     * Normalize phone to E.164 format (India default +91).
-     */
     private function normalizePhone(string $phone): string
     {
-        // Strip all non-digits
         $digits = preg_replace('/\D/', '', $phone);
 
-        // Already has country code (12+ digits)
         if (strlen($digits) >= 12) {
             return '+' . $digits;
         }
 
-        // Indian 10-digit number — prepend +91
         if (strlen($digits) === 10) {
             return '+91' . $digits;
         }
 
-        // Return as-is with + prefix
         return '+' . $digits;
     }
 }

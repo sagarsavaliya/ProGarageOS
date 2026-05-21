@@ -23,6 +23,7 @@ class StaffLoginState {
   final int lockSecondsRemaining;
   final UserModel? savedUser;
   final bool showSwitchUser;
+  final bool needsPinSetup;
 
   const StaffLoginState({
     this.status = StaffLoginStatus.idle,
@@ -33,6 +34,7 @@ class StaffLoginState {
     this.lockSecondsRemaining = 0,
     this.savedUser,
     this.showSwitchUser = false,
+    this.needsPinSetup = false,
   });
 
   bool get isLocked => status == StaffLoginStatus.locked;
@@ -48,6 +50,7 @@ class StaffLoginState {
     int? lockSecondsRemaining,
     UserModel? savedUser,
     bool? showSwitchUser,
+    bool? needsPinSetup,
   }) =>
       StaffLoginState(
         status: status ?? this.status,
@@ -58,6 +61,7 @@ class StaffLoginState {
         lockSecondsRemaining: lockSecondsRemaining ?? this.lockSecondsRemaining,
         savedUser: savedUser ?? this.savedUser,
         showSwitchUser: showSwitchUser ?? this.showSwitchUser,
+        needsPinSetup: needsPinSetup ?? this.needsPinSetup,
       );
 }
 
@@ -155,6 +159,15 @@ class StaffLoginNotifier extends StateNotifier<StaffLoginState> {
       await _storage.clearLockout();
       state = state.copyWith(status: StaffLoginStatus.success, savedUser: response.user);
     } on DioException catch (e) {
+      final code = apiErrorCode(e);
+      if (code == 'PIN_SETUP_REQUIRED') {
+        state = state.copyWith(
+          status: StaffLoginStatus.idle,
+          needsPinSetup: true,
+          pin: '',
+        );
+        return;
+      }
       final statusCode = e.response?.statusCode;
       if (statusCode == 401 || statusCode == 422) {
         await _handleFailedAttempt();
@@ -250,6 +263,9 @@ class StaffLoginNotifier extends StateNotifier<StaffLoginState> {
   }
 
   // --- Switch user ---
+
+  void clearPinSetupRedirect() =>
+      state = state.copyWith(needsPinSetup: false, clearError: true);
 
   void showSwitchUser() => state = state.copyWith(showSwitchUser: true, pin: '', clearError: true);
   void hideSwitchUser() => state = state.copyWith(showSwitchUser: false, pin: '', clearError: true);

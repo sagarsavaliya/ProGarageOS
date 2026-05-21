@@ -74,6 +74,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     final notifier = ref.read(staffLoginProvider.notifier);
 
     ref.listen<StaffLoginState>(staffLoginProvider, (prev, next) {
+      if (next.needsPinSetup && prev?.needsPinSetup != true) {
+        final login = next.currentLogin.isNotEmpty
+            ? next.currentLogin
+            : (_usePhone ? _phoneController.text.trim() : _emailController.text.trim());
+        notifier.clearPinSetupRedirect();
+        context.push('/auth/staff-pin', extra: {'login': login, 'purpose': 'setup'});
+        return;
+      }
       if (next.status == StaffLoginStatus.success) {
         ref.read(fcmServiceProvider).initialize().then((_) {
           ref.read(fcmServiceProvider).registerTokenIfAvailable();
@@ -154,7 +162,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 onBiometric: notifier.triggerBiometric,
                               ),
                               const SizedBox(height: 12),
-                              _buildForgotPin(),
+                              _buildForgotPin(state),
                               const SizedBox(height: 40),
                             ],
                           ),
@@ -213,23 +221,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
-  Widget _buildForgotPin() {
+  Widget _buildForgotPin(StaffLoginState state) {
     return TextButton(
       onPressed: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Contact your admin to reset your PIN.',
-              style: GoogleFonts.dmSans(
-                  fontSize: 12, color: Colors.white.withOpacity(0.70)),
+        final login = state.currentLogin.isNotEmpty
+            ? state.currentLogin
+            : (_usePhone ? _phoneController.text.trim() : _emailController.text.trim());
+        if (login.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Enter your phone or email first.',
+                style: GoogleFonts.dmSans(fontSize: 12, color: Colors.white.withOpacity(0.70)),
+              ),
+              backgroundColor: const Color(0xFF161E2E).withOpacity(0.96),
+              behavior: SnackBarBehavior.floating,
             ),
-            backgroundColor: const Color(0xFF161E2E).withOpacity(0.96),
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          ),
-        );
+          );
+          return;
+        }
+        context.push('/auth/staff-pin', extra: {'login': login, 'purpose': 'reset'});
       },
       style: TextButton.styleFrom(
         foregroundColor: Colors.white.withOpacity(0.28),

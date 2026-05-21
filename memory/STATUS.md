@@ -5,28 +5,27 @@
 ## Overall Status
 - **Project:** Pro Garage OS (ProGarageOS)
 - **Infrastructure:** ✅ Live — `https://api.progarage.cloud/api`
-- **WhatsApp:** ✅ Platform credentials on production server
+- **WhatsApp:** ✅ Production + **Owner Integrations UI** approved
 - **Last Updated:** 2026-05-21 IST
 
 ---
 
 ## 🏗️ Technical
-- **SSL + DB + seed data:** ✅
-- **WhatsApp:** Server `.env` synced; Meta API reachable
-- **Integrations roadmap:** `memory/INTEGRATIONS_STRATEGY.md`
-- **Next:** Device test → Wave 3 includes **Owner Integrations UI** (no-redeploy secret mgmt)
+- **Integrations UI:** Owner can manage WhatsApp in app (encrypted DB, no redeploy)
+- **Staff PIN:** WhatsApp OTP for first-time setup + Forgot PIN reset
+- **Wave 3:** In progress (inventory, GST, integrations polish)
+- **Device test:** Login `8141302341` / `123456` · try Forgot PIN flow
 
 ---
 
-## ⚠️ Needs Sagar
-1. **Security:** Rotate Meta token if it was ever shared in chat/logs (best practice)
-2. **Device test:** Flutter `.env` → login `8141302341` / `123456`
-3. **Approve Wave 3 scope:** Owner Settings → Integrations screen
+## ✅ Approved by Sagar
+- Owner Settings → Integrations screen
+- WhatsApp OTP for phone verify + 6-digit PIN setup/reset
 
 ---
 
-## 🔲 Wave plan
-- Wave 3: Inventory + GST + **Integrations settings API/UI**
+## 🔲 Coming next
+- Wave 3 remaining modules after device sign-off
 
 ---
-*Secrets: memory/PRODUCTION_SECRETS.md · Strategy: memory/INTEGRATIONS_STRATEGY.md*
+*Strategy: memory/INTEGRATIONS_STRATEGY.md*

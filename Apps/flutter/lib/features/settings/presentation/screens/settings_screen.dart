@@ -12,6 +12,7 @@ import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../../../../core/widgets/api_error_view.dart';
 import '../../../auth/data/auth_repository.dart';
+import '../../../auth/presentation/providers/current_user_provider.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -146,6 +147,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ],
           const SizedBox(height: 24),
           _SectionTitle('Garage'),
+          if (ref.watch(isOwnerProvider))
+            _SettingsTile(
+              icon: PhosphorIconsRegular.plugsConnected,
+              title: 'Integrations',
+              subtitle: 'WhatsApp and connected services',
+              onTap: () => context.push('/settings/integrations'),
+            ),
           _SettingsTile(
             icon: PhosphorIconsRegular.usersThree,
             title: 'Team',

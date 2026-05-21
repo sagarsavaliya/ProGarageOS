@@ -67,6 +67,25 @@ class AuthRepository {
     );
     return StaffAuthResponse.fromJson(response.data as Map<String, dynamic>);
   }
+
+  /// POST /auth/staff/pin-otp/request
+  Future<String> requestStaffPinOtp(StaffPinOtpRequest request) async {
+    final response = await _dio.post(
+      '/auth/staff/pin-otp/request',
+      data: request.toJson(),
+    );
+    final data = response.data as Map<String, dynamic>;
+    final inner = data['data'] as Map<String, dynamic>? ?? {};
+    return inner['phone_masked'] as String? ?? '';
+  }
+
+  /// POST /auth/staff/pin-otp/reset
+  Future<void> resetStaffPin(StaffPinResetRequest request) async {
+    await _dio.post(
+      '/auth/staff/pin-otp/reset',
+      data: request.toJson(),
+    );
+  }
 }
 
 /// Riverpod provider for [AuthRepository].

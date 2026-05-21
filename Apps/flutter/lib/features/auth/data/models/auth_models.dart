@@ -104,6 +104,31 @@ class StaffLoginRequest {
   Map<String, dynamic> toJson() => {'login': login, 'pin': pin};
 }
 
+/// Request body for POST /auth/staff/pin-otp/request
+class StaffPinOtpRequest {
+  final String login;
+  final String purpose; // setup | reset
+
+  const StaffPinOtpRequest({required this.login, this.purpose = 'reset'});
+
+  Map<String, dynamic> toJson() => {'login': login, 'purpose': purpose};
+}
+
+/// Request body for POST /auth/staff/pin-otp/reset
+class StaffPinResetRequest {
+  final String login;
+  final String otp;
+  final String pin;
+
+  const StaffPinResetRequest({
+    required this.login,
+    required this.otp,
+    required this.pin,
+  });
+
+  Map<String, dynamic> toJson() => {'login': login, 'otp': otp, 'pin': pin};
+}
+
 /// Request body for POST /auth/customer/otp/request
 class OtpRequestBody {
   final String phone;

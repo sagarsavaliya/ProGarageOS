@@ -8,6 +8,7 @@ import '../constants/app_colors.dart';
 import '../storage/secure_storage.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/otp_screen.dart';
+import '../../features/auth/presentation/screens/staff_pin_otp_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/jobs/presentation/screens/jobs_screen.dart';
 import '../../features/jobs/presentation/screens/job_detail_screen.dart';
@@ -33,6 +34,7 @@ import '../../features/invoices/presentation/screens/create_invoice_screen.dart'
 import '../../features/inventory/presentation/screens/add_part_screen.dart';
 import '../../features/inventory/presentation/screens/inventory_screen.dart';
 import '../../features/inventory/presentation/screens/inventory_detail_screen.dart';
+import '../../features/settings/presentation/screens/integrations_screen.dart';
 import '../../features/settings/presentation/screens/notifications_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/splash/presentation/splash_screen.dart';
@@ -70,6 +72,18 @@ GoRouter appRouter(Ref ref) {
         path: '/auth/otp',
         name: 'otp',
         builder: (context, state) => const OtpScreen(),
+      ),
+      GoRoute(
+        path: '/auth/staff-pin',
+        name: 'staff-pin',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          final query = state.uri.queryParameters;
+          return StaffPinOtpScreen(
+            login: extra['login'] as String? ?? query['login'] ?? '',
+            purpose: extra['purpose'] as String? ?? query['purpose'] ?? 'reset',
+          );
+        },
       ),
       // Shell wraps ONLY the tab screens — detail screens are outside to hide bottom nav.
       ShellRoute(
@@ -254,6 +268,11 @@ GoRouter appRouter(Ref ref) {
         path: '/team',
         name: 'team',
         builder: (context, state) => const TechniciansScreen(),
+      ),
+      GoRoute(
+        path: '/settings/integrations',
+        name: 'integrations',
+        builder: (context, state) => const IntegrationsScreen(),
       ),
       GoRoute(
         path: '/settings',

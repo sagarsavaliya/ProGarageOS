@@ -6,7 +6,7 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\InventoryController;
 use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\NotificationController;
-use App\Http\Controllers\Api\InspectionTemplateController;
+use App\Http\Controllers\Api\IntegrationController;
 use App\Http\Controllers\Api\JobEstimateController;
 use App\Http\Controllers\Api\JobTaskController;
 use App\Http\Controllers\Api\PaymentMethodController;
@@ -37,6 +37,12 @@ Route::get('/health', fn () => response()->json([
 // ── Authentication ─────────────────────────────────────────────────────────
 Route::prefix('auth')->group(function () {
     Route::post('/staff/login', [AuthController::class, 'staffLogin'])
+        ->middleware('throttle:10,15');
+
+    Route::post('/staff/pin-otp/request', [AuthController::class, 'staffPinOtpRequest'])
+        ->middleware('throttle:5,10');
+
+    Route::post('/staff/pin-otp/reset', [AuthController::class, 'staffPinReset'])
         ->middleware('throttle:10,15');
 
     Route::post('/customer/otp/request', [AuthController::class, 'customerOtpRequest'])
@@ -118,4 +124,9 @@ Route::middleware(['auth:sanctum', 'throttle:300,1'])->group(function () {
 
     // Payment methods
     Route::get('/payment-methods', [PaymentMethodController::class, 'index']);
+
+    // Integrations (owner only)
+    Route::get('/integrations/whatsapp', [IntegrationController::class, 'showWhatsApp']);
+    Route::put('/integrations/whatsapp', [IntegrationController::class, 'updateWhatsApp']);
+    Route::post('/integrations/whatsapp/test', [IntegrationController::class, 'testWhatsApp']);
 });

@@ -32,3 +32,8 @@ final hideInvoicesTabProvider = Provider<bool>((ref) {
   if (user == null) return false;
   return user.role == 'technician';
 });
+
+final isOwnerProvider = Provider<bool>((ref) {
+  final user = ref.watch(currentUserProvider).valueOrNull;
+  return user?.role == 'owner';
+});

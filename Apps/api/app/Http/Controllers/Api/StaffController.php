@@ -9,6 +9,8 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use App\Support\StaffLoginHelper;
 
 class StaffController extends Controller
 {
@@ -48,17 +50,21 @@ class StaffController extends Controller
             'phone'      => ['required', 'string', 'max:20'],
             'email'      => ['nullable', 'email'],
             'role'       => ['required', 'in:technician,service_advisor'],
-            'pin'        => ['required', 'string', 'size:6'],
+            'pin'        => ['nullable', 'string', 'regex:/^\d{6}$/'],
         ]);
 
+        $phone = StaffLoginHelper::normalizePhone($data['phone']);
+        $hasPin = !empty($data['pin']);
+
         $user = User::create([
-            'tenant_id'  => $tenantId,
-            'first_name' => $data['first_name'],
-            'last_name'  => $data['last_name'] ?? '',
-            'phone'      => $data['phone'],
-            'email'      => $data['email'] ?? null,
-            'role'       => $data['role'],
-            'pin_hash'   => Hash::make($data['pin']),
+            'tenant_id'          => $tenantId,
+            'first_name'         => $data['first_name'],
+            'last_name'          => $data['last_name'] ?? '',
+            'phone'              => $phone,
+            'email'              => $data['email'] ?? null,
+            'role'               => $data['role'],
+            'pin_hash'           => $hasPin ? Hash::make($data['pin']) : Hash::make(Str::random(40)),
+            'requires_pin_setup' => !$hasPin,
         ]);
 
         AuditLog::record('staff.created', 'users', $user->id, [], ['role' => $user->role]);

@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\User;
+use App\Services\WhatsAppConfigResolver;
 use App\Services\WhatsAppService;
+use App\Support\StaffLoginHelper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -39,17 +41,17 @@ class AuthController extends Controller
         }
 
         $login = trim($request->login);
-        $phoneCandidates = [$login];
-        if (preg_match('/^\d{10}$/', $login)) {
-            $phoneCandidates[] = '+91' . $login;
-        }
+        $user  = StaffLoginHelper::findByLogin($login);
 
-        $user = User::with('tenant')
-            ->where(function ($query) use ($login, $phoneCandidates) {
-                $query->where('email', $login)
-                    ->orWhereIn('phone', array_unique($phoneCandidates));
-            })
-            ->first();
+        if ($user && $user->requires_pin_setup) {
+            return response()->json([
+                'success' => false,
+                'error'   => [
+                    'code'    => 'PIN_SETUP_REQUIRED',
+                    'message' => 'Verify your phone via WhatsApp to set your 6-digit PIN.',
+                ],
+            ], 403);
+        }
 
         if (!$user || !Hash::check($request->pin, $user->pin_hash)) {
             RateLimiter::hit($key, 900);
@@ -109,7 +111,7 @@ class AuthController extends Controller
         $otp = $customer->generateOtp();
         RateLimiter::hit($key, 600);
 
-        // Dispatch OTP via WhatsApp
+        // Dispatch OTP via WhatsApp (platform config for customer app)
         $whatsapp = new WhatsAppService();
         $sent = $whatsapp->sendOtp($request->phone, $otp);
 
@@ -171,6 +173,131 @@ class AuthController extends Controller
     }
 
     /**
+     * Send WhatsApp OTP for staff PIN setup or reset.
+     */
+    public function staffPinOtpRequest(Request $request): JsonResponse
+    {
+        $request->validate([
+            'login'   => ['required', 'string'],
+            'purpose' => ['sometimes', 'in:setup,reset'],
+        ]);
+
+        $login   = trim($request->login);
+        $purpose = $request->input('purpose', 'reset');
+        $key     = 'staff-pin-otp:' . $login;
+
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            $seconds = RateLimiter::availableIn($key);
+            return response()->json([
+                'success' => false,
+                'error'   => [
+                    'code'                => 'RATE_LIMITED',
+                    'message'             => "Too many OTP requests. Wait {$seconds} seconds.",
+                    'retry_after_seconds' => $seconds,
+                ],
+            ], 429)->withHeaders(['Retry-After' => $seconds]);
+        }
+
+        $user = StaffLoginHelper::findByLogin($login);
+
+        if (!$user || !$user->phone) {
+            return response()->json([
+                'success' => false,
+                'error'   => ['code' => 'USER_NOT_FOUND', 'message' => 'No staff account found for this phone or email.'],
+            ], 404);
+        }
+
+        if ($purpose === 'setup' && !$user->requires_pin_setup) {
+            return response()->json([
+                'success' => false,
+                'error'   => ['code' => 'PIN_ALREADY_SET', 'message' => 'PIN is already configured. Use Forgot PIN instead.'],
+            ], 422);
+        }
+
+        if ($purpose === 'reset' && $user->requires_pin_setup) {
+            return response()->json([
+                'success' => false,
+                'error'   => ['code' => 'PIN_SETUP_REQUIRED', 'message' => 'Complete first-time PIN setup instead.'],
+            ], 422);
+        }
+
+        if (!WhatsAppConfigResolver::isConfigured($user->tenant_id)) {
+            return response()->json([
+                'success' => false,
+                'error'   => ['code' => 'WHATSAPP_NOT_CONFIGURED', 'message' => 'WhatsApp is not configured for this garage.'],
+            ], 503);
+        }
+
+        $otp      = $user->generatePinOtp();
+        $whatsapp = new WhatsAppService();
+        $sent     = $whatsapp->sendOtp($user->phone, $otp, $user->tenant_id);
+
+        RateLimiter::hit($key, 600);
+
+        if (!$sent) {
+            Log::warning("Staff PIN OTP WhatsApp delivery failed for {$user->phone}");
+        }
+
+        $response = [
+            'success' => true,
+            'message' => 'Verification code sent to your WhatsApp.',
+            'data'    => [
+                'phone_masked' => $this->maskPhone($user->phone),
+                'purpose'      => $purpose,
+            ],
+        ];
+
+        if (config('app.debug')) {
+            $response['dev_otp'] = $otp;
+        }
+
+        return response()->json($response);
+    }
+
+    /**
+     * Verify WhatsApp OTP and set a new 6-digit staff PIN.
+     */
+    public function staffPinReset(Request $request): JsonResponse
+    {
+        $request->validate([
+            'login' => ['required', 'string'],
+            'otp'   => ['required', 'string', 'size:6'],
+            'pin'   => ['required', 'string', 'regex:/^\d{6}$/'],
+        ]);
+
+        $key = 'staff-pin-reset:' . $request->ip();
+        if (RateLimiter::tooManyAttempts($key, 10)) {
+            $seconds = RateLimiter::availableIn($key);
+            return response()->json([
+                'success' => false,
+                'error'   => [
+                    'code'                => 'RATE_LIMITED',
+                    'message'             => "Too many attempts. Wait {$seconds} seconds.",
+                    'retry_after_seconds' => $seconds,
+                ],
+            ], 429);
+        }
+
+        $user = StaffLoginHelper::findByLogin(trim($request->login));
+
+        if (!$user || !$user->verifyPinOtp($request->otp)) {
+            RateLimiter::hit($key, 900);
+            return response()->json([
+                'success' => false,
+                'error'   => ['code' => 'INVALID_OTP', 'message' => 'Invalid or expired verification code.'],
+            ], 401);
+        }
+
+        $user->setPin($request->pin);
+        RateLimiter::clear($key);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'PIN updated successfully. You can sign in now.',
+        ]);
+    }
+
+    /**
      * Logout (revoke current token).
      */
     public function logout(Request $request): JsonResponse
@@ -204,6 +331,8 @@ class AuthController extends Controller
             'is_support_agent'  => $user->is_support_agent,
             'avatar_url'        => $user->avatar_url,
             'last_login_at'     => $user->last_login_at?->toIso8601String(),
+            'phone_verified_at'     => $user->phone_verified_at?->toIso8601String(),
+            'requires_pin_setup'    => $user->requires_pin_setup,
             'tenant'            => $user->tenant ? [
                 'uuid'          => $user->tenant->uuid,
                 'business_name' => $user->tenant->business_name,
@@ -212,5 +341,14 @@ class AuthController extends Controller
                 'timezone'      => $user->tenant->timezone,
             ] : null,
         ];
+    }
+
+    private function maskPhone(string $phone): string
+    {
+        if (strlen($phone) < 6) {
+            return $phone;
+        }
+
+        return str_repeat('*', max(0, strlen($phone) - 4)) . substr($phone, -4);
     }
 }
