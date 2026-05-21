@@ -4,30 +4,29 @@
 
 ## Overall Status
 - **Project:** Pro Garage OS (ProGarageOS)
-- **Infrastructure:** ✅ **Live on Hostinger** — `https://api.progarage.cloud/api`
-- **Repo:** https://github.com/sagarsavaliya/ProGarageOS.git
+- **Infrastructure:** ✅ Live — `https://api.progarage.cloud/api`
+- **WhatsApp:** ✅ Platform credentials on production server
 - **Last Updated:** 2026-05-21 IST
 
 ---
 
 ## 🏗️ Technical
-- **SSL:** ✅ Let's Encrypt on `api.progarage.cloud`
-- **Database:** ✅ Migrations + demo seed data (Patel Auto Works tenant)
-- **Waves 1–2:** Ready for device test
-- **Secrets guide:** `memory/PRODUCTION_SECRETS.md`
-- **Next:** Flutter `.env` → phone test → Wave 3
+- **SSL + DB + seed data:** ✅
+- **WhatsApp:** Server `.env` synced; Meta API reachable
+- **Integrations roadmap:** `memory/INTEGRATIONS_STRATEGY.md`
+- **Next:** Device test → Wave 3 includes **Owner Integrations UI** (no-redeploy secret mgmt)
 
 ---
 
 ## ⚠️ Needs Sagar
-1. **Flutter:** Set `API_BASE_URL=https://api.progarage.cloud/api` and rebuild app
-2. **WhatsApp:** Add Meta tokens to server `.env` when ready (see secrets guide)
-3. **Device test:** Login `8141302341` / PIN `123456`
+1. **Security:** Rotate Meta token if it was ever shared in chat/logs (best practice)
+2. **Device test:** Flutter `.env` → login `8141302341` / `123456`
+3. **Approve Wave 3 scope:** Owner Settings → Integrations screen
 
 ---
 
 ## 🔲 Wave plan
-- Wave 3–4 after live test sign-off
+- Wave 3: Inventory + GST + **Integrations settings API/UI**
 
 ---
-*API: memory/HOSTINGER_LIVE_API.md · Secrets: memory/PRODUCTION_SECRETS.md*
+*Secrets: memory/PRODUCTION_SECRETS.md · Strategy: memory/INTEGRATIONS_STRATEGY.md*
