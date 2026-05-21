@@ -1,4 +1,4 @@
-# GarageFlow — Production App Roadmap (Staff Mobile)
+# Pro Garage OS — Production App Roadmap (Staff Mobile)
 # Mode: REAL APP — not MVP placeholders. Updated: 2026-05-19
 # Source of truth for sprint order. PRD/API in briefs/ — do not re-read full PRD each session.
 

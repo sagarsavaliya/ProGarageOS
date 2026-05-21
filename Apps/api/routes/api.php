@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| GarageFlow API Routes
+| Pro Garage OS API Routes
 |--------------------------------------------------------------------------
 | Base URL: /api
 | Auth: Laravel Sanctum (Bearer token)
@@ -31,7 +31,7 @@ Route::get('/health', fn () => response()->json([
     'status'    => 'ok',
     'timestamp' => now()->toIso8601String(),
     'version'   => config('app.version', '1.0.0'),
-    'api'       => 'garageflow',
+    'api'       => 'progarageos',
 ]));
 
 // ── Authentication ─────────────────────────────────────────────────────────

@@ -26,7 +26,7 @@ class ProGarageApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
     return MaterialApp.router(
-      title: 'ProGarage',
+      title: 'Pro Garage OS',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark,
       routerConfig: router,

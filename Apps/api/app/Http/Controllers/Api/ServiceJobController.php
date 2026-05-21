@@ -143,7 +143,7 @@ class ServiceJobController extends Controller
 
         if (
             $data['status'] === 'ready_for_delivery'
-            && config('garageflow.require_delivery_inspection', true)
+            && config('progarageos.require_delivery_inspection', true)
         ) {
             $hasDelivery = JobInspectionRecord::where('job_id', $job->id)
                 ->where('inspection_phase', 'delivery')

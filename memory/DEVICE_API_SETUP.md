@@ -1,4 +1,4 @@
-# GarageFlow — Physical device API setup
+# Pro Garage OS — Physical device API setup
 
 ## API (Docker on Windows)
 
@@ -8,7 +8,7 @@
 
 2. Start stack: `docker compose up -d` from `Apps/api`
 
-3. Verify: `curl http://<LAN-IP>:8000/api/health` → `version`, `api: garageflow`
+3. Verify: `curl http://<LAN-IP>:8000/api/health` → `version`, `api: progarageos`
 
 ## Flutter staff app
 

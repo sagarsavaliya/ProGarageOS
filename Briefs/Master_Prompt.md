@@ -1,4 +1,4 @@
-# GarageFlow Flutter — Master Autonomous Build Prompt
+# Pro Garage OS Flutter — Master Autonomous Build Prompt
 > Paste this entire file into Claude Code. It runs end-to-end without further input.
 > Claude Code will build, verify, and self-correct each phase before moving to the next.
 
@@ -14,20 +14,20 @@
 
 ---
 
-# MASTER BUILD PROMPT — GARAGEFLOW FLUTTER
+# MASTER BUILD PROMPT — PRO GARAGE OS FLUTTER
 
-You are an expert Flutter developer building the GarageFlow SaaS mobile application for an Indian garage management platform. You have access to the full PRD, API specification, and design system. Execute every phase completely before moving to the next. After each phase, print a checklist of what was built and verify it compiles with `flutter analyze`.
+You are an expert Flutter developer building the Pro Garage OS SaaS mobile application for an Indian garage management platform. You have access to the full PRD, API specification, and design system. Execute every phase completely before moving to the next. After each phase, print a checklist of what was built and verify it compiles with `flutter analyze`.
 
 ---
 
 ## CONTEXT & CONSTRAINTS
 
-**Project**: GarageFlow — Multi-tenant garage operations SaaS
+**Project**: Pro Garage OS — Multi-tenant garage operations SaaS
 **Stack**: Flutter 3.22.x (stable) · Dart 3.4 · Riverpod 2.5 · GoRouter 13 · Dio 5 · Freezed 2
 **Two app flavors in one project**:
 - `staff` flavor → garage owners, technicians, service advisors (PIN auth)
 - `customer` flavor → vehicle owners (OTP auth)
-**API Base URL**: `https://api.garageflow.in/v1`
+**API Base URL**: `https://api.progarageos.in/v1`
 **Auth**: Laravel Sanctum Bearer tokens stored in FlutterSecureStorage
 **Realtime**: Pusher Channels (Laravel Reverb backend)
 **Indian market**: INR currency, +91 phone prefix, GST tax, RC compliance
@@ -259,7 +259,7 @@ volumes:
 Also create `.devcontainer/devcontainer.json`:
 ```json
 {
-  "name": "GarageFlow Flutter",
+  "name": "Pro Garage OS Flutter",
   "dockerComposeFile": "../docker-compose.yml",
   "service": "flutter",
   "workspaceFolder": "/workspace",
@@ -283,20 +283,20 @@ Also create `.devcontainer/devcontainer.json`:
 Run these commands in sequence:
 
 ```bash
-flutter create garageflow \
-  --org in.akshara.garageflow \
-  --project-name garageflow \
+flutter create progarageos \
+  --org in.akshara.progarageos \
+  --project-name progarageos \
   --platforms android,ios \
   --template app
 
-cd garageflow
+cd progarageos
 ```
 
 Replace `pubspec.yaml` entirely with:
 
 ```yaml
-name: garageflow
-description: GarageFlow — Garage Operations SaaS
+name: progarageos
+description: Pro Garage OS — Garage Operations SaaS
 publish_to: none
 version: 1.0.0+1
 
@@ -464,7 +464,7 @@ Create `lib/core/theme/app_theme.dart`:
 Create `lib/core/network/api_endpoints.dart`:
 ```dart
 class ApiEndpoints {
-  static const String baseUrl = 'https://api.garageflow.in/v1';
+  static const String baseUrl = 'https://api.progarageos.in/v1';
 
   // Auth
   static const staffLogin         = '/auth/staff/login';
@@ -579,13 +579,13 @@ Create `lib/core/network/auth_interceptor.dart`:
 - On 429 response: reads `Retry-After` header, waits, retries once
 
 Create `lib/core/network/error_interceptor.dart`:
-- Maps DioException types to GarageFlowException with: code (string), message (user-friendly), statusCode
+- Maps DioException types to ProGarageOSException with: code (string), message (user-friendly), statusCode
 - Maps API error envelope `{ success: false, error: { code, message, details } }` to typed exception
 - Never exposes raw Dio exceptions to UI layer
 
 Create `lib/core/network/api_exception.dart`:
 ```dart
-class GarageFlowException implements Exception {
+class ProGarageOSException implements Exception {
   final String code;
   final String message;
   final int? statusCode;
@@ -756,7 +756,7 @@ Create one repository per feature domain. Each repository:
 - Takes Dio as constructor parameter (injected via Riverpod)
 - Returns typed model results, never raw Maps
 - Handles pagination via PaginatedResult<T> wrapper
-- Throws GarageFlowException on error (never raw DioException)
+- Throws ProGarageOSException on error (never raw DioException)
 
 ```dart
 // lib/shared/models/paginated_result.dart
@@ -1072,7 +1072,7 @@ EmptyState widget:
 ### `lib/core/widgets/error_state.dart`
 ```
 ErrorState widget:
-- error: GarageFlowException
+- error: ProGarageOSException
 - onRetry: VoidCallback
 - Shows user-friendly message from exception, retry button
 ```
@@ -1152,7 +1152,7 @@ Full implementation:
 - Dark Slate-900 full screen background
 - Dot pattern overlay (custom painter, 60px grid, white 2.5% opacity)
 - Center column, max 320px wide
-- "GarageFlow Staff" wordmark: DM Sans 28px weight 300, white
+- "Pro Garage OS Staff" wordmark: DM Sans 28px weight 300, white
 - Saved garage name from SharedPreferences (if returning user)
 - Email/phone text field: white surface 44px, ink2 text, 10px radius
 - 6-dot PIN indicator row: unfilled circle → filled sky400 circle per digit
@@ -1170,7 +1170,7 @@ Uses `StaffLoginNotifier` provider. On success → GoRouter to `/staff/dashboard
 
 Full implementation:
 - White background, centered layout
-- GarageFlow logo text: DM Sans 28px weight 300, ink0
+- Pro Garage OS logo text: DM Sans 28px weight 300, ink0
 - "Welcome back" heading + subtitle in ink4
 - +91 prefix chip (teal50 background) + phone number field (DM Mono)
 - "Send OTP" primary button (full width, 44px, 16px radius)
@@ -1590,13 +1590,13 @@ flavorDimensions "app"
 productFlavors {
     customer {
         dimension "app"
-        applicationId "in.akshara.garageflow.customer"
-        resValue "string", "app_name", "GarageFlow"
+        applicationId "in.akshara.progarageos.customer"
+        resValue "string", "app_name", "Pro Garage OS"
     }
     staff {
         dimension "app"  
-        applicationId "in.akshara.garageflow.staff"
-        resValue "string", "app_name", "GarageFlow Staff"
+        applicationId "in.akshara.progarageos.staff"
+        resValue "string", "app_name", "Pro Garage OS Staff"
     }
 }
 ```
@@ -1707,5 +1707,5 @@ Print a final summary of:
 
 ---
 
-*GarageFlow Flutter Master Prompt v1.0 — Akshara Technologies*
+*Pro Garage OS Flutter Master Prompt v1.0 — Akshara Technologies*
 *API Spec v1.0 · PRD v1.0 · Design System v1.0*

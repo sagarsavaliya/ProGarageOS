@@ -217,7 +217,7 @@ class _WordmarkGroup extends StatelessWidget {
         const SizedBox(height: 4),
         // Tagline
         Text(
-          'GARAGE OPERATIONS PLATFORM',
+          'PRO GARAGE OS',
           style: AppTextStyles.labelSmall.copyWith(
             color: Colors.white.withOpacity(0.22),
             letterSpacing: 0.14 * 10,

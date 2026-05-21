@@ -1,11 +1,11 @@
 #!/bin/sh
 set -e
 
-READY_MARKER=".garageflow_ready"
+READY_MARKER=".progarageos_ready"
 
 if [ ! -f "$READY_MARKER" ]; then
     echo "================================================================"
-    echo " GarageFlow: First run — installing Laravel 11 (~2 mins)..."
+    echo " Pro Garage OS: First run — installing Laravel 11 (~2 mins)..."
     echo "================================================================"
 
     # Clean any leftover temp dir from a previous crashed install
@@ -80,12 +80,12 @@ if [ ! -f "$READY_MARKER" ]; then
 
     touch "$READY_MARKER"
     echo "================================================================"
-    echo " GarageFlow: API ready at http://localhost:8000"
+    echo " Pro Garage OS: API ready at http://localhost:8000"
     echo "================================================================"
 else
     # Subsequent starts: vendor lives on a Linux volume (fast). Host vendor/ is ignored.
     if [ ! -f "vendor/autoload.php" ]; then
-        echo ">>> Installing Composer dependencies into garageflow_vendor volume ..."
+        echo ">>> Installing Composer dependencies into progarageos_vendor volume ..."
         composer install --no-interaction --optimize-autoloader --prefer-dist
     fi
 

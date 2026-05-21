@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# GarageFlow — first-time Hostinger KVM2 deploy
+# Pro Garage OS — first-time Hostinger KVM2 deploy
 # Run on VPS as root: bash deploy/hostinger/scripts/server-bootstrap.sh
 
 set -euo pipefail
@@ -47,6 +47,6 @@ echo "==> Installing nginx-proxy route (HTTP)"
 cp "$APP_DIR/repo/deploy/hostinger/nginx-proxy/progarage-http.conf" /var/www/nginx-proxy/conf.d/progarage-http.conf
 docker exec nginx-proxy nginx -t && docker exec nginx-proxy nginx -s reload
 
-echo "✅ GarageFlow API should respond at http://69.62.78.240/api/health"
+echo "✅ Pro Garage OS API should respond at http://69.62.78.240/api/health"
 echo "   After DNS: api.progarageos.com → 69.62.78.240"
 echo "   Then run: bash repo/deploy/hostinger/scripts/enable-ssl.sh"

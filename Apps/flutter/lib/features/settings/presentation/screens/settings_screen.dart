@@ -128,7 +128,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ? 'Checking…'
                 : _healthError != null
                     ? _healthError!
-                    : 'Version $_apiVersion · garageflow',
+                    : 'Version $_apiVersion · ProGarageOS',
             trailing: _healthError != null
                 ? IconButton(
                     icon: const Icon(PhosphorIconsRegular.arrowCounterClockwise, size: 18),

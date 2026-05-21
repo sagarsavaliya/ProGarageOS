@@ -85,7 +85,7 @@ class FcmService {
   }
 
   void _handlePayload(Map<String, dynamic> data, RemoteNotification? notification) {
-    final title = notification?.title ?? data['title']?.toString() ?? 'GarageFlow';
+    final title = notification?.title ?? data['title']?.toString() ?? 'Pro Garage OS';
     final body = notification?.body ?? data['body']?.toString() ?? '';
 
     final item = StaffNotificationItem(

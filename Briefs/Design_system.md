@@ -1,4 +1,4 @@
-# GarageFlow Design System v1.0
+# Pro Garage OS Design System v1.0
 > Paste the **Master System Block** into every Claude design prompt. The system is designed to be AI-readable — structured constraints that produce consistent, on-brand output without back-and-forth.
 
 ---
@@ -6,7 +6,7 @@
 ## Master System Block (Copy-Paste into Claude Prompts)
 
 ```
-Design System: GarageFlow SaaS — Garage Operations Platform
+Design System: Pro Garage OS — Garage Operations Platform
 
 AESTHETIC DIRECTION:
 Calm, composed, minimal. Like a premium clinic or a Swiss watch dial.
@@ -724,5 +724,5 @@ Redeem CTA button: Ghost violet style with "Redeem points" label.
 
 ---
 
-*GarageFlow Design System v1.0.0 — Maintained by Akshara Technologies*
+*Pro Garage OS Design System v1.0.0 — Maintained by Akshara Technologies*
 *For use with Claude AI design generation, React 18 (Inertia.js), and Flutter 3.x*

@@ -1,4 +1,4 @@
-# ProGarage — Development Progress
+# Pro Garage OS — Development Progress
 
 **Last Updated:** 2026-05-15 11:56 IST
 **Current Sprint:** S7 — (Next Sprint TBD)

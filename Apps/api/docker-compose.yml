@@ -1,15 +1,15 @@
 services:
   app:
     build: .
-    container_name: garageflow_app
+    container_name: progarageos_app
     restart: unless-stopped
     env_file: .env
     volumes:
       - .:/var/www/html:cached
-      - garageflow_vendor:/var/www/html/vendor
+      - progarageos_vendor:/var/www/html/vendor
       - composer_cache:/root/.composer/cache
     networks:
-      - garageflow
+      - progarageos
     depends_on:
       db:
         condition: service_healthy
@@ -18,34 +18,34 @@ services:
 
   nginx:
     image: nginx:1.25-alpine
-    container_name: garageflow_nginx
+    container_name: progarageos_nginx
     restart: unless-stopped
     ports:
       - "8000:80"
     volumes:
       - .:/var/www/html:cached
-      - garageflow_vendor:/var/www/html/vendor:ro
+      - progarageos_vendor:/var/www/html/vendor:ro
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
-      - garageflow
+      - progarageos
     depends_on:
       - app
 
   db:
     image: mysql:8.0
-    container_name: garageflow_db
+    container_name: progarageos_db
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-secret}
-      MYSQL_DATABASE: ${DB_DATABASE:-garageflow}
-      MYSQL_USER: ${DB_USERNAME:-garageflow}
+      MYSQL_DATABASE: ${DB_DATABASE:-progarageos}
+      MYSQL_USER: ${DB_USERNAME:-progarageos}
       MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
     volumes:
       - db_data:/var/lib/mysql
     ports:
       - "3306:3306"
     networks:
-      - garageflow
+      - progarageos
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DB_ROOT_PASSWORD:-secret}"]
       interval: 10s
@@ -54,7 +54,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: garageflow_redis
+    container_name: progarageos_redis
     restart: unless-stopped
     command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
     volumes:
@@ -62,7 +62,7 @@ services:
     ports:
       - "6379:6379"
     networks:
-      - garageflow
+      - progarageos
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -71,22 +71,22 @@ services:
 
   mailpit:
     image: axllent/mailpit:latest
-    container_name: garageflow_mail
+    container_name: progarageos_mail
     restart: unless-stopped
     ports:
       - "8025:8025"
       - "1025:1025"
     networks:
-      - garageflow
+      - progarageos
 
   adminer:
     image: adminer:4-standalone
-    container_name: garageflow_adminer
+    container_name: progarageos_adminer
     restart: unless-stopped
     ports:
       - "8888:8080"
     networks:
-      - garageflow
+      - progarageos
     depends_on:
       - db
 
@@ -94,16 +94,16 @@ services:
 
   horizon:
     build: .
-    container_name: garageflow_horizon
+    container_name: progarageos_horizon
     restart: unless-stopped
     env_file: .env
     command: php artisan horizon
     volumes:
       - .:/var/www/html:cached
-      - garageflow_vendor:/var/www/html/vendor
+      - progarageos_vendor:/var/www/html/vendor
       - composer_cache:/root/.composer/cache
     networks:
-      - garageflow
+      - progarageos
     depends_on:
       - app
       - db
@@ -113,18 +113,18 @@ services:
 
   reverb:
     build: .
-    container_name: garageflow_reverb
+    container_name: progarageos_reverb
     restart: unless-stopped
     env_file: .env
     command: php artisan reverb:start --host=0.0.0.0 --port=8080
     volumes:
       - .:/var/www/html:cached
-      - garageflow_vendor:/var/www/html/vendor
+      - progarageos_vendor:/var/www/html/vendor
       - composer_cache:/root/.composer/cache
     ports:
       - "6001:8080"
     networks:
-      - garageflow
+      - progarageos
     depends_on:
       - app
       - redis
@@ -132,11 +132,11 @@ services:
       - workers
 
 networks:
-  garageflow:
+  progarageos:
     driver: bridge
 
 volumes:
   db_data:
   redis_data:
   composer_cache:
-  garageflow_vendor:
+  progarageos_vendor:

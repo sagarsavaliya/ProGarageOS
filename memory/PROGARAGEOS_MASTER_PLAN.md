@@ -1,4 +1,4 @@
-# GarageFlow — Master Sprint Plan (Production Complete)
+# Pro Garage OS — Master Sprint Plan (Production Complete)
 # Owner: Sagar | Akshara Technologies | Updated: 2026-05-19
 # Strategy: **Staff / garage operations first (100% complete)** → **Customer app second (100% complete)** → Web owner portal third.
 
@@ -8,9 +8,9 @@
 
 | Product | Users | Goal |
 |---------|--------|------|
-| **GarageFlow Staff** (Flutter) | Owner, service advisor, technician, reception | Run the garage floor: jobs, intake, estimates, parts, billing, appointments |
-| **GarageFlow Customer** (Flutter) | Vehicle owners | Track service, approve estimates, pay, book, loyalty |
-| **GarageFlow Web** (React/Inertia) | Owner/manager (desk) | Reports, master data, staff admin, subscription — *after staff mobile v1* |
+| **Pro Garage OS Staff** (Flutter) | Owner, service advisor, technician, reception | Run the garage floor: jobs, intake, estimates, parts, billing, appointments |
+| **Pro Garage OS Customer** (Flutter) | Vehicle owners | Track service, approve estimates, pay, book, loyalty |
+| **Pro Garage OS Web** (React/Inertia) | Owner/manager (desk) | Reports, master data, staff admin, subscription — *after staff mobile v1* |
 
 ---
 
@@ -25,7 +25,7 @@
 
 ---
 
-# PART A — GARAGE OPERATIONS (Staff Mobile + API)
+# PART A — PRO GARAGE OS (Staff Mobile + API)
 
 **Current baseline (already built):** Login, dashboard, jobs list/detail/create, intake inspection + photos, status sheet, customers + add customer/vehicle, parts list/detail + add part + stock adjust, invoices list/detail + create + record payment, push inbox partial, API perf (Docker vendor volume).
 

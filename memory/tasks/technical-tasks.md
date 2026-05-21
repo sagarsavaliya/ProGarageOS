@@ -1,4 +1,5 @@
-# TECHNICAL TASKS — Wave testing checklist (Sagar)
+# TECHNICAL TASKS — ProGarageOS
+# Wave testing checklist (Sagar)
 
 ## Wave 1
 - [ ] Login — real API only (no offline demo)

@@ -233,7 +233,7 @@ class StaffLoginNotifier extends StateNotifier<StaffLoginState> {
         return;
       }
       final authenticated = await _localAuth.authenticate(
-        localizedReason: 'Sign in to ProGarage',
+        localizedReason: 'Sign in to Pro Garage OS',
         options: const AuthenticationOptions(biometricOnly: true, stickyAuth: true),
       );
       if (authenticated) {

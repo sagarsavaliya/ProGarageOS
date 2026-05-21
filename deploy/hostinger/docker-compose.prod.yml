@@ -1,4 +1,4 @@
-# GarageFlow API — Hostinger KVM2 production stack
+# Pro Garage OS API — Hostinger KVM2 production stack
 # Path on server: /var/www/progarage/docker-compose.prod.yml
 
 services:

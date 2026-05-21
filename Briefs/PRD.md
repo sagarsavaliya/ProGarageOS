@@ -1,4 +1,4 @@
-# 📄 PRD.md — GarageFlow SaaS
+# 📄 PRD.md — Pro Garage OS SaaS
 > **Version**: 1.0.0 | **Status**: Schema Design Complete | **Last Updated**: 2026-05-02  
 > **Owner**: Sagar (Solo Dev → Team Handoff Ready)  
 > **Stack**: Laravel 11 + MySQL 8 + React 18 (Garage Dashboard) + Flutter (Customer App) + Reverb/Soketi + S3-Compatible Storage

@@ -6,7 +6,7 @@
 ---
 
 ## Project Identity
-- **Project Name:** GarageFlow SaaS (repo: progarage)
+- **Project Name:** Pro Garage OS (ProGarageOS) — repo: ProGarageOS
 - **Client / Product:** Akshara Internal — Own SaaS Product
 - **Type:** [x] SaaS Product
 - **Start Date:** 2026-05-14
@@ -16,7 +16,7 @@
 ---
 
 ## Project Summary
-GarageFlow is a multi-tenant SaaS platform for garage businesses in India.
+Pro Garage OS is a multi-tenant SaaS platform for garage businesses in India.
 It enables garage owners to manage end-to-end operations:
 Customer Intake → Estimate → Inspection → Job Assignment → Parts/Labor Tracking → Billing → Delivery → Post-Service Loyalty.
 Stack: Laravel 11 (API) + React 18/Inertia (Web Dashboard) + Flutter 3.x (Customer + Staff Mobile App) + MySQL 8 + Redis + Laravel Reverb (WebSockets).

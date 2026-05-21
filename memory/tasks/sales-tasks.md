@@ -1,4 +1,4 @@
-# SALES TASKS — progarage
+# SALES TASKS — ProGarageOS
 # Updated by: Sales Agent | Created: 2026-05-14
 # Max 50 lines — trim when full
 

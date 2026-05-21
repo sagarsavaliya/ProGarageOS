@@ -7,6 +7,7 @@ cd "$APP_DIR/repo"
 git pull origin main
 
 cd deploy/hostinger
+ln -sf "$APP_DIR/.env" "$APP_DIR/repo/deploy/hostinger/.env"
 docker compose -f docker-compose.prod.yml --env-file "$APP_DIR/.env" build api
 docker compose -f docker-compose.prod.yml --env-file "$APP_DIR/.env" up -d
 docker compose -f docker-compose.prod.yml --env-file "$APP_DIR/.env" exec -T api php artisan migrate --force

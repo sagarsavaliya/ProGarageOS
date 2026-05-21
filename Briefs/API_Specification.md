@@ -1,5 +1,5 @@
-# 🚗 GarageFlow SaaS — API Specification
-> **Version**: 1.0.0 | **Base URL**: `https://api.garageflow.in/v1`  
+# 🚗 Pro Garage OS — API Specification
+> **Version**: 1.0.0 | **Base URL**: `https://api.progarageos.com/api`  
 > **Auth**: Laravel Sanctum (Staff: Bearer Token + PIN; Customer: Bearer Token + OTP)  
 > **Format**: JSON | **Timezone**: Per tenant (`Asia/Kolkata` default) | **Currency**: Per tenant (`INR` default)  
 > **Multi-Tenancy**: All tenant-scoped endpoints resolve `tenant_id` from authenticated token context. Never pass `tenant_id` as a query param from the client.
@@ -916,7 +916,7 @@ List all vehicles for a specific customer.
       "fitness_validity": null,
       "insurance_expiry": "2027-03-14",
       "is_active": true,
-      "photo_url": "https://r2.garageflow.in/vehicles/vhc_01J2.jpg",
+      "photo_url": "https://r2.progarageos.com/vehicles/vhc_01J2.jpg",
       "compliance_alerts": [
         { "type": "puc", "status": "expired", "expiry": "2026-03-01" }
       ]
@@ -1016,7 +1016,7 @@ List all compliance documents for a vehicle.
       "issuing_authority": "National Insurance Co.",
       "issue_date": "2024-03-15",
       "expiry_date": "2027-03-14",
-      "file_url": "https://r2.garageflow.in/docs/vdoc_01J2.pdf",
+      "file_url": "https://r2.progarageos.com/docs/vdoc_01J2.pdf",
       "is_verified": true,
       "is_active": true,
       "status": "valid",
@@ -1059,7 +1059,7 @@ file: [binary PDF/image]
     "document_type": "puc",
     "document_number": "PUC/GJ01AB1234/2026-NEW",
     "expiry_date": "2026-11-02",
-    "file_url": "https://r2.garageflow.in/docs/vdoc_03J2.pdf",
+    "file_url": "https://r2.progarageos.com/docs/vdoc_03J2.pdf",
     "ocr_extracted_data": {
       "vehicle_reg": "GJ01AB1234",
       "valid_until": "2026-11-02"
@@ -1731,7 +1731,7 @@ Finalize estimate and send to customer for approval.
     "tasks_requiring_approval": 1,
     "estimate_sent_at": "2026-05-03T10:30:00Z",
     "estimate_valid_until": "2026-05-04T10:30:00Z",
-    "approval_link": "https://app.garageflow.in/approve/est_token_abc123"
+    "approval_link": "https://app.progarageos.com/approve/est_token_abc123"
   }
 }
 ```
@@ -1825,7 +1825,7 @@ Get all inspection records for a job (intake + delivery).
         "condition_status": "minor_scratch",
         "severity": "low",
         "notes": "3cm scratch on left side",
-        "media_urls": ["https://r2.garageflow.in/inspect/irec_01J2_1.jpg"],
+        "media_urls": ["https://r2.progarageos.com/inspect/irec_01J2_1.jpg"],
         "inspected_by": { "uuid": "usr_01J2...", "name": "Rahul Shah" },
         "customer_acknowledged": true,
         "acknowledged_at": "2026-05-03T09:20:00Z"
@@ -1855,7 +1855,7 @@ Submit inspection records (bulk — entire checklist at once).
       "condition_status": "minor_scratch",
       "severity": "low",
       "notes": "3cm scratch on left side of front bumper",
-      "media_urls": ["https://r2.garageflow.in/inspect/tmp_photo_1.jpg"]
+      "media_urls": ["https://r2.progarageos.com/inspect/tmp_photo_1.jpg"]
     },
     {
       "template_uuid": "itpl_02J2...",
@@ -1865,7 +1865,7 @@ Submit inspection records (bulk — entire checklist at once).
       "media_urls": []
     }
   ],
-  "signature_url": "https://r2.garageflow.in/signatures/job_02J2_intake.png",
+  "signature_url": "https://r2.progarageos.com/signatures/job_02J2_intake.png",
   "customer_acknowledged": true
 }
 ```
@@ -1902,7 +1902,7 @@ component_code: "FRONT_BUMPER"
 {
   "success": true,
   "data": {
-    "url": "https://r2.garageflow.in/inspect/tmp_photo_abc123.jpg",
+    "url": "https://r2.progarageos.com/inspect/tmp_photo_abc123.jpg",
     "expires_at": "2026-05-03T11:00:00Z"
   }
 }
@@ -2234,8 +2234,8 @@ Get the invoice for a specific job.
     "balance_due": 3473.00,
     "customer_pay_amount": 5473.00,
     "insurance_claim_amount": 0.00,
-    "pdf_url": "https://r2.garageflow.in/invoices/INV-2026-0089.pdf",
-    "qr_code_url": "https://r2.garageflow.in/qr/INV-2026-0089.png"
+    "pdf_url": "https://r2.progarageos.com/invoices/INV-2026-0089.pdf",
+    "qr_code_url": "https://r2.progarageos.com/qr/INV-2026-0089.png"
   }
 }
 ```
@@ -2305,7 +2305,7 @@ Send invoice to customer and lock it as immutable.
     "uuid": "inv_02J2...",
     "invoice_number": "INV-2026-0090",
     "status": "sent",
-    "pdf_url": "https://r2.garageflow.in/invoices/INV-2026-0090.pdf",
+    "pdf_url": "https://r2.progarageos.com/invoices/INV-2026-0090.pdf",
     "sent_at": "2026-05-03T14:00:00Z"
   }
 }
@@ -2359,7 +2359,7 @@ Initiate an online payment via Razorpay/PhonePe/Cashfree.
 {
   "payment_method_uuid": "pm_razorpay_01J2...",
   "amount": 3473.00,
-  "return_url": "https://app.garageflow.in/payment/callback"
+  "return_url": "https://app.progarageos.com/payment/callback"
 }
 ```
 
@@ -2905,7 +2905,7 @@ Send feedback request to customer after delivery.
     "uuid": "fbk_01J2...",
     "status": "requested",
     "sent_at": "2026-05-03T15:00:00Z",
-    "feedback_link": "https://app.garageflow.in/feedback/fbk_token_xyz"
+    "feedback_link": "https://app.progarageos.com/feedback/fbk_token_xyz"
   }
 }
 ```
@@ -3576,5 +3576,5 @@ All WebSocket channels use **Laravel Reverb** (Pusher-compatible). Staff dashboa
 
 ---
 
-*GarageFlow API Specification v1.0.0 — Generated from PRD v1.0.0*  
+*Pro Garage OS API Specification v1.0.0 — Generated from PRD v1.0.0*  
 *Stack: Laravel 11 + Sanctum + OpenAPI 3.0 | Auto-generates Zod (React) + Dart models (Flutter) on CI*
