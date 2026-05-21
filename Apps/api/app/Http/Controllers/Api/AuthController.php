@@ -38,9 +38,17 @@ class AuthController extends Controller
             ], 429)->withHeaders(['Retry-After' => $seconds]);
         }
 
+        $login = trim($request->login);
+        $phoneCandidates = [$login];
+        if (preg_match('/^\d{10}$/', $login)) {
+            $phoneCandidates[] = '+91' . $login;
+        }
+
         $user = User::with('tenant')
-            ->where('email', $request->login)
-            ->orWhere('phone', $request->login)
+            ->where(function ($query) use ($login, $phoneCandidates) {
+                $query->where('email', $login)
+                    ->orWhereIn('phone', array_unique($phoneCandidates));
+            })
             ->first();
 
         if (!$user || !Hash::check($request->pin, $user->pin_hash)) {
