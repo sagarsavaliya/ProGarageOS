@@ -26,6 +26,7 @@ if [ ! -f "$APP_DIR/.env" ]; then
   sed -i "s/CHANGE_ME_STRONG_PASSWORD/$DB_PASS/" "$APP_DIR/.env"
   sed -i "s/CHANGE_ME_ROOT_PASSWORD/$ROOT_PASS/" "$APP_DIR/.env"
 fi
+ln -sf "$APP_DIR/.env" "$APP_DIR/repo/deploy/hostinger/.env"
 
 echo "==> Building and starting stack"
 cd "$APP_DIR/repo/deploy/hostinger"
