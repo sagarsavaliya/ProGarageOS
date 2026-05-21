@@ -2,22 +2,24 @@
 
 ## Server
 - **VPS:** Hostinger KVM2 — `69.62.78.240` (alias: `hostinger-vps`)
-- **API URL:** `https://api.progarageos.com/api` (after DNS + SSL)
+- **API URL (temp):** `https://api.progarage.cloud/api`
+- **Future domain:** `api.progarageos.com` (swap via `deploy/hostinger/domain.env`)
 - **Health:** `GET /api/health` → `"api": "progarageos"`
 - **Repo:** [ProGarageOS on GitHub](https://github.com/sagarsavaliya/ProGarageOS.git)
 
-## DNS (required once)
-| Record | Type | Value |
-|--------|------|-------|
-| `api.progarageos.com` | A | `69.62.78.240` |
+## DNS (temporary — progarage.cloud)
+| Record | Type | Name/Host | Value |
+|--------|------|-----------|-------|
+| API | **A** | `api` | `69.62.78.240` |
+
+**Do not change** existing `@` → `2.57.91.91` or `www` CNAME unless you want the landing page on Hostinger too.
 
 ## Flutter staff app
-Edit `Apps/flutter/.env`:
+`Apps/flutter/.env`:
 ```
-API_BASE_URL=https://api.progarageos.com/api
+API_BASE_URL=https://api.progarage.cloud/api
 APP_ENV=production
 ```
-Rebuild: `flutter run` on device.
 
 ## Deploy / update on server
 ```bash
@@ -25,42 +27,19 @@ ssh hostinger-vps
 bash /var/www/progarage/repo/deploy/hostinger/scripts/redeploy.sh
 ```
 
-## First-time bootstrap (on VPS)
-```bash
-git clone https://github.com/sagarsavaliya/ProGarageOS.git /var/www/progarage/repo
-bash /var/www/progarage/repo/deploy/hostinger/scripts/server-bootstrap.sh
-```
-
 ## SSL (after DNS propagates)
 ```bash
 bash /var/www/progarage/repo/deploy/hostinger/scripts/enable-ssl.sh
 ```
 
-## Local Docker
-Optional offline dev only (`Apps/api/docker-compose.yml`). Phone testing uses live API.
+## Switch to progarageos.com later
+1. Update `deploy/hostinger/domain.env` → `API_DOMAIN=api.progarageos.com`
+2. Update nginx-proxy configs + `.env.production.example` URLs
+3. New DNS A record → `69.62.78.240`
+4. Run `enable-ssl.sh` for new cert
+5. Update Flutter `API_BASE_URL`
+
+Single source of truth for temp domain: **`deploy/hostinger/domain.env`**
 
 ## Login (seeded)
-Use same staff credentials from database seeders after first `db:seed`.
-
----
-
-## Safe deploy on shared VPS (VastraOS, LactoSync, n8n, Portainer)
-
-**Nothing below touches existing production apps.** Each change is isolated.
-
-| Step | What it does | Risk to existing apps |
-|------|----------------|----------------------|
-| New Docker network `progarage_network` | Private network for MySQL, Redis, API, nginx | **None** — separate bridge |
-| Join existing `proxy-net` | Only `progarage_nginx` container added | **None** — same pattern as VastraOS/LactoSync |
-| New containers `progarage_*` | 4 new containers on dedicated ports internally | **None** — no host port binding except via proxy |
-| New file `nginx-proxy/conf.d/progarage-http.conf` | Routes `api.progarageos.com` → `progarage_nginx` | **None** — unique `server_name`; existing domains unchanged |
-| `/var/www/progarage/` directory | New app folder only | **None** |
-
-**Not changed without your approval:**
-- Existing `vastraos.conf`, `lactosync.conf`, `n8n.conf`
-- Portainer, n8n, LactoSync, VastraOS containers or volumes
-- Default nginx-proxy SSL certificates for other domains
-
-**One decision needed:** HTTP config includes bare IP `69.62.78.240` for pre-DNS testing. If another app also claims the IP on port 80, we can remove the IP from `server_name` and use domain-only routing.
-
-**Partial bootstrap status:** Repo cloned to `/var/www/progarage/repo`; Docker API image build was in progress when last interrupted. Safe to resume — no production configs were modified yet.
+Staff credentials from database seeders after first `db:seed`.

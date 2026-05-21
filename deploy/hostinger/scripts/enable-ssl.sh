@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
-# Enable HTTPS after DNS points api.progarageos.com → server IP
+# Enable HTTPS after DNS points API domain → server IP
 set -euo pipefail
 
-DOMAIN="${DOMAIN:-api.progarageos.com}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/../domain.env"
+
+DOMAIN="${DOMAIN:-$API_DOMAIN}"
 
 certbot certonly --webroot -w /var/www/certbot -d "$DOMAIN" --non-interactive --agree-tos -m admin@aksharatech.com || {
-  echo "Certbot failed — ensure DNS A record exists for $DOMAIN"
+  echo "Certbot failed — ensure DNS A record exists for $DOMAIN → 69.62.78.240"
   exit 1
 }
 

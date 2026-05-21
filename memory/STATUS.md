@@ -4,25 +4,24 @@
 
 ## Overall Status
 - **Project:** Pro Garage OS (ProGarageOS)
-- **Infrastructure:** **Moving to Hostinger KVM2 live API** (no local Docker for testing)
+- **Infrastructure:** ✅ Hostinger deploy **approved** — using temp domain `api.progarage.cloud`
 - **Repo:** https://github.com/sagarsavaliya/ProGarageOS.git
 - **Last Updated:** 2026-05-19 IST
 
 ---
 
 ## 🏗️ Technical
-- **Waves 1–2:** ✅ Built (test against **live server**)
-- **Live API:** `https://api.progarageos.com/api` (DNS → `69.62.78.240`)
+- **Waves 1–2:** ✅ Built — device test against live API next
+- **Live API:** `https://api.progarage.cloud/api` → VPS `69.62.78.240`
+- **Routing:** Option B — domain-only (no bare IP on nginx)
 - **Deploy docs:** `memory/HOSTINGER_LIVE_API.md`
-- **Naming:** Unified to **Pro Garage OS** / ProGarageOS
-- **Next:** Sagar approval for Hostinger deploy → DNS + SSL → Flutter `.env` → device test → Wave 3
+- **Next:** DNS `api` A record → SSL → Flutter `.env` → device test → Wave 3
 
 ---
 
 ## ⚠️ Needs Sagar
-1. **Hostinger:** Approve isolated ProGarageOS stack (see `HOSTINGER_LIVE_API.md` — Safe deploy)
-2. **DNS:** Add A record `api.progarageos.com` → `69.62.78.240`
-3. **Device test:** Staff app against live API after deploy
+1. **DNS:** Add A record `api` → `69.62.78.240` (keep `@`/`www` as-is)
+2. **Device test:** Staff app on phone after SSL live
 
 ---
 
