@@ -1,0 +1,61 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Str;
+use Laravel\Sanctum\HasApiTokens;
+
+class User extends Authenticatable
+{
+    use HasApiTokens, SoftDeletes;
+
+    protected $fillable = [
+        'uuid', 'tenant_id', 'email', 'phone', 'pin_hash',
+        'first_name', 'last_name', 'role', 'is_platform_admin',
+        'is_support_agent', 'avatar_url', 'last_login_at', 'pin_last_changed_at',
+    ];
+
+    protected $hidden = ['pin_hash', 'remember_token'];
+
+    protected $casts = [
+        'is_platform_admin' => 'boolean',
+        'is_support_agent'  => 'boolean',
+        'last_login_at'     => 'datetime',
+        'pin_last_changed_at' => 'datetime',
+    ];
+
+    protected static function boot(): void
+    {
+        parent::boot();
+        static::creating(fn ($m) => $m->uuid ??= (string) Str::uuid());
+    }
+
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class);
+    }
+
+    public function assignedJobs(): HasMany
+    {
+        return $this->hasMany(ServiceJob::class, 'primary_technician_id');
+    }
+
+    public function getFullNameAttribute(): string
+    {
+        return trim("{$this->first_name} {$this->last_name}");
+    }
+
+    public function getInitialsAttribute(): string
+    {
+        return strtoupper(substr($this->first_name, 0, 1) . substr($this->last_name ?? '', 0, 1));
+    }
+
+    public function verifyPin(string $pin): bool
+    {
+        return \Hash::check($pin, $this->pin_hash);
+    }
+}

@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProGarage · 05 — Create Job</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink-0:#0A0E14; --ink-1:#1C2230; --ink-2:#364052; --ink-3:#566076;
+      --ink-4:#8898AA; --ink-5:#B8C5D0; --ink-6:#DDE5EC; --ink-7:#EEF2F6;
+      --ink-8:#F7F9FB; --ink-9:#FFFFFF;
+      --sky-50:#E8F4FD; --sky-400:#2BB0ED; --sky-600:#0A7DBF; --sky-800:#065E91;
+      --teal-50:#EBF7F5; --teal-400:#26B8A8; --teal-600:#138878; --teal-800:#076358;
+      --sage-50:#EBF5EE; --sage-400:#3BAD5B; --sage-600:#1E7F3C;
+      --amber-50:#FEF7EC; --amber-400:#F0A018; --amber-600:#C07A08; --amber-800:#8A5602;
+      --rose-50:#FEF0F0; --rose-400:#EF4444; --rose-600:#C01E1E; --rose-800:#8A1010;
+      --violet-50:#F0EFFE; --violet-600:#4F46C8;
+      --slate-100:#D9E2EC; --slate-600:#486581;
+      --shadow-sm:0 1px 3px rgba(10,14,20,0.06),0 1px 2px rgba(10,14,20,0.04);
+      --shadow-md:0 4px 12px rgba(10,14,20,0.08),0 2px 4px rgba(10,14,20,0.04);
+      --ease-feather:cubic-bezier(0.16,1,0.3,1);
+      --ease-out:cubic-bezier(0.25,1,0.5,1);
+      --ease-spring:cubic-bezier(0.34,1.56,0.64,1);
+      --font-ui:'DM Sans',system-ui,sans-serif;
+      --font-mono:'DM Mono',monospace;
+    }
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+    body{background:#111420;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:var(--font-ui);-webkit-font-smoothing:antialiased;gap:28px;padding:32px 16px 40px;}
+    .screen-meta{font-family:var(--font-mono);font-size:10px;color:rgba(255,255,255,0.16);letter-spacing:0.12em;text-transform:uppercase;}
+
+    .phone{width:375px;height:812px;background:var(--ink-8);border-radius:44px;overflow:hidden;position:relative;flex-shrink:0;box-shadow:0 0 0 0.5px rgba(255,255,255,0.07),inset 0 0 0 0.5px rgba(0,0,0,0.05),0 48px 120px rgba(0,0,0,0.70),0 16px 40px rgba(0,0,0,0.35);}
+    .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:30px;background:#0a0e14;border-radius:0 0 20px 20px;z-index:40;}
+
+    /* ── Status bar ── */
+    .status-bar{position:absolute;top:0;left:0;right:0;height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 24px 8px;z-index:30;background:var(--ink-9);}
+    .s-time{font-family:var(--font-mono);font-size:12px;color:var(--ink-1);letter-spacing:0.02em;font-weight:500;}
+    .s-icons{display:flex;align-items:center;gap:5px;}
+
+    /* ── Wizard header ── */
+    /* Flutter: Scaffold > AppBar(leading:CloseButton, title:Text('New Job'), actions:[Text('Step X of 3')]) */
+    .wizard-header{
+      position:absolute;top:44px;left:0;right:0;height:54px;
+      background:var(--ink-9);border-bottom:0.5px solid var(--ink-7);
+      display:flex;align-items:center;justify-content:space-between;
+      padding:0 8px 0 6px;z-index:25;
+    }
+    .close-btn{
+      width:38px;height:38px;border-radius:50%;border:none;background:transparent;
+      cursor:pointer;display:flex;align-items:center;justify-content:center;
+      color:var(--ink-3);font-size:18px;transition:background 140ms ease,color 140ms ease;
+    }
+    .close-btn:hover{background:var(--ink-7);color:var(--ink-1);}
+    .wizard-title{font-size:16px;font-weight:500;color:var(--ink-0);letter-spacing:-0.01em;}
+    .step-counter{font-family:var(--font-mono);font-size:10px;color:var(--ink-4);padding:0 12px;letter-spacing:0.04em;}
+
+    /* ── Step indicator ── */
+    /* Flutter: Row of 3 AnimatedContainer (height:3, borderRadius, color) + labels */
+    .step-bar{
+      position:absolute;top:98px;left:0;right:0;
+      padding:10px 20px 0;background:var(--ink-9);z-index:24;
+    }
+    .step-bars{display:flex;gap:6px;margin-bottom:6px;}
+    .step-seg-bar{
+      flex:1;height:3px;border-radius:2px;
+      background:var(--ink-7);
+      transition:background 300ms var(--ease-feather);
+    }
+    .step-seg-bar.active    {background:var(--sky-600);}
+    .step-seg-bar.completed {background:var(--teal-400);}
+    .step-labels{display:flex;gap:6px;}
+    .step-lbl{flex:1;font-size:9px;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;color:var(--ink-5);transition:color 200ms ease;}
+    .step-lbl.active    {color:var(--sky-600);}
+    .step-lbl.completed {color:var(--teal-600);}
+
+    /* ── Content area ── */
+    .step-content{
+      position:absolute;top:148px;left:0;right:0;bottom:78px;
+      overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+    }
+    .step-content::-webkit-scrollbar{display:none;}
+    .step-panel{padding:20px 20px 24px;animation:stepIn 300ms var(--ease-feather) both;}
+    .step-panel.hidden{display:none;}
+    @keyframes stepIn{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:translateX(0)}}
+    @keyframes stepBack{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:translateX(0)}}
+
+    /* ── Form elements ── */
+    .field-label{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-4);margin-bottom:6px;}
+    .field-group{margin-bottom:18px;}
+    .gf-input{
+      width:100%;height:42px;padding:0 12px;
+      background:var(--ink-9);border:0.5px solid var(--ink-6);border-radius:10px;
+      font-family:var(--font-ui);font-size:13px;color:var(--ink-1);outline:none;
+      transition:border-color 140ms var(--ease-out),box-shadow 140ms var(--ease-out);
+    }
+    .gf-input:focus{border-color:var(--sky-400);box-shadow:0 0 0 3px rgba(43,176,237,0.18);}
+    .gf-input::placeholder{color:var(--ink-5);}
+    .gf-input.mono{font-family:var(--font-mono);}
+    .gf-textarea{
+      width:100%;padding:10px 12px;min-height:72px;resize:none;
+      background:var(--ink-9);border:0.5px solid var(--ink-6);border-radius:10px;
+      font-family:var(--font-ui);font-size:13px;color:var(--ink-1);outline:none;
+      line-height:1.6;
+      transition:border-color 140ms var(--ease-out),box-shadow 140ms var(--ease-out);
+    }
+    .gf-textarea:focus{border-color:var(--sky-400);box-shadow:0 0 0 3px rgba(43,176,237,0.18);}
+    .gf-textarea::placeholder{color:var(--ink-5);}
+    .row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+    /* ── Customer search ── */
+    /* Flutter: Autocomplete<CustomerListItem> or SearchDelegate */
+    .search-wrap-field{position:relative;margin-bottom:4px;}
+    .search-icon-inset{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--ink-4);pointer-events:none;}
+    .search-input-cust{padding-left:34px!important;}
+    .customer-results{
+      background:var(--ink-9);border:0.5px solid var(--ink-6);border-radius:12px;
+      overflow:hidden;box-shadow:var(--shadow-md);
+      margin-bottom:12px;
+    }
+    .cust-result-item{
+      display:flex;align-items:center;gap:12px;padding:11px 14px;
+      cursor:pointer;border-bottom:0.5px solid var(--ink-7);
+      transition:background 80ms ease;
+    }
+    .cust-result-item:last-child{border-bottom:none;}
+    .cust-result-item:hover{background:var(--ink-8);}
+    .cust-av{
+      width:36px;height:36px;border-radius:50%;flex-shrink:0;
+      background:var(--teal-50);color:var(--teal-600);
+      border:0.5px solid rgba(38,184,168,0.22);
+      display:flex;align-items:center;justify-content:center;
+      font-size:12px;font-weight:500;
+    }
+    .cust-info{flex:1;min-width:0;}
+    .cust-name{font-size:13px;font-weight:500;color:var(--ink-0);}
+    .cust-phone{font-family:var(--font-mono);font-size:11px;color:var(--ink-4);margin-top:1px;}
+    .cust-vcnt{font-size:10px;font-weight:500;padding:2px 7px;background:var(--ink-7);color:var(--ink-3);border-radius:9999px;white-space:nowrap;}
+    .new-cust-row{
+      display:flex;align-items:center;gap:10px;padding:11px 14px;
+      cursor:pointer;border-top:0.5px solid var(--ink-7);
+      transition:background 80ms ease;
+    }
+    .new-cust-row:hover{background:var(--sky-50);}
+    .new-cust-plus{width:36px;height:36px;border-radius:50%;background:var(--sky-50);border:0.5px solid rgba(43,176,237,0.25);display:flex;align-items:center;justify-content:center;color:var(--sky-600);font-size:18px;flex-shrink:0;}
+    .new-cust-lbl{font-size:13px;font-weight:500;color:var(--sky-600);}
+
+    /* Selected customer card */
+    .selected-customer-card{
+      display:flex;align-items:center;gap:12px;padding:12px 14px;
+      background:var(--sky-50);border:0.5px solid rgba(43,176,237,0.25);border-radius:12px;
+      margin-bottom:16px;
+    }
+    .selected-customer-card .cust-av{background:var(--sky-50);color:var(--sky-600);border-color:rgba(43,176,237,0.30);}
+    .change-btn{
+      background:transparent;border:none;cursor:pointer;
+      font-family:var(--font-ui);font-size:11px;font-weight:500;color:var(--sky-600);
+      padding:4px 0;transition:opacity 140ms ease;white-space:nowrap;
+    }
+    .change-btn:hover{opacity:0.7;}
+
+    /* Vehicle chips */
+    /* Flutter: Wrap > VehicleChip widgets */
+    .vehicle-section{margin-bottom:18px;}
+    .vehicle-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+    .vehicle-chip{
+      display:flex;align-items:center;gap:6px;padding:8px 12px;
+      background:var(--ink-9);border:0.5px solid var(--ink-6);border-radius:10px;
+      cursor:pointer;transition:all 140ms var(--ease-out);
+    }
+    .vehicle-chip:hover{border-color:var(--ink-5);}
+    .vehicle-chip.selected{background:var(--sky-50);border-color:var(--sky-600);border-width:1px;}
+    .v-plate{font-family:var(--font-mono);font-size:11px;color:var(--ink-2);}
+    .v-model{font-size:11px;color:var(--ink-4);}
+    .v-check{width:16px;height:16px;border-radius:50%;background:var(--sky-600);display:none;align-items:center;justify-content:center;flex-shrink:0;}
+    .vehicle-chip.selected .v-check{display:flex;}
+    .add-vehicle-chip{
+      display:flex;align-items:center;gap:6px;padding:8px 12px;
+      background:transparent;border:0.5px dashed var(--ink-5);border-radius:10px;
+      cursor:pointer;font-family:var(--font-ui);font-size:11px;font-weight:500;color:var(--sky-600);
+      transition:all 140ms ease;
+    }
+    .add-vehicle-chip:hover{border-color:var(--sky-400);background:var(--sky-50);}
+
+    /* New vehicle form (expandable) */
+    .new-vehicle-form{
+      background:var(--ink-8);border:0.5px solid var(--ink-6);border-radius:12px;
+      padding:14px;margin-top:8px;display:none;flex-direction:column;gap:10px;
+    }
+    .new-vehicle-form.open{display:flex;animation:stepIn 240ms var(--ease-feather) both;}
+
+    /* ── Service categories (Step 2) ── */
+    /* Flutter: GridView.count(crossAxisCount:2, spacing:10) > CategoryCard */
+    .categories-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+    .cat-card{
+      position:relative;background:var(--ink-9);border:0.5px solid var(--ink-6);
+      border-radius:12px;padding:14px 12px;cursor:pointer;
+      transition:all 140ms var(--ease-out);box-shadow:var(--shadow-sm);
+    }
+    .cat-card:hover{box-shadow:var(--shadow-md);border-color:var(--ink-5);transform:translateY(-1px);}
+    .cat-card.selected{background:var(--sky-50);border-color:var(--sky-600);border-width:1px;}
+    .cat-icon{
+      width:34px;height:34px;border-radius:9px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:12px;font-weight:500;margin-bottom:8px;
+    }
+    .cat-name{font-size:12px;font-weight:500;color:var(--ink-1);margin-bottom:2px;}
+    .cat-dur{font-size:10px;color:var(--ink-4);}
+    .cat-flags{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap;}
+    .cat-flag{font-size:9px;font-weight:500;padding:2px 5px;border-radius:4px;letter-spacing:0.03em;}
+    .flag-insp{background:var(--amber-50);color:var(--amber-800);}
+    .flag-appr{background:var(--violet-50);color:var(--violet-600);}
+    .cat-check{
+      position:absolute;top:8px;right:8px;
+      width:18px;height:18px;border-radius:50%;
+      background:var(--sky-600);
+      display:flex;align-items:center;justify-content:center;
+      opacity:0;transition:opacity 140ms var(--ease-spring);
+    }
+    .cat-card.selected .cat-check{opacity:1;}
+
+    /* Fuel level selector */
+    /* Flutter: Row of 5 ChoiceChip widgets */
+    .fuel-selector{display:flex;gap:6px;}
+    .fuel-btn{
+      flex:1;height:36px;border:0.5px solid var(--ink-6);border-radius:8px;
+      background:var(--ink-9);cursor:pointer;
+      font-family:var(--font-ui);font-size:11px;font-weight:500;color:var(--ink-4);
+      transition:all 140ms var(--ease-out);
+    }
+    .fuel-btn:hover{border-color:var(--ink-5);color:var(--ink-2);}
+    .fuel-btn.active{background:var(--sky-50);border-color:var(--sky-600);color:var(--sky-800);}
+
+    /* ── Bay selector (Step 3) ── */
+    /* Flutter: SizedBox(height:108) > ListView(scrollDir:horizontal) > BaySelectCard */
+    .bay-scroll{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;margin-bottom:18px;}
+    .bay-scroll::-webkit-scrollbar{display:none;}
+    .bay-select-card{
+      min-width:120px;padding:12px 12px 10px;
+      background:var(--ink-9);border:0.5px solid var(--ink-6);border-radius:12px;
+      cursor:pointer;flex-shrink:0;box-shadow:var(--shadow-sm);
+      transition:all 140ms var(--ease-out);
+    }
+    .bay-select-card:hover:not(.disabled){box-shadow:var(--shadow-md);border-color:var(--ink-5);}
+    .bay-select-card.selected{background:var(--sky-50);border-color:var(--sky-600);border-width:1px;}
+    .bay-select-card.disabled{opacity:0.45;cursor:not-allowed;}
+    .bay-sc-name{font-size:12px;font-weight:500;color:var(--ink-0);margin-bottom:2px;}
+    .bay-sc-type{font-size:10px;color:var(--ink-4);margin-bottom:8px;}
+    .bay-sc-chip{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:9999px;font-size:9.5px;font-weight:500;}
+    .bay-sc-chip.avail{background:var(--sage-50);color:var(--sage-600);}
+    .bay-sc-chip.occ  {background:var(--sky-50);color:var(--sky-800);}
+    .bay-sc-chip.maint{background:var(--amber-50);color:var(--amber-800);}
+    .bay-sc-chip .dot{width:4px;height:4px;border-radius:50%;}
+    .bay-sc-chip.avail .dot{background:var(--sage-400);}
+    .bay-sc-chip.occ .dot  {background:var(--sky-600);}
+    .bay-sc-chip.maint .dot{background:var(--amber-400);}
+
+    /* ── Technician list (Step 3) ── */
+    /* Flutter: ListView(shrinkWrap:true) > TechnicianSelectTile */
+    .tech-list{display:flex;flex-direction:column;gap:8px;margin-bottom:18px;}
+    .tech-card{
+      display:flex;align-items:center;gap:12px;padding:12px 14px;
+      background:var(--ink-9);border:0.5px solid var(--ink-6);border-radius:12px;
+      cursor:pointer;box-shadow:var(--shadow-sm);
+      transition:all 140ms var(--ease-out);
+    }
+    .tech-card:hover{box-shadow:var(--shadow-md);border-color:var(--ink-5);}
+    .tech-card.selected{background:var(--sky-50);border-color:var(--sky-600);border-width:1px;}
+    .tech-av{width:40px;height:40px;border-radius:50%;flex-shrink:0;background:var(--teal-50);color:var(--teal-600);border:0.5px solid rgba(38,184,168,0.22);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;}
+    .tech-info{flex:1;}
+    .tech-nm{font-size:13px;font-weight:500;color:var(--ink-0);}
+    .tech-spec{font-size:11px;color:var(--ink-4);margin-top:1px;}
+    .tech-avail{font-size:10px;font-weight:500;padding:2px 7px;border-radius:9999px;}
+    .tech-avail.free{background:var(--sage-50);color:var(--sage-600);}
+    .tech-avail.busy{background:var(--amber-50);color:var(--amber-600);}
+    .tech-match{width:18px;height:18px;border-radius:50%;background:var(--sage-50);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+    /* Priority selector */
+    /* Flutter: SegmentedButton or Row of ChoiceChip */
+    .priority-row{display:flex;gap:6px;margin-bottom:18px;}
+    .prio-chip{
+      flex:1;height:36px;border:0.5px solid var(--ink-6);border-radius:8px;
+      background:var(--ink-9);cursor:pointer;
+      font-family:var(--font-ui);font-size:11.5px;font-weight:500;color:var(--ink-4);
+      display:flex;align-items:center;justify-content:center;
+      transition:all 140ms var(--ease-out);
+    }
+    .prio-chip.active-low      {background:var(--ink-7);border-color:var(--ink-5);color:var(--ink-2);}
+    .prio-chip.active-normal   {background:var(--sky-50);border-color:var(--sky-600);color:var(--sky-800);}
+    .prio-chip.active-urgent   {background:var(--amber-50);border-color:var(--amber-600);color:var(--amber-800);}
+    .prio-chip.active-critical {background:var(--rose-50);border-color:var(--rose-600);color:var(--rose-800);}
+    .prio-chip:hover:not([class*="active"]){border-color:var(--ink-5);color:var(--ink-2);}
+
+    /* Date time row */
+    .datetime-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
+    .datetime-field{
+      height:42px;padding:0 12px;
+      background:var(--ink-9);border:0.5px solid var(--ink-6);border-radius:10px;
+      display:flex;align-items:center;gap:8px;cursor:pointer;
+      transition:border-color 140ms ease;
+    }
+    .datetime-field:hover{border-color:var(--ink-5);}
+    .datetime-label{font-size:11px;color:var(--ink-4);}
+    .datetime-value{font-family:var(--font-mono);font-size:12px;color:var(--ink-1);flex:1;}
+
+    /* ── Success panel ── */
+    .success-panel{
+      display:none;flex-direction:column;align-items:center;justify-content:center;
+      padding:48px 24px;gap:16px;text-align:center;
+    }
+    .success-panel.visible{display:flex;}
+    .success-icon-wrap{
+      width:64px;height:64px;border-radius:50%;
+      background:var(--sage-50);border:0.5px solid rgba(30,127,60,0.20);
+      display:flex;align-items:center;justify-content:center;margin-bottom:4px;
+      animation:successPop 400ms var(--ease-spring) both;
+    }
+    .success-job-id{font-family:var(--font-mono);font-size:22px;font-weight:400;color:var(--ink-0);letter-spacing:-0.01em;}
+    .success-msg{font-size:14px;color:var(--ink-3);max-width:240px;line-height:1.6;}
+    .success-sub{font-size:11px;color:var(--ink-5);}
+    @keyframes successPop{from{opacity:0;transform:scale(0.6)}to{opacity:1;transform:scale(1)}}
+
+    /* ── Footer buttons ── */
+    /* Flutter: Padding(bottom:safeArea) > Row [BackButton, NextButton] */
+    .wizard-footer{
+      position:absolute;bottom:0;left:0;right:0;height:78px;
+      background:var(--ink-9);border-top:0.5px solid var(--ink-7);
+      display:flex;align-items:center;gap:10px;padding:0 20px 14px;z-index:25;
+    }
+    .btn-back{
+      height:44px;padding:0 20px;border:0.5px solid var(--ink-6);border-radius:14px;
+      background:transparent;cursor:pointer;
+      font-family:var(--font-ui);font-size:14px;font-weight:500;color:var(--ink-3);
+      transition:all 140ms ease;
+    }
+    .btn-back:hover{border-color:var(--ink-5);color:var(--ink-1);}
+    .btn-back:disabled{opacity:0.35;cursor:not-allowed;}
+    .btn-next{
+      flex:1;height:44px;border-radius:14px;border:none;
+      background:var(--sky-600);cursor:pointer;
+      font-family:var(--font-ui);font-size:14px;font-weight:500;color:#fff;
+      transition:background 140ms ease,opacity 140ms ease,transform 80ms ease-in;
+    }
+    .btn-next:hover:not(:disabled){background:var(--sky-800);}
+    .btn-next:active{transform:scale(0.98);}
+    .btn-next:disabled{opacity:0.45;cursor:not-allowed;}
+    .btn-next.creating{background:var(--teal-600);}
+
+    .home-indicator{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:118px;height:4px;background:rgba(0,0,0,0.12);border-radius:2px;z-index:40;}
+
+    /* Snackbar */
+    .snackbar{position:absolute;bottom:86px;left:16px;right:16px;padding:12px 16px;background:rgba(28,34,48,0.96);border:0.5px solid rgba(255,255,255,0.08);border-radius:12px;font-size:12px;color:rgba(255,255,255,0.80);text-align:center;z-index:50;opacity:0;transform:translateY(8px);transition:all 280ms var(--ease-feather);pointer-events:none;}
+    .snackbar.visible{opacity:1;transform:translateY(0);}
+
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0ms!important;transition-duration:0ms!important}}
+
+    /* ── Handoff card ── */
+    .handoff{width:375px;border:0.5px solid rgba(255,255,255,0.07);border-radius:12px;padding:20px 22px 22px;background:rgba(255,255,255,0.022);}
+    .handoff-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+    .handoff-tag{font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--sky-400);background:rgba(43,176,237,0.10);padding:3px 8px;border-radius:4px;}
+    .handoff-title{font-family:var(--font-mono);font-size:10px;color:rgba(255,255,255,0.35);flex:1;}
+    .handoff ul{list-style:none;display:flex;flex-direction:column;gap:10px;}
+    .handoff li{display:grid;grid-template-columns:6px 1fr;gap:10px;align-items:baseline;}
+    .bullet{width:4px;height:4px;background:var(--sky-600);border-radius:50%;margin-top:5px;}
+    .handoff li p{font-family:var(--font-mono);font-size:11px;color:rgba(255,255,255,0.38);line-height:1.65;}
+    .handoff li p strong{color:rgba(255,255,255,0.62);font-weight:400;}
+    .handoff li p code{color:var(--sky-400);background:rgba(43,176,237,0.10);padding:1px 5px;border-radius:3px;font-size:10px;}
+  </style>
+</head>
+<body>
+
+<div class="screen-meta">Screen 05 · Staff App · Create Job — 3-step wizard</div>
+
+<!-- Flutter: lib/features/jobs/screens/job_create_screen.dart
+     class JobCreateScreen extends ConsumerStatefulWidget
+     Provider: jobCreateProvider (JobCreateNotifier)
+     Steps: 1=CustomerVehicle, 2=ServiceCategories, 3=AssignmentSchedule -->
+<div class="phone" id="phone">
+  <div class="notch"></div>
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <span class="s-time">9:41</span>
+    <div class="s-icons">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="6.5" width="3" height="4.5" rx="0.6" fill="rgba(0,0,0,0.45)"/><rect x="4.5" y="4" width="3" height="7" rx="0.6" fill="rgba(0,0,0,0.45)"/><rect x="9" y="1.8" width="3" height="9.2" rx="0.6" fill="rgba(0,0,0,0.45)"/><rect x="13.5" y="0" width="3" height="11" rx="0.6" fill="rgba(0,0,0,0.45)"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><path d="M8 9.5a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6z" fill="rgba(0,0,0,0.45)"/><path d="M3.7 6.2a6.1 6.1 0 0 1 8.6 0" stroke="rgba(0,0,0,0.45)" stroke-width="1.1" stroke-linecap="round" fill="none"/><path d="M1 3.5a10.3 10.3 0 0 1 14 0" stroke="rgba(0,0,0,0.45)" stroke-width="1.1" stroke-linecap="round" fill="none"/></svg>
+      <svg width="27" height="12" viewBox="0 0 27 12" fill="none"><rect x="0.5" y="0.5" width="23" height="11" rx="2.5" stroke="rgba(0,0,0,0.35)"/><rect x="2" y="2" width="17" height="8" rx="1.5" fill="rgba(0,0,0,0.50)"/><path d="M25 4v4c.9-.4 1.5-1.1 1.5-2s-.6-1.6-1.5-2z" fill="rgba(0,0,0,0.25)"/></svg>
+    </div>
+  </div>
+
+  <!-- Wizard header -->
+  <div class="wizard-header">
+    <button class="close-btn" id="closeBtn" aria-label="Close">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <span class="wizard-title" id="wizardTitle">New Job</span>
+    <span class="step-counter" id="stepCounter">Step 1 of 3</span>
+  </div>
+
+  <!-- Step indicator -->
+  <!-- Flutter: AnimatedContainer bars + Text labels in Row -->
+  <div class="step-bar">
+    <div class="step-bars">
+      <div class="step-seg-bar active"    id="bar1"></div>
+      <div class="step-seg-bar"           id="bar2"></div>
+      <div class="step-seg-bar"           id="bar3"></div>
+    </div>
+    <div class="step-labels">
+      <div class="step-lbl active"    id="lbl1">Customer</div>
+      <div class="step-lbl"           id="lbl2">Services</div>
+      <div class="step-lbl"           id="lbl3">Assign</div>
+    </div>
+  </div>
+
+  <!-- Step content -->
+  <div class="step-content" id="stepContent">
+
+    <!-- ═══════════ STEP 1 — Customer & Vehicle ═══════════ -->
+    <!-- Flutter: CustomerVehicleStep extends StatelessWidget -->
+    <div class="step-panel" id="step1">
+
+      <!-- Customer search -->
+      <!-- Flutter: GfInput(prefix:Icon(search), hint:'Search customer…', onChanged:_debounceSearch) -->
+      <div class="field-group" id="customerSearchGroup">
+        <div class="field-label">Customer</div>
+        <div class="search-wrap-field">
+          <span class="search-icon-inset">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          </span>
+          <input type="text" class="gf-input search-input-cust" id="custSearch" placeholder="Name, phone, or vehicle plate…" autocomplete="off">
+        </div>
+
+        <!-- Search results dropdown -->
+        <div class="customer-results" id="custResults" style="display:none">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Selected customer (hidden until selection) -->
+      <div class="selected-customer-card" id="selectedCustCard" style="display:none">
+        <div class="cust-av" id="selCustAv">RK</div>
+        <div class="cust-info">
+          <div class="cust-name" id="selCustName">Rahul Sharma</div>
+          <div class="cust-phone" id="selCustPhone">+91 98765 43210</div>
+        </div>
+        <button class="change-btn" id="changeCustBtn">Change →</button>
+      </div>
+
+      <!-- Vehicle selection (shown after customer selected) -->
+      <div class="vehicle-section" id="vehicleSection" style="display:none">
+        <div class="field-label">Vehicle</div>
+        <div class="vehicle-chips" id="vehicleChips">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- New vehicle form (expandable) -->
+      <div class="new-vehicle-form" id="newVehicleForm">
+        <div class="field-label" style="margin-bottom:0">Add Vehicle</div>
+        <input type="text" class="gf-input mono" placeholder="Registration · MH12AB1234" autocomplete="off">
+        <div class="row-2">
+          <input type="text" class="gf-input" placeholder="Make (Maruti)">
+          <input type="text" class="gf-input" placeholder="Model (Swift)">
+        </div>
+        <div class="row-2">
+          <input type="text" class="gf-input" placeholder="Year (2021)">
+          <input type="text" class="gf-input mono" placeholder="Odometer km">
+        </div>
+        <button style="height:38px;border-radius:10px;background:var(--sky-600);border:none;color:#fff;font-family:var(--font-ui);font-size:13px;font-weight:500;cursor:pointer;" onclick="addVehicleDone()">Add Vehicle</button>
+      </div>
+
+    </div><!-- /step1 -->
+
+    <!-- ═══════════ STEP 2 — Services ═══════════ -->
+    <!-- Flutter: ServiceCategoriesStep extends StatelessWidget -->
+    <div class="step-panel hidden" id="step2">
+
+      <div class="field-group">
+        <div class="field-label">Service Categories</div>
+        <div class="categories-grid" id="catGrid">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Odometer + fuel -->
+      <div class="field-group">
+        <div class="field-label">Odometer Reading</div>
+        <input type="number" class="gf-input mono" id="odometerInput" placeholder="Current reading in km">
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Fuel Level</div>
+        <div class="fuel-selector" id="fuelSelector">
+          <button class="fuel-btn" data-level="empty">E</button>
+          <button class="fuel-btn" data-level="quarter">¼</button>
+          <button class="fuel-btn active" data-level="half">½</button>
+          <button class="fuel-btn" data-level="three_quarter">¾</button>
+          <button class="fuel-btn" data-level="full">F</button>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-label">Special Instructions</div>
+        <textarea class="gf-textarea" placeholder="Customer's specific concerns, notes for technician…" rows="3"></textarea>
+      </div>
+
+    </div><!-- /step2 -->
+
+    <!-- ═══════════ STEP 3 — Assignment & Schedule ═══════════ -->
+    <!-- Flutter: AssignmentStep extends StatelessWidget -->
+    <div class="step-panel hidden" id="step3">
+
+      <!-- Bay selection -->
+      <div class="field-group">
+        <div class="field-label">Service Bay</div>
+        <div class="bay-scroll" id="bayScroll">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Technician -->
+      <div class="field-group">
+        <div class="field-label">Technician</div>
+        <div class="tech-list" id="techList">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Priority -->
+      <!-- Flutter: Row of ChoiceChip widgets, ref.watch(jobCreateProvider).priority -->
+      <div class="field-group">
+        <div class="field-label">Priority</div>
+        <div class="priority-row" id="priorityRow">
+          <button class="prio-chip" data-prio="low">Low</button>
+          <button class="prio-chip active-normal" data-prio="normal">Normal</button>
+          <button class="prio-chip" data-prio="urgent">Urgent</button>
+          <button class="prio-chip" data-prio="critical">Critical</button>
+        </div>
+      </div>
+
+      <!-- Date + time -->
+      <!-- Flutter: DateTimePicker widgets -->
+      <div class="field-group">
+        <div class="field-label">Schedule</div>
+        <div class="datetime-row">
+          <div class="datetime-field">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ink-4)" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <div>
+              <div class="datetime-label">Start</div>
+              <div class="datetime-value">Today, Now</div>
+            </div>
+          </div>
+          <div class="datetime-field">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ink-4)" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <div>
+              <div class="datetime-label">Est. Done</div>
+              <div class="datetime-value">Today, 5 PM</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Handover notes -->
+      <div class="field-group">
+        <div class="field-label">Handover Notes</div>
+        <textarea class="gf-textarea" placeholder="Notes for technician, customer requests on handover…" rows="2"></textarea>
+      </div>
+
+    </div><!-- /step3 -->
+
+    <!-- ═══════════ SUCCESS ═══════════ -->
+    <div class="success-panel" id="successPanel">
+      <div class="success-icon-wrap">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--sage-600)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="success-job-id">JOB-2849</div>
+      <div class="success-msg">Job created and assigned to <strong>Amit Kamble</strong> in Bay C</div>
+      <div class="success-sub" style="margin-top:4px">Customer notification sent via WhatsApp</div>
+    </div>
+
+  </div><!-- /step-content -->
+
+  <!-- Wizard footer -->
+  <div class="wizard-footer" id="wizardFooter">
+    <button class="btn-back" id="btnBack" disabled>Back</button>
+    <button class="btn-next" id="btnNext" disabled>Customer required</button>
+  </div>
+
+  <div class="snackbar" id="snackbar"></div>
+  <div class="home-indicator"></div>
+</div>
+
+<!-- Handoff notes -->
+<div class="handoff">
+  <div class="handoff-header">
+    <span class="handoff-tag">Cursor</span>
+    <span class="handoff-title">Screen 05 · Create Job · 3-step wizard</span>
+  </div>
+  <ul>
+    <li><div class="bullet"></div><p><strong>Provider:</strong> <code>jobCreateProvider</code> (JobCreateNotifier) holds <code>JobCreateState { step:int, selectedCustomer:CustomerListItem?, selectedVehicle:Vehicle?, selectedCategories:List&lt;String&gt;, primaryCategory, odometer, fuelLevel, techUuid, bayUuid, priority, scheduledAt, estimatedAt, notes }</code>. Methods: <code>nextStep()</code>, <code>prevStep()</code>, <code>submit() → Future&lt;ServiceJob&gt;</code>.</p></li>
+    <li><div class="bullet"></div><p><strong>Customer search:</strong> <code>customerSearch(String q)</code> debounced 300ms → <code>GET /customers?search=q&per_page=5</code>. On select: <code>GET /customers/{uuid}/vehicles</code> to populate vehicle chips. New customer: inline <code>POST /customers</code> + immediately select result.</p></li>
+    <li><div class="bullet"></div><p><strong>Step validation:</strong> Step 1: <code>selectedCustomer != null && selectedVehicle != null</code>. Step 2: <code>selectedCategories.isNotEmpty</code>. Step 3: <code>selectedTech != null</code>. Disable Next button reactively via <code>ref.watch(jobCreateProvider.select((s) => s.isStepValid(step)))</code>.</p></li>
+    <li><div class="bullet"></div><p><strong>Submit:</strong> <code>POST /jobs</code> with full payload. On 201: <code>ref.invalidate(jobsListProvider)</code> to refresh list, then <code>context.go('/staff/jobs/{uuid}')</code> for job detail. Show <code>SnackBar('JOB-XXXX created')</code> on Dashboard.</p></li>
+    <li><div class="bullet"></div><p><strong>Navigation:</strong> Presented as <code>MaterialPageRoute(fullscreenDialog:true)</code> from FAB. Step transitions: <code>AnimatedSwitcher(duration:kNormal, transitionBuilder:SlideTransitionBuilder)</code>. Close button: <code>context.pop()</code> with <code>showDialog(confirm discard)</code> if any data entered.</p></li>
+  </ul>
+</div>
+
+<script>
+  /* ════════════════════════════════════
+     WIZARD STATE
+  ════════════════════════════════════ */
+  const state = {
+    step: 1,
+    selectedCustomer: null,
+    selectedVehicle: null,
+    selectedCategories: [],
+    fuelLevel: 'half',
+    selectedBay: null,
+    selectedTech: null,
+    priority: 'normal',
+  };
+
+  /* ── Mock data ── */
+  const CUSTOMERS = [
+    {id:'c1', name:'Rahul Sharma',  initials:'RS', phone:'+91 98765 43210', vehicles:[
+      {id:'v1', plate:'MH12AB1234', model:'Maruti Swift VXI'},
+      {id:'v2', plate:'MH12CD5678', model:'Honda City ZX'},
+    ]},
+    {id:'c2', name:'Priya Patel',   initials:'PP', phone:'+91 87654 32109', vehicles:[
+      {id:'v3', plate:'DL8CAF9876', model:'Hyundai i20 Asta'},
+    ]},
+    {id:'c3', name:'Kavya Reddy',   initials:'KR', phone:'+91 76543 21098', vehicles:[
+      {id:'v4', plate:'KA01MX5678', model:'Honda City ZX'},
+    ]},
+    {id:'c4', name:'Sunita Gupta',  initials:'SG', phone:'+91 65432 10987', vehicles:[
+      {id:'v5', plate:'TN09BD3210', model:'Toyota Innova Crysta'},
+      {id:'v6', plate:'TN09EF4567', model:'Maruti Baleno Alpha'},
+    ]},
+    {id:'c5', name:'Vikram Mehta',  initials:'VM', phone:'+91 54321 09876', vehicles:[
+      {id:'v7', plate:'MH01ZP4567', model:'Mahindra Thar LX'},
+    ]},
+  ];
+
+  const CATEGORIES = [
+    {id:'mech',  name:'Mechanical',  dur:'2–4 hrs', flags:['insp'],       iconBg:'#E8F4FD', iconColor:'#0A7DBF', letter:'M'},
+    {id:'body',  name:'Body Work',   dur:'4–8 hrs', flags:['insp','appr'],iconBg:'#FEF7EC', iconColor:'#C07A08', letter:'B'},
+    {id:'elec',  name:'Electrical',  dur:'1–3 hrs', flags:[],             iconBg:'#F0EFFE', iconColor:'#4F46C8', letter:'E'},
+    {id:'ac',    name:'AC & Climate',dur:'2–3 hrs', flags:['insp'],       iconBg:'#EBF7F5', iconColor:'#138878', letter:'A'},
+    {id:'tyre',  name:'Tyres',       dur:'0.5–1 hr',flags:[],             iconBg:'#EEF2F6', iconColor:'#566076', letter:'T'},
+    {id:'det',   name:'Detailing',   dur:'3–5 hrs', flags:[],             iconBg:'#EBF5EE', iconColor:'#1E7F3C', letter:'D'},
+    {id:'susp',  name:'Suspension',  dur:'2–3 hrs', flags:['insp'],       iconBg:'#FEF7EC', iconColor:'#C07A08', letter:'S'},
+    {id:'wash',  name:'Wash & Clean',dur:'0.5–1 hr',flags:[],             iconBg:'#EBF7F5', iconColor:'#138878', letter:'W'},
+  ];
+
+  const BAYS = [
+    {id:'bayA', name:'Bay A', type:'Mechanical', status:'occupied', info:'Maruti Swift'},
+    {id:'bayB', name:'Bay B', type:'Body Work',  status:'occupied', info:'Hyundai i20'},
+    {id:'bayC', name:'Bay C', type:'Detailing',  status:'available', info:'Available now'},
+    {id:'bayD', name:'Bay D', type:'Tyres',      status:'maintenance', info:'~2 hrs'},
+  ];
+
+  const TECHS = [
+    {id:'t1', name:'Amit Kamble',  initials:'AK', spec:'All categories',        avail:'free', busy:null},
+    {id:'t2', name:'Suresh More',  initials:'SM', spec:'Mechanical, Electrical', avail:'free', busy:null},
+    {id:'t3', name:'Rajan Patil',  initials:'RP', spec:'Body Work, Suspension',  avail:'busy', busy:'JOB-2845'},
+    {id:'t4', name:'Deepak Shinde',initials:'DS', spec:'Detailing, Tyres, Wash', avail:'free', busy:null},
+  ];
+
+  /* ════════════════════════════════════
+     STEP NAVIGATION
+  ════════════════════════════════════ */
+  function goToStep(n, direction) {
+    const prev = state.step;
+    state.step = n;
+
+    document.getElementById('step' + prev).classList.add('hidden');
+    const nextPanel = document.getElementById('step' + n);
+    nextPanel.classList.remove('hidden');
+    nextPanel.style.animation = direction === 'forward'
+      ? 'stepIn 300ms var(--ease-feather) both'
+      : 'stepBack 300ms var(--ease-feather) both';
+
+    document.getElementById('stepCounter').textContent = `Step ${n} of 3`;
+    document.getElementById('stepContent').scrollTop = 0;
+    updateStepBar();
+    updateFooter();
+  }
+
+  function updateStepBar() {
+    const s = state.step;
+    for (let i = 1; i <= 3; i++) {
+      const bar = document.getElementById('bar'+i);
+      const lbl = document.getElementById('lbl'+i);
+      bar.className = 'step-seg-bar' + (i < s ? ' completed' : i === s ? ' active' : '');
+      lbl.className = 'step-lbl' + (i < s ? ' completed' : i === s ? ' active' : '');
+    }
+  }
+
+  function updateFooter() {
+    const s = state.step;
+    const back = document.getElementById('btnBack');
+    const next = document.getElementById('btnNext');
+    back.disabled = (s === 1);
+
+    if (s === 1) {
+      const valid = state.selectedCustomer && state.selectedVehicle;
+      next.disabled = !valid;
+      next.textContent = valid ? 'Next → Services' : 'Select customer & vehicle';
+      next.className = 'btn-next';
+    } else if (s === 2) {
+      const valid = state.selectedCategories.length > 0;
+      next.disabled = !valid;
+      next.textContent = valid ? 'Next → Assign' : 'Select a service';
+      next.className = 'btn-next';
+    } else if (s === 3) {
+      const valid = state.selectedTech !== null;
+      next.disabled = !valid;
+      next.textContent = valid ? 'Create Job' : 'Assign technician';
+      next.className = 'btn-next' + (valid ? ' creating' : '');
+    }
+  }
+
+  document.getElementById('btnBack').addEventListener('click', () => {
+    if (state.step > 1) goToStep(state.step - 1, 'back');
+  });
+
+  document.getElementById('btnNext').addEventListener('click', () => {
+    if (state.step < 3) {
+      goToStep(state.step + 1, 'forward');
+    } else {
+      createJob();
+    }
+  });
+
+  document.getElementById('closeBtn').addEventListener('click', () => {
+    showSnackbar('Cancelled — returning to Jobs list');
+  });
+
+  /* ════════════════════════════════════
+     STEP 1 — Customer search & vehicle
+  ════════════════════════════════════ */
+  let searchTimer;
+  document.getElementById('custSearch').addEventListener('input', function() {
+    clearTimeout(searchTimer);
+    const q = this.value.trim().toLowerCase();
+    searchTimer = setTimeout(() => renderCustResults(q), 200);
+  });
+
+  function renderCustResults(q) {
+    const container = document.getElementById('custResults');
+    if (!q) { container.style.display = 'none'; return; }
+
+    const matches = CUSTOMERS.filter(c =>
+      c.name.toLowerCase().includes(q) ||
+      c.phone.replace(/\s/g,'').includes(q.replace(/\s/g,'')) ||
+      c.vehicles.some(v => v.plate.toLowerCase().includes(q))
+    );
+
+    container.innerHTML = matches.map(c => `
+      <div class="cust-result-item" onclick="selectCustomer('${c.id}')">
+        <div class="cust-av">${c.initials}</div>
+        <div class="cust-info">
+          <div class="cust-name">${c.name}</div>
+          <div class="cust-phone">${c.phone}</div>
+        </div>
+        <span class="cust-vcnt">${c.vehicles.length} vehicle${c.vehicles.length!==1?'s':''}</span>
+      </div>
+    `).join('') + `
+      <div class="new-cust-row" onclick="showNewCustForm()">
+        <div class="new-cust-plus">+</div>
+        <span class="new-cust-lbl">New customer…</span>
+      </div>`;
+    container.style.display = 'block';
+  }
+
+  function selectCustomer(id) {
+    const c = CUSTOMERS.find(x => x.id === id);
+    if (!c) return;
+    state.selectedCustomer = c;
+    state.selectedVehicle  = null;
+
+    document.getElementById('custResults').style.display = 'none';
+    document.getElementById('custSearch').value = '';
+    document.getElementById('customerSearchGroup').style.display = 'none';
+
+    document.getElementById('selCustAv').textContent   = c.initials;
+    document.getElementById('selCustName').textContent  = c.name;
+    document.getElementById('selCustPhone').textContent = c.phone;
+    document.getElementById('selectedCustCard').style.display = 'flex';
+
+    renderVehicleChips(c);
+    document.getElementById('vehicleSection').style.display = 'block';
+    updateFooter();
+  }
+
+  document.getElementById('changeCustBtn').addEventListener('click', () => {
+    state.selectedCustomer = null;
+    state.selectedVehicle  = null;
+    document.getElementById('selectedCustCard').style.display = 'none';
+    document.getElementById('vehicleSection').style.display   = 'none';
+    document.getElementById('customerSearchGroup').style.display = 'block';
+    document.getElementById('custSearch').value = '';
+    document.getElementById('custSearch').focus();
+    updateFooter();
+  });
+
+  function renderVehicleChips(customer) {
+    const wrap = document.getElementById('vehicleChips');
+    wrap.innerHTML = customer.vehicles.map(v => `
+      <div class="vehicle-chip" data-vid="${v.id}" onclick="selectVehicle('${v.id}')">
+        <div style="display:flex;flex-direction:column;gap:1px;">
+          <span class="v-plate">${v.plate}</span>
+          <span class="v-model">${v.model}</span>
+        </div>
+        <div class="v-check">
+          <svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><polyline points="2 6 5 9 10 3"/></svg>
+        </div>
+      </div>
+    `).join('') + `
+      <div class="add-vehicle-chip" onclick="toggleNewVehicleForm()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add vehicle
+      </div>`;
+  }
+
+  function selectVehicle(id) {
+    document.querySelectorAll('.vehicle-chip').forEach(c => c.classList.remove('selected'));
+    const chip = document.querySelector(`.vehicle-chip[data-vid="${id}"]`);
+    if (chip) chip.classList.add('selected');
+    state.selectedVehicle = id;
+    updateFooter();
+  }
+
+  function toggleNewVehicleForm() {
+    const form = document.getElementById('newVehicleForm');
+    form.classList.toggle('open');
+  }
+
+  function addVehicleDone() {
+    document.getElementById('newVehicleForm').classList.remove('open');
+    showSnackbar('Vehicle added — select it to continue');
+  }
+
+  function showNewCustForm() {
+    document.getElementById('custResults').style.display = 'none';
+    showSnackbar('Quick customer form — type name & phone to add');
+  }
+
+  /* ════════════════════════════════════
+     STEP 2 — Service categories
+  ════════════════════════════════════ */
+  function renderCategories() {
+    const grid = document.getElementById('catGrid');
+    grid.innerHTML = CATEGORIES.map(c => {
+      const flagsHtml = c.flags.map(f => {
+        if (f==='insp') return '<span class="cat-flag flag-insp">Inspection</span>';
+        if (f==='appr') return '<span class="cat-flag flag-appr">Approval</span>';
+        return '';
+      }).join('');
+      return `
+        <div class="cat-card" data-catid="${c.id}" onclick="toggleCat('${c.id}')">
+          <div class="cat-icon" style="background:${c.iconBg};color:${c.iconColor}">${c.letter}</div>
+          <div class="cat-name">${c.name}</div>
+          <div class="cat-dur">${c.dur}</div>
+          ${c.flags.length ? `<div class="cat-flags">${flagsHtml}</div>` : ''}
+          <div class="cat-check">
+            <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><polyline points="2 6 5 9 10 3"/></svg>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function toggleCat(id) {
+    const idx = state.selectedCategories.indexOf(id);
+    if (idx > -1) {
+      state.selectedCategories.splice(idx, 1);
+      document.querySelector(`.cat-card[data-catid="${id}"]`).classList.remove('selected');
+    } else {
+      state.selectedCategories.push(id);
+      document.querySelector(`.cat-card[data-catid="${id}"]`).classList.add('selected');
+    }
+    updateFooter();
+  }
+
+  /* Fuel level */
+  document.querySelectorAll('.fuel-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.fuel-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      state.fuelLevel = this.dataset.level;
+    });
+  });
+
+  /* ════════════════════════════════════
+     STEP 3 — Bay & Technician
+  ════════════════════════════════════ */
+  function renderBays() {
+    document.getElementById('bayScroll').innerHTML = BAYS.map(b => {
+      const disabled = b.status !== 'available';
+      const chipClass = b.status === 'available' ? 'avail' : b.status === 'occupied' ? 'occ' : 'maint';
+      const chipLabel = b.status === 'available' ? 'Available' : b.status === 'occupied' ? 'Occupied' : 'Maint.';
+      return `
+        <div class="bay-select-card ${disabled ? 'disabled':''}" data-bayid="${b.id}" onclick="${disabled ? '' : `selectBay('${b.id}')`}">
+          <div class="bay-sc-name">${b.name}</div>
+          <div class="bay-sc-type">${b.type}</div>
+          <div class="bay-sc-chip ${chipClass}">
+            <span class="dot"></span>${chipLabel}
+          </div>
+          <div style="font-size:10px;color:var(--ink-4);margin-top:4px;">${b.info}</div>
+        </div>`;
+    }).join('');
+  }
+
+  function selectBay(id) {
+    document.querySelectorAll('.bay-select-card').forEach(c => c.classList.remove('selected'));
+    const card = document.querySelector(`.bay-select-card[data-bayid="${id}"]`);
+    if (card) card.classList.add('selected');
+    state.selectedBay = id;
+  }
+
+  function renderTechs() {
+    document.getElementById('techList').innerHTML = TECHS.map(t => `
+      <div class="tech-card" data-techid="${t.id}" onclick="selectTech('${t.id}')">
+        <div class="tech-av">${t.initials}</div>
+        <div class="tech-info">
+          <div class="tech-nm">${t.name}</div>
+          <div class="tech-spec">${t.spec}</div>
+        </div>
+        <span class="tech-avail ${t.avail}">${t.avail === 'free' ? 'Available' : 'On ' + t.busy}</span>
+        <div class="tech-match">
+          <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="${t.avail === 'free' ? 'var(--sage-600)' : 'var(--ink-5)'}" stroke-width="2.2" stroke-linecap="round"><polyline points="2 6 5 9 10 3"/></svg>
+        </div>
+      </div>`).join('');
+  }
+
+  function selectTech(id) {
+    document.querySelectorAll('.tech-card').forEach(c => c.classList.remove('selected'));
+    const card = document.querySelector(`.tech-card[data-techid="${id}"]`);
+    if (card) card.classList.add('selected');
+    state.selectedTech = id;
+    updateFooter();
+  }
+
+  /* Priority */
+  document.querySelectorAll('.prio-chip').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.prio-chip').forEach(b => b.className = 'prio-chip');
+      this.className = 'prio-chip active-' + this.dataset.prio;
+      state.priority = this.dataset.prio;
+    });
+  });
+
+  /* ════════════════════════════════════
+     SUBMIT
+  ════════════════════════════════════ */
+  function createJob() {
+    const btn = document.getElementById('btnNext');
+    btn.textContent = 'Creating…';
+    btn.disabled = true;
+
+    setTimeout(() => {
+      /* Success state */
+      document.getElementById('step3').classList.add('hidden');
+      document.getElementById('successPanel').classList.add('visible');
+      document.getElementById('wizardFooter').style.display = 'none';
+      document.getElementById('stepCounter').textContent = 'Created ✓';
+
+      /* Update bars to all completed */
+      ['bar1','bar2','bar3'].forEach(id => {
+        document.getElementById(id).className = 'step-seg-bar completed';
+      });
+      ['lbl1','lbl2','lbl3'].forEach(id => {
+        document.getElementById(id).className = 'step-lbl completed';
+      });
+    }, 700);
+  }
+
+  /* ════════════════════════════════════
+     INIT
+  ════════════════════════════════════ */
+  function showSnackbar(msg) {
+    const s = document.getElementById('snackbar');
+    s.textContent = msg; s.classList.add('visible');
+    setTimeout(() => s.classList.remove('visible'), 2800);
+  }
+
+  /* Show customer search results on focus */
+  document.getElementById('custSearch').addEventListener('focus', function() {
+    if (this.value) renderCustResults(this.value.toLowerCase());
+    else {
+      const container = document.getElementById('custResults');
+      container.innerHTML = CUSTOMERS.map(c => `
+        <div class="cust-result-item" onclick="selectCustomer('${c.id}')">
+          <div class="cust-av">${c.initials}</div>
+          <div class="cust-info">
+            <div class="cust-name">${c.name}</div>
+            <div class="cust-phone">${c.phone}</div>
+          </div>
+          <span class="cust-vcnt">${c.vehicles.length} vehicle${c.vehicles.length!==1?'s':''}</span>
+        </div>
+      `).join('') + `
+        <div class="new-cust-row" onclick="showNewCustForm()">
+          <div class="new-cust-plus">+</div>
+          <span class="new-cust-lbl">New customer…</span>
+        </div>`;
+      container.style.display = 'block';
+    }
+  });
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#customerSearchGroup') && !e.target.closest('#custResults')) {
+      document.getElementById('custResults').style.display = 'none';
+    }
+  });
+
+  renderCategories();
+  renderBays();
+  renderTechs();
+  updateFooter();
+</script>
+
+</body>
+</html>

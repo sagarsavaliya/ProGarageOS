@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProGarage · 02 — Staff Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+  <style>
+    /* ═══════════════════════════════════════════════
+       PROGARAGE DESIGN TOKENS — GarageFlow DS v1.0
+    ═══════════════════════════════════════════════ */
+    :root {
+      --ink-0:#0A0E14; --ink-1:#1C2230; --ink-2:#364052; --ink-3:#566076;
+      --ink-4:#8898AA; --ink-5:#B8C5D0; --ink-6:#DDE5EC; --ink-7:#EEF2F6;
+      --ink-8:#F7F9FB; --ink-9:#FFFFFF;
+      --sky-50:#E8F4FD; --sky-400:#2BB0ED; --sky-600:#0A7DBF; --sky-800:#065E91;
+      --teal-50:#EBF7F5; --teal-400:#26B8A8; --teal-600:#138878;
+      --rose-50:#FEF0F0; --rose-400:#EF4444; --rose-600:#C01E1E;
+      --slate-600:#486581; --slate-800:#243B53; --slate-900:#102A43;
+      --ease-feather:   cubic-bezier(0.16, 1,    0.3,  1);
+      --ease-out-quart: cubic-bezier(0.25, 1,    0.5,  1);
+      --ease-spring:    cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ease-exit:      cubic-bezier(0.40, 0,    1.0,  1);
+      --font-ui:   'DM Sans',  system-ui, sans-serif;
+      --font-mono: 'DM Mono',  monospace;
+    }
+
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      background: #111420;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: var(--font-ui);
+      -webkit-font-smoothing: antialiased;
+      gap: 28px;
+      padding: 32px 16px 40px;
+    }
+
+    .screen-meta {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: rgba(255,255,255,0.16);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    /* ═══════════════════════════════════════════════
+       PHONE FRAME
+    ═══════════════════════════════════════════════ */
+    .phone {
+      width: 375px; height: 812px;
+      background: var(--slate-900);
+      border-radius: 44px;
+      overflow: hidden;
+      position: relative;
+      flex-shrink: 0;
+      box-shadow:
+        0 0 0 0.5px rgba(255,255,255,0.07),
+        inset 0 0 0 0.5px rgba(255,255,255,0.03),
+        0 48px 120px rgba(0,0,0,0.80),
+        0 16px 40px  rgba(0,0,0,0.40);
+    }
+
+    /* Flutter: CustomPaint(painter: DotGridPainter()) */
+    .dot-grid {
+      position: absolute; inset: 0;
+      background-image: radial-gradient(circle, rgba(255,255,255,0.028) 1.2px, transparent 1.2px);
+      background-size: 28px 28px;
+      background-position: 14px 14px;
+      pointer-events: none; z-index: 0;
+    }
+
+    .ambient-glow {
+      position: absolute; left: 50%;
+      width: 360px; height: 360px;
+      transform: translate(-50%, -55%);
+      background: radial-gradient(circle, rgba(10,125,191,0.09) 0%, transparent 68%);
+      pointer-events: none; z-index: 0;
+      top: 48%;
+    }
+
+    /* Notch */
+    .notch {
+      position: absolute; top:0; left:50%;
+      transform: translateX(-50%);
+      width: 120px; height: 30px;
+      background: #0a0e14;
+      border-radius: 0 0 20px 20px;
+      z-index: 30;
+    }
+
+    /* ═══════════════════════════════════════════════
+       STATUS BAR
+       Flutter: SafeArea(bottom:false) > Padding > Row
+    ═══════════════════════════════════════════════ */
+    .status-bar {
+      position: absolute; top:0; left:0; right:0; height:50px;
+      display: flex; align-items: flex-end; justify-content: space-between;
+      padding: 0 28px 9px; z-index: 20;
+    }
+    .s-time { font-family:var(--font-mono); font-size:12px; color:rgba(255,255,255,0.50); letter-spacing:0.02em; }
+    .s-icons { display:flex; align-items:center; gap:5px; }
+
+    /* ═══════════════════════════════════════════════
+       LOGIN CONTENT WRAPPER
+       Flutter: Scaffold > SafeArea > SingleChildScrollView >
+                Center > ConstrainedBox(maxWidth:320) > Column
+    ═══════════════════════════════════════════════ */
+    .login-wrap {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 62px 32px 40px;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    /* ─── Logo ─── */
+    /* Flutter: Column(crossAxis:center, spacing:5) */
+    .logo-section {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 5px;
+      margin-bottom: 28px;
+      animation: fadeSlideUp 580ms var(--ease-feather) 60ms both;
+    }
+    .wordmark {
+      font-size: 22px; font-weight: 300;
+      letter-spacing: -0.022em; color: rgba(255,255,255,0.90);
+    }
+    .wordmark span { color: var(--sky-400); }
+    .staff-portal-lbl {
+      font-size: 9px; font-weight: 500;
+      letter-spacing: 0.13em; text-transform: uppercase;
+      color: rgba(255,255,255,0.22);
+    }
+    .garage-name {
+      font-size: 11px; font-weight: 400;
+      color: rgba(255,255,255,0.32);
+      margin-top: 1px;
+    }
+
+    /* ─── User Card (returning user) ─── */
+    /* Flutter: GfCard(padding:12px) > Row */
+    .user-section {
+      width: 100%; margin-bottom: 24px;
+      animation: fadeSlideUp 580ms var(--ease-feather) 120ms both;
+    }
+    .user-card {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.045);
+      border: 0.5px solid rgba(255,255,255,0.10);
+      border-radius: 16px;
+      transition: border-color 140ms ease;
+    }
+    .user-avatar {
+      width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+      background: rgba(43,176,237,0.13);
+      border: 0.5px solid rgba(43,176,237,0.28);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 500; color: var(--sky-400);
+    }
+    .user-card-info { flex: 1; min-width: 0; }
+    .user-card-name {
+      font-size: 14px; font-weight: 400;
+      color: rgba(255,255,255,0.85);
+      line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .user-card-sub {
+      display: flex; align-items: center; gap: 6px;
+      margin-top: 2px;
+    }
+    .role-chip {
+      font-size: 10px; font-weight: 500; letter-spacing: 0.05em;
+      color: var(--sky-400);
+      background: rgba(43,176,237,0.10);
+      padding: 2px 7px; border-radius: 9999px;
+    }
+    .user-card-garage {
+      font-size: 10px; color: rgba(255,255,255,0.28);
+    }
+    .user-card-switch {
+      background: transparent; border: none; cursor: pointer;
+      display: flex; align-items: center; gap: 3px;
+      font-family: var(--font-ui); font-size: 11px; font-weight: 500;
+      color: rgba(255,255,255,0.35);
+      padding: 6px 4px;
+      border-radius: 6px;
+      transition: color 140ms ease, background 140ms ease;
+    }
+    .user-card-switch:hover { color: var(--sky-400); background: rgba(43,176,237,0.07); }
+
+    /* ─── Input Section (switch-user mode) ─── */
+    /* Flutter: Column(spacing:8) > GfInput, TextButton(cancel) */
+    .input-section {
+      width: 100%; margin-bottom: 24px;
+      display: flex; flex-direction: column; gap: 8px;
+      animation: fadeSlideUp 280ms var(--ease-feather) 0ms both;
+    }
+    .login-input {
+      width: 100%; height: 44px; padding: 0 14px;
+      background: #FFFFFF;
+      border: 0.5px solid var(--ink-6); border-radius: 10px;
+      font-family: var(--font-ui); font-size: 14px; font-weight: 400;
+      color: var(--ink-2); outline: none;
+      transition: border-color 140ms var(--ease-out-quart), box-shadow 140ms var(--ease-out-quart);
+    }
+    .login-input:focus {
+      border-color: var(--sky-400);
+      box-shadow: 0 0 0 3px rgba(43,176,237,0.20);
+    }
+    .login-input::placeholder { color: var(--ink-4); }
+    .input-hint { font-size: 11px; color: rgba(255,255,255,0.22); padding-left: 2px; }
+    .cancel-switch {
+      align-self: flex-start;
+      background: transparent; border: none; cursor: pointer;
+      font-family: var(--font-ui); font-size: 12px; font-weight: 500;
+      color: rgba(255,255,255,0.30); padding: 4px 0;
+      display: flex; align-items: center; gap: 4px;
+      transition: color 140ms ease;
+    }
+    .cancel-switch:hover { color: var(--sky-400); }
+
+    .hidden { display: none !important; }
+
+    /* ─── PIN Indicator ─── */
+    /* Flutter: Column(crossAxis:center, spacing:12) */
+    .pin-section {
+      width: 100%;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 14px;
+      margin-bottom: 20px;
+      animation: fadeSlideUp 580ms var(--ease-feather) 180ms both;
+    }
+    .pin-label {
+      font-size: 9px; font-weight: 500;
+      letter-spacing: 0.13em; text-transform: uppercase;
+      color: rgba(255,255,255,0.22);
+    }
+    /* Flutter: Row(mainAxisSize:min, spacing:16) */
+    .pin-dots {
+      display: flex; gap: 16px; align-items: center;
+    }
+    /* Flutter: AnimatedContainer per dot */
+    .pin-dot {
+      width: 13px; height: 13px; border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,0.22);
+      background: transparent;
+      transition: all 130ms var(--ease-spring);
+      will-change: transform, background, box-shadow;
+    }
+    .pin-dot.filled {
+      background: var(--sky-400); border-color: var(--sky-400);
+      box-shadow: 0 0 7px rgba(43,176,237,0.38);
+      transform: scale(1.18);
+    }
+    .pin-dot.error-dot {
+      background: var(--rose-400) !important;
+      border-color: var(--rose-400) !important;
+      box-shadow: 0 0 8px rgba(239,68,68,0.40) !important;
+      transform: scale(1.1) !important;
+    }
+    .pin-message {
+      font-size: 11px; font-weight: 500;
+      color: var(--rose-400);
+      height: 16px; letter-spacing: 0.02em;
+      opacity: 0;
+      transition: opacity 200ms ease;
+    }
+    .pin-message.visible { opacity: 1; }
+    .pin-message.success-msg { color: var(--teal-400); }
+
+    /* ═══════════════════════════════════════════════
+       PIN PAD
+       Flutter: Column(spacing:10) > Row(spacing:20) × 4
+    ═══════════════════════════════════════════════ */
+    .pin-pad {
+      display: flex; flex-direction: column; gap: 10px;
+      animation: fadeSlideUp 580ms var(--ease-feather) 240ms both;
+    }
+    .pad-row {
+      display: flex; gap: 20px; justify-content: center;
+    }
+    /* Flutter: GestureDetector > AnimatedContainer(circle) > Text/Icon */
+    .pad-btn {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: rgba(255,255,255,0.048);
+      border: 0.5px solid rgba(255,255,255,0.11);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 1px;
+      cursor: pointer;
+      font-family: var(--font-ui); font-size: 22px; font-weight: 300;
+      color: rgba(255,255,255,0.90);
+      position: relative;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      transition: background 80ms ease, border-color 80ms ease;
+    }
+    .pad-btn:hover:not(:disabled) {
+      background: rgba(255,255,255,0.085);
+      border-color: rgba(255,255,255,0.20);
+    }
+    .pad-btn:disabled { opacity: 0.30; cursor: not-allowed; }
+    .pad-btn .pad-sub {
+      font-size: 8px; font-weight: 500; letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.30);
+      line-height: 1; margin-top: -2px;
+    }
+    .pad-btn.biometric-btn { opacity: 0.7; }
+    .pad-btn.biometric-btn:hover:not(:disabled) { opacity: 1; }
+    .pad-btn.delete-btn { opacity: 0.7; }
+    .pad-btn.delete-btn:hover:not(:disabled) { opacity: 1; }
+    .pad-btn.biometric-btn.scanning {
+      animation: biometricScan 600ms var(--ease-feather) forwards;
+    }
+
+    /* ─── Demo hint ─── */
+    .demo-hint {
+      margin-top: 14px;
+      font-family: var(--font-mono);
+      font-size: 9px; color: rgba(255,255,255,0.14);
+      letter-spacing: 0.05em; text-align: center;
+      animation: fadeSlideUp 580ms var(--ease-feather) 300ms both;
+    }
+
+    /* ─── Footer ─── */
+    /* Flutter: TextButton(onPressed: _forgotPin) */
+    .login-footer {
+      margin-top: 16px;
+      animation: fadeSlideUp 580ms var(--ease-feather) 320ms both;
+    }
+    .forgot-btn {
+      background: transparent; border: none; cursor: pointer;
+      font-family: var(--font-ui); font-size: 12px; font-weight: 500;
+      color: rgba(255,255,255,0.28); padding: 8px 14px; border-radius: 8px;
+      transition: color 140ms ease, background 140ms ease;
+    }
+    .forgot-btn:hover { color: var(--sky-400); background: rgba(43,176,237,0.07); }
+
+    /* ═══════════════════════════════════════════════
+       LOCKED OVERLAY
+       Flutter: AnimatedOpacity > Positioned.fill > Column(center)
+    ═══════════════════════════════════════════════ */
+    .locked-overlay {
+      position: absolute; inset: 0;
+      background: var(--slate-900);
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 10px;
+      z-index: 15;
+      opacity: 0; pointer-events: none;
+      transition: opacity 300ms var(--ease-feather);
+    }
+    .locked-overlay.visible { opacity: 1; pointer-events: all; }
+    .lock-icon-wrap {
+      width: 58px; height: 58px; border-radius: 50%;
+      background: rgba(192,30,30,0.10);
+      border: 0.5px solid rgba(192,30,30,0.22);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 6px;
+    }
+    .lock-heading {
+      font-size: 20px; font-weight: 300;
+      letter-spacing: -0.015em;
+      color: rgba(255,255,255,0.85);
+    }
+    .lock-sub {
+      font-size: 12px; color: rgba(255,255,255,0.28);
+      text-align: center; max-width: 200px; line-height: 1.5;
+    }
+    .lock-timer {
+      font-family: var(--font-mono); font-size: 44px; font-weight: 400;
+      color: var(--sky-400); letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums; line-height: 1;
+      margin: 4px 0;
+    }
+    .lock-sub-top { margin-top: 2px; }
+    .lock-retry-hint { font-size: 11px; color: rgba(255,255,255,0.20); margin-top: 4px; }
+    .dot-grid-lock {
+      position: absolute; inset: 0;
+      background-image: radial-gradient(circle, rgba(255,255,255,0.018) 1.2px, transparent 1.2px);
+      background-size: 28px 28px;
+      background-position: 14px 14px;
+      pointer-events: none;
+    }
+
+    /* ═══════════════════════════════════════════════
+       SNACKBAR
+       Flutter: ScaffoldMessenger.showSnackBar(SnackBar(...))
+    ═══════════════════════════════════════════════ */
+    .snackbar {
+      position: absolute; bottom: 56px; left: 20px; right: 20px;
+      padding: 12px 16px;
+      background: rgba(22,30,46,0.96);
+      border: 0.5px solid rgba(255,255,255,0.11);
+      border-radius: 12px;
+      font-size: 12px; color: rgba(255,255,255,0.70);
+      text-align: center; z-index: 50;
+      opacity: 0; transform: translateY(8px);
+      transition: all 300ms var(--ease-feather);
+      pointer-events: none;
+      backdrop-filter: blur(10px);
+    }
+    .snackbar.visible {
+      opacity: 1; transform: translateY(0);
+      pointer-events: all;
+    }
+
+    /* ─── Home indicator ─── */
+    .home-indicator {
+      position: absolute; bottom: 10px; left: 50%;
+      transform: translateX(-50%);
+      width: 118px; height: 4px;
+      background: rgba(255,255,255,0.18);
+      border-radius: 2px; z-index: 20;
+    }
+
+    /* ═══════════════════════════════════════════════
+       KEYFRAME ANIMATIONS
+    ═══════════════════════════════════════════════ */
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0);    }
+    }
+    @keyframes dotPop {
+      from { transform: scale(0.6); }
+      to   { transform: scale(1.18); }
+    }
+    /* 3-oscillation horizontal shake */
+    @keyframes shakeX {
+      0%,100% { transform: translateX(0); }
+      16%     { transform: translateX(-8px); }
+      32%     { transform: translateX(8px); }
+      48%     { transform: translateX(-6px); }
+      64%     { transform: translateX(6px); }
+      80%     { transform: translateX(-3px); }
+      90%     { transform: translateX(3px); }
+    }
+    @keyframes dotWave {
+      0%,60%,100% { transform: scale(1.18) translateY(0);    }
+      30%         { transform: scale(1.18) translateY(-6px); }
+    }
+    @keyframes biometricScan {
+      0%   { box-shadow: 0 0 0  0px rgba(43,176,237,0.50); }
+      40%  { box-shadow: 0 0 0 10px rgba(43,176,237,0.15); }
+      100% { box-shadow: 0 0 0 18px rgba(43,176,237,0); }
+    }
+    @keyframes phoneExit {
+      from { opacity: 1; transform: scale(1);    }
+      to   { opacity: 0; transform: scale(0.96); }
+    }
+    @keyframes phoneEnter {
+      from { opacity: 0; transform: scale(0.96); }
+      to   { opacity: 1; transform: scale(1);    }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0ms !important; transition-duration: 0ms !important; }
+    }
+
+    /* ═══════════════════════════════════════════════
+       CURSOR HANDOFF NOTES
+    ═══════════════════════════════════════════════ */
+    .handoff {
+      width: 375px;
+      border: 0.5px solid rgba(255,255,255,0.07); border-radius: 12px;
+      padding: 20px 22px 22px;
+      background: rgba(255,255,255,0.022);
+    }
+    .handoff-header {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+    }
+    .handoff-tag {
+      font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--sky-400);
+      background: rgba(43,176,237,0.10); padding: 3px 8px; border-radius: 4px;
+    }
+    .handoff-title {
+      font-family: var(--font-mono); font-size: 10px;
+      color: rgba(255,255,255,0.35); letter-spacing: 0.04em; flex: 1;
+    }
+    .handoff ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .handoff li {
+      display: grid; grid-template-columns: 6px 1fr; gap: 10px; align-items: baseline;
+    }
+    .bullet {
+      width: 4px; height: 4px; background: var(--sky-600); border-radius: 50%;
+      margin-top: 5px; flex-shrink: 0;
+    }
+    .handoff li p {
+      font-family: var(--font-mono); font-size: 11px;
+      color: rgba(255,255,255,0.38); line-height: 1.65;
+    }
+    .handoff li p strong { color: rgba(255,255,255,0.62); font-weight: 400; }
+    .handoff li p code {
+      color: var(--sky-400); background: rgba(43,176,237,0.10);
+      padding: 1px 5px; border-radius: 3px; font-size: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="screen-meta">Screen 02 · Staff App · Staff Login</div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       Flutter: lib/features/auth/staff/screens/staff_login_screen.dart
+       class StaffLoginScreen extends ConsumerStatefulWidget
+       Provider: staffLoginProvider (StaffLoginNotifier)
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="phone" id="phone">
+
+    <div class="dot-grid"></div>
+    <div class="ambient-glow"></div>
+    <div class="notch"></div>
+
+    <!-- Flutter: SafeArea(bottom:false) > Padding > Row(spaceBetween) -->
+    <div class="status-bar">
+      <span class="s-time">9:41</span>
+      <div class="s-icons">
+        <svg width="17" height="11" viewBox="0 0 17 11" fill="none">
+          <rect x="0"    y="6.5" width="3"   height="4.5" rx="0.6" fill="rgba(255,255,255,0.45)"/>
+          <rect x="4.5"  y="4"   width="3"   height="7"   rx="0.6" fill="rgba(255,255,255,0.45)"/>
+          <rect x="9"    y="1.8" width="3"   height="9.2" rx="0.6" fill="rgba(255,255,255,0.45)"/>
+          <rect x="13.5" y="0"   width="3"   height="11"  rx="0.6" fill="rgba(255,255,255,0.45)"/>
+        </svg>
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+          <path d="M8 9.5a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6z" fill="rgba(255,255,255,0.45)"/>
+          <path d="M3.7 6.2a6.1 6.1 0 0 1 8.6 0" stroke="rgba(255,255,255,0.45)" stroke-width="1.15" stroke-linecap="round" fill="none"/>
+          <path d="M1 3.5a10.3 10.3 0 0 1 14 0" stroke="rgba(255,255,255,0.45)" stroke-width="1.15" stroke-linecap="round" fill="none"/>
+        </svg>
+        <svg width="27" height="12" viewBox="0 0 27 12" fill="none">
+          <rect x="0.5" y="0.5" width="23" height="11" rx="2.5" stroke="rgba(255,255,255,0.35)"/>
+          <rect x="2" y="2" width="17" height="8" rx="1.5" fill="rgba(255,255,255,0.55)"/>
+          <path d="M25 4v4c.9-.4 1.5-1.1 1.5-2s-.6-1.6-1.5-2z" fill="rgba(255,255,255,0.30)"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- ─── Main Login Content ─── -->
+    <!-- Flutter: SingleChildScrollView > Center > ConstrainedBox(maxWidth:320) > Column -->
+    <div class="login-wrap" id="loginWrap">
+
+      <!-- LOGO SECTION -->
+      <!-- Flutter: WordmarkWidget() — StatelessWidget, Text.rich + labels -->
+      <div class="logo-section">
+        <div class="wordmark">Pro<span>Garage</span></div>
+        <div class="staff-portal-lbl">Staff Portal</div>
+        <div class="garage-name">AutoCare Garage, Mumbai</div>
+      </div>
+
+      <!-- USER CARD (returning user — from SharedPreferences) -->
+      <!-- Flutter: Consumer(builder: (ctx,ref,_) { final user = ref.watch(savedUserProvider);
+                    return user != null ? SavedUserCard(user) : GfInput(...); }) -->
+      <div class="user-section" id="userSection">
+        <div class="user-card">
+          <!-- Flutter: InitialsAvatar(name:'Rajesh Kumar', size:42) -->
+          <div class="user-avatar">RK</div>
+          <div class="user-card-info">
+            <div class="user-card-name">Rajesh Kumar</div>
+            <div class="user-card-sub">
+              <span class="role-chip">Owner</span>
+              <span class="user-card-garage">AutoCare Garage</span>
+            </div>
+          </div>
+          <!-- Flutter: TextButton(onPressed: _switchAccount) -->
+          <button class="user-card-switch" id="switchBtn" aria-label="Switch account">
+            Switch
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M4.5 2.5L7.5 6l-3 3.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- INPUT SECTION (shown when switching user) -->
+      <!-- Flutter: AnimatedSwitcher(duration:kNormal) toggled by _showInput state -->
+      <div class="input-section hidden" id="inputSection">
+        <!-- Flutter: GfInput(hint:'Email or +91 phone', keyboardType:emailAddress/phone) -->
+        <input type="text" class="login-input" id="loginInput"
+               placeholder="Email or +91 phone number"
+               autocomplete="username" autocorrect="off" spellcheck="false">
+        <div class="input-hint">Use your registered email or phone number</div>
+        <!-- Flutter: TextButton(onPressed:_cancelSwitch, child:Row([Icon(chevronLeft),'Back'])) -->
+        <button class="cancel-switch" id="cancelSwitchBtn">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M7.5 2.5L4.5 6l3 3.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Back
+        </button>
+      </div>
+
+      <!-- PIN DOTS + LABEL -->
+      <!-- Flutter: PinDotsWidget(count:6, filledCount:_pin.length, status:_pinStatus) -->
+      <div class="pin-section">
+        <div class="pin-label">Enter PIN</div>
+        <div class="pin-dots" id="pinDots">
+          <div class="pin-dot" id="pd0"></div>
+          <div class="pin-dot" id="pd1"></div>
+          <div class="pin-dot" id="pd2"></div>
+          <div class="pin-dot" id="pd3"></div>
+          <div class="pin-dot" id="pd4"></div>
+          <div class="pin-dot" id="pd5"></div>
+        </div>
+        <!-- Flutter: AnimatedOpacity(opacity:_errorMsg.isNotEmpty ? 1:0) > Text -->
+        <div class="pin-message" id="pinMsg"></div>
+      </div>
+
+      <!-- PIN PAD -->
+      <!-- Flutter: PinPadWidget(onDigit:_addDigit, onDelete:_deleteDigit, onBiometric:_biometricAuth) -->
+      <div class="pin-pad" id="pinPad">
+        <div class="pad-row">
+          <button class="pad-btn" data-digit="1">1</button>
+          <button class="pad-btn" data-digit="2">
+            2<span class="pad-sub">ABC</span>
+          </button>
+          <button class="pad-btn" data-digit="3">
+            3<span class="pad-sub">DEF</span>
+          </button>
+        </div>
+        <div class="pad-row">
+          <button class="pad-btn" data-digit="4">
+            4<span class="pad-sub">GHI</span>
+          </button>
+          <button class="pad-btn" data-digit="5">
+            5<span class="pad-sub">JKL</span>
+          </button>
+          <button class="pad-btn" data-digit="6">
+            6<span class="pad-sub">MNO</span>
+          </button>
+        </div>
+        <div class="pad-row">
+          <button class="pad-btn" data-digit="7">
+            7<span class="pad-sub">PQRS</span>
+          </button>
+          <button class="pad-btn" data-digit="8">
+            8<span class="pad-sub">TUV</span>
+          </button>
+          <button class="pad-btn" data-digit="9">
+            9<span class="pad-sub">WXYZ</span>
+          </button>
+        </div>
+        <div class="pad-row">
+          <!-- Flutter: BiometricButton — LocalAuthentication.authenticate() -->
+          <button class="pad-btn biometric-btn" id="biometricBtn" title="Use biometric" aria-label="Use fingerprint or Face ID">
+            <!-- Fingerprint icon -->
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.65)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 3.4"/>
+              <path d="M14 13.12c0 2.38 0 6.38-1 8.88"/>
+              <path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/>
+              <path d="M2 12a10 10 0 0 1 18-6"/>
+              <path d="M2 16h.01"/>
+              <path d="M21.8 16c.2-2 .131-5.354 0-6"/>
+              <path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"/>
+              <path d="M8.65 22c.21-.66.45-1.32.57-2"/>
+              <path d="M9 6.8a6 6 0 0 1 9 5.2v2"/>
+            </svg>
+          </button>
+
+          <button class="pad-btn" data-digit="0">0</button>
+
+          <!-- Flutter: DeleteButton — onLongPress → clearAll -->
+          <button class="pad-btn delete-btn" id="deleteBtn" aria-label="Delete digit">
+            <svg width="22" height="16" viewBox="0 0 22 16" fill="none">
+              <path d="M8 1H20a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H8L1.5 8 8 1z"
+                    stroke="rgba(255,255,255,0.60)" stroke-width="1.3"
+                    stroke-linejoin="round" fill="none"/>
+              <path d="M13 6l-3.5 4M13 10l-3.5-4"
+                    stroke="rgba(255,255,255,0.60)" stroke-width="1.3"
+                    stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Demo hint -->
+      <div class="demo-hint">Demo: enter 1–2–3–4–5–6 to sign in</div>
+
+      <!-- Footer -->
+      <!-- Flutter: TextButton(child:Text('Forgot PIN?'), onPressed:_showForgotPinSheet) -->
+      <div class="login-footer">
+        <button class="forgot-btn" id="forgotBtn">Forgot PIN?</button>
+      </div>
+
+    </div><!-- /login-wrap -->
+
+    <!-- LOCKED OVERLAY -->
+    <!-- Flutter: AnimatedOpacity wrapping Scaffold overlay, shows on lockout -->
+    <div class="locked-overlay" id="lockedOverlay">
+      <div class="dot-grid-lock"></div>
+      <!-- Flutter: Container(56, circle, rose bg) > Icon(Icons.lock_outline, rose) -->
+      <div class="lock-icon-wrap">
+        <svg width="22" height="26" viewBox="0 0 22 26" fill="none" stroke="#C01E1E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1" y="11" width="20" height="14" rx="3"/>
+          <path d="M6 11V7a5 5 0 0 1 10 0v4"/>
+          <circle cx="11" cy="18" r="1.5" fill="#C01E1E"/>
+        </svg>
+      </div>
+      <div class="lock-heading">Account locked</div>
+      <div class="lock-sub lock-sub-top">Too many incorrect attempts</div>
+      <!-- Flutter: TweenAnimationBuilder(tween:Tween<int>(begin:lockSeconds, end:0)) > Text -->
+      <div class="lock-timer" id="lockTimer">0:15</div>
+      <div class="lock-sub">seconds remaining</div>
+      <div class="lock-retry-hint">You'll be able to try again shortly</div>
+    </div>
+
+    <!-- SNACKBAR -->
+    <!-- Flutter: ScaffoldMessenger.showSnackBar(SnackBar(...)) -->
+    <div class="snackbar" id="snackbar"></div>
+
+    <div class="home-indicator"></div>
+  </div><!-- /phone -->
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       CURSOR HANDOFF NOTES
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="handoff">
+    <div class="handoff-header">
+      <span class="handoff-tag">Cursor</span>
+      <span class="handoff-title">Screen 02 · Staff Login · PIN Auth</span>
+    </div>
+    <ul>
+      <li>
+        <div class="bullet"></div>
+        <p><strong>Providers:</strong> <code>staffLoginProvider</code> (StaffLoginNotifier) holds <code>StaffLoginState { idle | loading | error | locked }</code>. Methods: <code>addDigit(int)</code>, <code>deleteDigit()</code>, <code>clearPin()</code>, <code>submitPin()</code>, <code>triggerBiometric()</code>. <code>savedUserProvider</code> reads last logged-in user from FlutterSecureStorage to pre-fill the user card.</p>
+      </li>
+      <li>
+        <div class="bullet"></div>
+        <p><strong>PIN logic:</strong> <code>submitPin()</code> calls <code>AuthRepository.loginStaff(login, pin)</code> → POST <code>/auth/staff/login</code>. On 401: increment <code>failCount</code>. At <code>failCount ≥ 5</code>: set <code>status = locked</code>, start <code>CountdownTimer(30s)</code>. Store <code>failCount</code> + <code>lockExpiry</code> in SharedPreferences so lockout persists across app restarts.</p>
+      </li>
+      <li>
+        <div class="bullet"></div>
+        <p><strong>Widget tree:</strong> <code>PinPadWidget</code> (3×4 grid of <code>PinKeyWidget</code>) + <code>PinDotsWidget</code> (Row of 6 <code>AnimatedContainer</code>s). <code>PinKeyWidget</code>: <code>GestureDetector</code> with <code>onTapDown/Up</code> for scale 0.94 animation using <code>AnimatedScale(duration:kInstant, curve:easeIn)</code>.</p>
+      </li>
+      <li>
+        <div class="bullet"></div>
+        <p><strong>Biometric:</strong> <code>local_auth</code> package. <code>LocalAuthentication().authenticate(localizedReason:'Sign in to ProGarage')</code>. If authenticated: call <code>AuthRepository.loginStaff</code> with stored credentials. Show fingerprint ripple via <code>AnimatedContainer</code> box-shadow expansion.</p>
+      </li>
+      <li>
+        <div class="bullet"></div>
+        <p><strong>Navigation:</strong> On success: <code>ref.read(authProvider.notifier).saveSession(token, user)</code> → <code>context.go('/staff/dashboard')</code>. Transition: <code>CustomTransitionPage</code> with <code>FadeTransition + ScaleTransition(0.97→1)</code> on enter, <code>FadeTransition</code> on exit (300ms <code>easeExit</code>).</p>
+      </li>
+    </ul>
+  </div>
+
+  <script>
+    /* ═══════════════════════════════════════════════════════════
+       PIN STATE MACHINE
+       Mirrors: StaffLoginNotifier (Riverpod) in Dart
+    ═══════════════════════════════════════════════════════════ */
+    const CORRECT_PIN  = '123456';
+    const MAX_ATTEMPTS = 3;
+    const LOCK_SECS    = 15; // 15s for demo; 30s in production
+
+    let pin       = [];
+    let attempts  = 0;
+    let verifying = false;
+    let locked    = false;
+    let lockInterval = null;
+
+    /* ─── Dot helpers ─── */
+    function getDot(i) { return document.getElementById('pd' + i); }
+
+    function updateDots() {
+      for (let i = 0; i < 6; i++) {
+        const dot = getDot(i);
+        dot.classList.toggle('filled', i < pin.length);
+        dot.classList.remove('error-dot');
+      }
+    }
+
+    /* ─── Add digit ─── */
+    function addDigit(d) {
+      if (verifying || locked || pin.length >= 6) return;
+      clearPinMsg();
+      pin.push(d);
+
+      // Dot pop animation
+      const dot = getDot(pin.length - 1);
+      dot.style.animation = 'none';
+      dot.classList.add('filled');
+      void dot.offsetWidth;
+      dot.style.animation = 'dotPop 130ms var(--ease-spring) both';
+      setTimeout(() => { dot.style.animation = ''; }, 140);
+
+      if (pin.length === 6) {
+        setTimeout(verifyPin, 280);
+      }
+    }
+
+    /* ─── Delete digit ─── */
+    function deleteDigit() {
+      if (verifying || locked || pin.length === 0) return;
+      clearPinMsg();
+      getDot(pin.length - 1).classList.remove('filled');
+      pin.pop();
+    }
+
+    /* ─── Verify PIN ─── */
+    function verifyPin() {
+      verifying = true;
+      disablePad(true);
+
+      // Wave animation while verifying
+      const dotsEl = document.getElementById('pinDots');
+      for (let i = 0; i < 6; i++) {
+        getDot(i).style.animation = `dotWave 0.75s ${i * 75}ms ease-in-out infinite`;
+      }
+
+      setTimeout(() => {
+        // Clear wave
+        for (let i = 0; i < 6; i++) getDot(i).style.animation = '';
+
+        const isCorrect = pin.join('') === CORRECT_PIN;
+
+        if (isCorrect) {
+          onSuccess();
+        } else {
+          onError();
+        }
+        verifying = false;
+      }, 900);
+    }
+
+    /* ─── Success ─── */
+    function onSuccess() {
+      showPinMsg('Signing in…', false);
+      // All dots stay sky, add success glow
+      for (let i = 0; i < 6; i++) {
+        const d = getDot(i);
+        d.classList.add('filled');
+        d.style.boxShadow = '0 0 10px rgba(43,176,237,0.55)';
+      }
+
+      setTimeout(() => {
+        const phone = document.getElementById('phone');
+        phone.style.animation = 'phoneExit 300ms cubic-bezier(0.4,0,1,1) forwards';
+
+        setTimeout(() => {
+          /* Navigate: window.location.href = '03-Dashboard.html'; */
+          /* Demo: reset */
+          phone.style.animation = 'none';
+          void phone.offsetWidth;
+          pin = []; attempts = 0;
+          updateDots(); clearPinMsg(); disablePad(false);
+          for (let i = 0; i < 6; i++) getDot(i).style.boxShadow = '';
+
+          phone.style.animation = 'phoneEnter 380ms cubic-bezier(0.16,1,0.3,1) forwards';
+          setTimeout(() => { phone.style.animation = ''; }, 400);
+        }, 320);
+      }, 700);
+    }
+
+    /* ─── Error ─── */
+    function onError() {
+      attempts++;
+      const dotsEl = document.getElementById('pinDots');
+
+      // All dots → error-dot
+      for (let i = 0; i < 6; i++) {
+        getDot(i).classList.remove('filled');
+        getDot(i).classList.add('error-dot');
+      }
+
+      // Shake animation
+      dotsEl.style.animation = 'shakeX 430ms ease both';
+
+      const remaining = MAX_ATTEMPTS - attempts;
+      const msg = attempts >= MAX_ATTEMPTS
+        ? 'Account will be locked'
+        : `Incorrect PIN · ${remaining} attempt${remaining === 1 ? '' : 's'} remaining`;
+      showPinMsg(msg, true);
+
+      setTimeout(() => {
+        dotsEl.style.animation = '';
+        for (let i = 0; i < 6; i++) getDot(i).classList.remove('error-dot');
+        pin = [];
+
+        if (attempts >= MAX_ATTEMPTS) {
+          startLockout();
+        } else {
+          disablePad(false);
+        }
+      }, 620);
+    }
+
+    /* ─── Lockout ─── */
+    function startLockout() {
+      locked = true;
+      let secs = LOCK_SECS;
+      const overlay = document.getElementById('lockedOverlay');
+      const timerEl = document.getElementById('lockTimer');
+      overlay.classList.add('visible');
+
+      function tick() {
+        const m = Math.floor(secs / 60);
+        const s = secs % 60;
+        timerEl.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+        if (secs <= 0) {
+          clearInterval(lockInterval);
+          locked = false; attempts = 0; pin = [];
+          overlay.classList.remove('visible');
+          clearPinMsg(); disablePad(false);
+        }
+        secs--;
+      }
+      tick();
+      lockInterval = setInterval(tick, 1000);
+    }
+
+    /* ─── PIN message helpers ─── */
+    function showPinMsg(msg, isError) {
+      const el = document.getElementById('pinMsg');
+      el.textContent = msg;
+      el.classList.toggle('success-msg', !isError);
+      el.classList.add('visible');
+    }
+    function clearPinMsg() {
+      const el = document.getElementById('pinMsg');
+      el.classList.remove('visible');
+      setTimeout(() => { el.textContent = ''; el.classList.remove('success-msg'); }, 220);
+    }
+
+    /* ─── Disable/enable pad ─── */
+    function disablePad(disabled) {
+      document.querySelectorAll('.pad-btn').forEach(b => {
+        b.disabled = disabled;
+      });
+    }
+
+    /* ═══════════════════════════════════════════════
+       EVENT BINDING
+    ═══════════════════════════════════════════════ */
+
+    /* Digit buttons */
+    document.querySelectorAll('.pad-btn[data-digit]').forEach(btn => {
+      btn.addEventListener('click', () => addDigit(btn.dataset.digit));
+
+      /* Press scale — mirrors Flutter AnimatedScale(0.94, kInstant) + spring release */
+      btn.addEventListener('mousedown', function () {
+        this.style.transform  = 'scale(0.94)';
+        this.style.background = 'rgba(255,255,255,0.12)';
+        this.style.transition = 'transform 80ms ease-in, background 80ms ease';
+      });
+      const release = function () {
+        this.style.transform  = '';
+        this.style.background = '';
+        this.style.transition = 'transform 140ms cubic-bezier(0.34,1.56,0.64,1), background 140ms ease';
+        setTimeout(() => { this.style.transition = ''; }, 160);
+      };
+      btn.addEventListener('mouseup',    release);
+      btn.addEventListener('mouseleave', release);
+      /* Touch */
+      btn.addEventListener('touchstart', function () {
+        this.style.transform  = 'scale(0.94)';
+        this.style.background = 'rgba(255,255,255,0.12)';
+      }, { passive: true });
+      btn.addEventListener('touchend', release, { passive: true });
+    });
+
+    /* Delete */
+    document.getElementById('deleteBtn').addEventListener('click', deleteDigit);
+    /* Long-press delete → clear all */
+    let deleteLongPress;
+    document.getElementById('deleteBtn').addEventListener('mousedown', () => {
+      deleteLongPress = setTimeout(() => {
+        pin = []; updateDots(); clearPinMsg();
+        showSnackbar('PIN cleared');
+      }, 700);
+    });
+    document.getElementById('deleteBtn').addEventListener('mouseup',    () => clearTimeout(deleteLongPress));
+    document.getElementById('deleteBtn').addEventListener('mouseleave', () => clearTimeout(deleteLongPress));
+
+    /* Biometric button */
+    document.getElementById('biometricBtn').addEventListener('click', () => {
+      if (locked || verifying) return;
+      const btn = document.getElementById('biometricBtn');
+      btn.classList.add('scanning');
+      setTimeout(() => {
+        btn.classList.remove('scanning');
+        /* Simulate biometric success */
+        pin = ['1','2','3','4','5','6'];
+        updateDots();
+        setTimeout(verifyPin, 200);
+      }, 600);
+    });
+
+    /* Switch account */
+    document.getElementById('switchBtn').addEventListener('click', () => {
+      document.getElementById('userSection').classList.add('hidden');
+      document.getElementById('inputSection').classList.remove('hidden');
+      setTimeout(() => document.getElementById('loginInput').focus(), 80);
+    });
+
+    /* Cancel switch */
+    document.getElementById('cancelSwitchBtn').addEventListener('click', () => {
+      document.getElementById('inputSection').classList.add('hidden');
+      document.getElementById('userSection').classList.remove('hidden');
+      pin = []; updateDots(); clearPinMsg();
+    });
+
+    /* Forgot PIN */
+    document.getElementById('forgotBtn').addEventListener('click', () => {
+      showSnackbar('PIN reset link sent to raj***@gmail.com');
+    });
+
+    /* Keyboard support */
+    document.addEventListener('keydown', (e) => {
+      if (e.key >= '0' && e.key <= '9') addDigit(e.key);
+      else if (e.key === 'Backspace') deleteDigit();
+    });
+
+    /* ─── Snackbar helper ─── */
+    let snackTimer;
+    function showSnackbar(msg) {
+      const sb = document.getElementById('snackbar');
+      sb.textContent = msg;
+      sb.classList.add('visible');
+      clearTimeout(snackTimer);
+      snackTimer = setTimeout(() => sb.classList.remove('visible'), 3000);
+    }
+  </script>
+
+</body>
+</html>

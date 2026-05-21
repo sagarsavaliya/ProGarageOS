@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProGarage · 07 — Intake Inspection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink-0:#0A0E14;--ink-1:#1C2230;--ink-2:#364052;--ink-3:#566076;
+      --ink-4:#8898AA;--ink-5:#B8C5D0;--ink-6:#DDE5EC;--ink-7:#EEF2F6;
+      --ink-8:#F7F9FB;--ink-9:#FFFFFF;
+      --sky-50:#E8F4FD;--sky-400:#2BB0ED;--sky-600:#0A7DBF;--sky-800:#065E91;
+      --teal-50:#EBF7F5;--teal-400:#26B8A8;--teal-600:#138878;
+      --sage-50:#EBF5EE;--sage-400:#3BAD5B;--sage-600:#1E7F3C;--sage-800:#0E5C26;
+      --amber-50:#FEF7EC;--amber-400:#F0A018;--amber-600:#C07A08;--amber-800:#8A5602;
+      --rose-50:#FEF0F0;--rose-400:#EF4444;--rose-600:#C01E1E;--rose-800:#8A1010;
+      --shadow-sm:0 1px 3px rgba(10,14,20,.06),0 1px 2px rgba(10,14,20,.04);
+      --shadow-md:0 4px 12px rgba(10,14,20,.08),0 2px 4px rgba(10,14,20,.04);
+      --ease-feather:cubic-bezier(.16,1,.3,1);
+      --ease-out:cubic-bezier(.25,1,.5,1);
+      --ease-spring:cubic-bezier(.34,1.56,.64,1);
+      --font-ui:'DM Sans',system-ui,sans-serif;
+      --font-mono:'DM Mono',monospace;
+    }
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+    body{background:#111420;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:var(--font-ui);-webkit-font-smoothing:antialiased;gap:28px;padding:32px 16px 40px;}
+    .screen-meta{font-family:var(--font-mono);font-size:10px;color:rgba(255,255,255,.16);letter-spacing:.12em;text-transform:uppercase;}
+    .phone{width:375px;height:812px;background:var(--ink-8);border-radius:44px;overflow:hidden;position:relative;flex-shrink:0;box-shadow:0 0 0 .5px rgba(255,255,255,.07),inset 0 0 0 .5px rgba(0,0,0,.05),0 48px 120px rgba(0,0,0,.70),0 16px 40px rgba(0,0,0,.35);}
+    .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:30px;background:#0a0e14;border-radius:0 0 20px 20px;z-index:40;}
+
+    .status-bar{position:absolute;top:0;left:0;right:0;height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 24px 8px;z-index:30;background:var(--ink-9);}
+    .s-time{font-family:var(--font-mono);font-size:12px;color:var(--ink-1);letter-spacing:.02em;font-weight:500;}
+    .s-icons{display:flex;align-items:center;gap:5px;}
+
+    /* App bar */
+    /* Flutter: GfAppBar(showBack:true, title:'Intake Inspection', subtitle:'JOB-2847') */
+    .app-bar{position:absolute;top:44px;left:0;right:0;height:56px;background:var(--ink-9);border-bottom:.5px solid var(--ink-7);display:flex;align-items:center;gap:4px;padding:0 10px;z-index:25;}
+    .back-btn{width:36px;height:36px;border-radius:50%;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink-3);transition:background 140ms ease;}
+    .back-btn:hover{background:var(--ink-7);}
+    .app-bar-center{flex:1;display:flex;flex-direction:column;gap:1px;padding-left:2px;}
+    .app-bar-title{font-size:15px;font-weight:500;color:var(--ink-0);letter-spacing:-.01em;}
+    .app-bar-sub{font-family:var(--font-mono);font-size:10px;color:var(--ink-4);letter-spacing:.02em;}
+    .icon-btn{width:34px;height:34px;border-radius:50%;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink-3);transition:background 140ms ease;}
+    .icon-btn:hover{background:var(--ink-7);}
+
+    /* Scroll area */
+    .scroll-area{position:absolute;top:100px;left:0;right:0;bottom:72px;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+    .scroll-area::-webkit-scrollbar{display:none;}
+    .scroll-content{padding:12px 16px 24px;display:flex;flex-direction:column;gap:12px;}
+
+    /* Phase indicator */
+    /* Flutter: Row showing phase progress — Intake(active) → Delivery(pending) */
+    .phase-bar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--ink-9);border:.5px solid var(--ink-6);border-radius:12px;box-shadow:var(--shadow-sm);}
+    .phase-step{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;}
+    .phase-step.active{color:var(--sky-600);}
+    .phase-step.pending{color:var(--ink-5);}
+    .phase-dot{width:8px;height:8px;border-radius:50%;}
+    .phase-step.active .phase-dot{background:var(--sky-600);}
+    .phase-step.pending .phase-dot{background:var(--ink-6);border:.5px solid var(--ink-5);}
+    .phase-arrow{color:var(--ink-5);font-size:12px;}
+    .phase-right{margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--ink-5);}
+
+    /* Card base */
+    .card{background:var(--ink-9);border:.5px solid var(--ink-6);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-sm);}
+
+    /* Damage map card */
+    /* Flutter: GfCard > Stack[ VehicleSilhouettePainter, DamageOverlay, LegendRow ] */
+    .damage-map-card{padding:14px 16px 12px;}
+    .sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+    .sec-title{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);}
+    .sec-action{font-size:11px;font-weight:500;color:var(--sky-600);background:none;border:none;cursor:pointer;}
+    .map-container{display:flex;gap:16px;align-items:flex-start;}
+    .map-svg-wrap{flex-shrink:0;position:relative;}
+    .map-legend{flex:1;display:flex;flex-direction:column;gap:6px;padding-top:4px;}
+    .map-legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-3);}
+    .legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+    .map-instructions{font-size:10px;color:var(--ink-5);margin-top:8px;line-height:1.5;}
+    .map-zone-list{margin-top:10px;display:flex;flex-direction:column;gap:4px;}
+    .zone-damage-item{display:flex;align-items:center;gap:6px;font-size:11px;animation:fadeIn 200ms var(--ease-feather) both;}
+    @keyframes fadeIn{from{opacity:0;transform:translateX(-4px)}to{opacity:1;transform:translateX(0)}}
+
+    /* Inspection checklist */
+    /* Flutter: ListView(shrinkWrap:true) > InspectionGroupHeader + InspectionRow × n */
+    .checklist-group{margin-bottom:4px;}
+    .group-header{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);padding:12px 16px 6px;}
+    .insp-row{display:flex;align-items:center;gap:8px;padding:9px 16px;border-bottom:.5px solid var(--ink-7);transition:background 80ms ease;}
+    .insp-row:last-child{border-bottom:none;}
+    .insp-row:hover{background:var(--ink-8);}
+    .insp-name{font-size:12.5px;color:var(--ink-1);flex:1;}
+    .cond-btns{display:flex;gap:4px;flex-shrink:0;}
+    .cond-btn{
+      height:26px;padding:0 8px;border-radius:6px;
+      border:.5px solid var(--ink-6);background:var(--ink-9);
+      font-family:var(--font-ui);font-size:10px;font-weight:500;color:var(--ink-4);
+      cursor:pointer;transition:all 80ms ease;white-space:nowrap;
+    }
+    .cond-btn:hover{border-color:var(--ink-5);}
+    .cond-btn.ok    {background:var(--sage-50);border-color:rgba(30,127,60,.25);color:var(--sage-800);}
+    .cond-btn.issue {background:var(--amber-50);border-color:rgba(192,122,8,.25);color:var(--amber-800);}
+    .cond-btn.damage{background:var(--rose-50);border-color:rgba(192,30,30,.22);color:var(--rose-800);}
+    .photo-add-btn{width:28px;height:28px;border-radius:8px;border:.5px solid var(--ink-6);background:var(--ink-9);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-4);flex-shrink:0;transition:all 140ms ease;}
+    .photo-add-btn:hover{border-color:var(--sky-400);color:var(--sky-600);background:var(--sky-50);}
+    .photo-add-btn.has-photo{border-color:var(--sky-400);background:var(--sky-50);color:var(--sky-600);}
+
+    /* Photos grid */
+    /* Flutter: GridView(crossAxisCount:3) > PhotoSlot widgets */
+    .photos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:12px 16px;}
+    .photo-slot{border-radius:10px;overflow:hidden;cursor:pointer;aspect-ratio:1;position:relative;transition:transform 140ms var(--ease-out);}
+    .photo-slot:hover{transform:scale(1.03);}
+    .photo-slot-img{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-4);}
+    .photo-slot-label{position:absolute;bottom:0;left:0;right:0;padding:4px 6px;background:rgba(10,14,20,.45);font-size:8.5px;color:rgba(255,255,255,.85);font-weight:500;letter-spacing:.02em;}
+    .photo-slot-add{width:100%;height:100%;background:var(--ink-8);border:.5px dashed var(--ink-5);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;transition:all 140ms ease;}
+    .photo-slot-add:hover{border-color:var(--sky-400);background:var(--sky-50);}
+    .photo-slot-add svg{color:var(--ink-4);}
+    .photo-slot-add:hover svg{color:var(--sky-600);}
+    .photo-slot-add span{font-size:9px;font-weight:500;color:var(--ink-4);}
+    .photo-slot-add:hover span{color:var(--sky-600);}
+
+    /* Notes field */
+    .notes-card{padding:14px 16px;}
+    .field-label{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);margin-bottom:8px;}
+    .gf-textarea{width:100%;padding:10px 12px;min-height:72px;resize:none;background:var(--ink-9);border:.5px solid var(--ink-6);border-radius:10px;font-family:var(--font-ui);font-size:13px;color:var(--ink-1);outline:none;line-height:1.6;transition:border-color 140ms var(--ease-out),box-shadow 140ms var(--ease-out);}
+    .gf-textarea:focus{border-color:var(--sky-400);box-shadow:0 0 0 3px rgba(43,176,237,.18);}
+    .gf-textarea::placeholder{color:var(--ink-5);}
+
+    /* Signature pad */
+    /* Flutter: Signature(controller:_signatureCtrl, backgroundColor:Colors.white, onDrawEnd:_onSigned) */
+    .sig-card{padding:14px 16px;}
+    .sig-label-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+    .sig-pad{
+      background:var(--ink-9);border:.5px solid var(--ink-6);border-radius:10px;
+      height:90px;position:relative;overflow:hidden;cursor:crosshair;
+      display:flex;align-items:center;justify-content:center;
+      transition:border-color 140ms ease;
+    }
+    .sig-pad:hover{border-color:var(--ink-5);}
+    .sig-pad.signed{border-color:var(--sage-400);}
+    .sig-placeholder{font-size:11px;color:var(--ink-5);pointer-events:none;}
+    .sig-x-line{position:absolute;left:16px;bottom:14px;width:40px;height:.5px;background:var(--ink-5);}
+    .sig-x-label{position:absolute;left:16px;bottom:5px;font-size:9px;color:var(--ink-5);}
+    .sig-clear-btn{background:transparent;border:none;cursor:pointer;font-family:var(--font-ui);font-size:11px;font-weight:500;color:var(--ink-4);transition:color 140ms ease;}
+    .sig-clear-btn:hover{color:var(--rose-600);}
+    .sig-desc{font-size:10px;color:var(--ink-5);margin-top:6px;line-height:1.5;}
+
+    /* Sticky CTA */
+    .sticky-cta{position:absolute;bottom:0;left:0;right:0;background:var(--ink-9);border-top:.5px solid var(--ink-7);padding:10px 16px 18px;z-index:25;display:flex;gap:10px;}
+    .progress-info{display:flex;flex-direction:column;gap:1px;justify-content:center;}
+    .prog-count{font-size:12px;font-weight:500;color:var(--ink-1);}
+    .prog-sub{font-size:10px;color:var(--ink-4);}
+    .submit-btn{flex:1;height:46px;border-radius:14px;border:none;background:var(--sky-600);color:#fff;font-family:var(--font-ui);font-size:14px;font-weight:500;cursor:pointer;transition:all 140ms ease;display:flex;align-items:center;justify-content:center;gap:6px;}
+    .submit-btn:hover{background:var(--sky-800);}
+    .submit-btn:disabled{background:var(--ink-6);color:var(--ink-4);cursor:not-allowed;}
+    .submit-btn.ready{background:var(--teal-600);}
+    .submit-btn.ready:hover{background:var(--teal-800);}
+
+    .home-indicator{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:118px;height:4px;background:rgba(0,0,0,.12);border-radius:2px;z-index:40;}
+    .snackbar{position:absolute;bottom:78px;left:16px;right:16px;padding:12px 16px;background:rgba(28,34,48,.96);border:.5px solid rgba(255,255,255,.08);border-radius:12px;font-size:12px;color:rgba(255,255,255,.80);text-align:center;z-index:50;opacity:0;transform:translateY(8px);transition:all 280ms var(--ease-feather);pointer-events:none;}
+    .snackbar.visible{opacity:1;transform:translateY(0);}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0ms!important;transition-duration:0ms!important}}
+
+    /* ── Handoff card ── */
+    .handoff{width:375px;border:.5px solid rgba(255,255,255,.07);border-radius:12px;padding:20px 22px 22px;background:rgba(255,255,255,.022);}
+    .handoff-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+    .handoff-tag{font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--sky-400);background:rgba(43,176,237,.10);padding:3px 8px;border-radius:4px;}
+    .handoff-title{font-family:var(--font-mono);font-size:10px;color:rgba(255,255,255,.35);flex:1;}
+    .handoff ul{list-style:none;display:flex;flex-direction:column;gap:10px;}
+    .handoff li{display:grid;grid-template-columns:6px 1fr;gap:10px;align-items:baseline;}
+    .bullet{width:4px;height:4px;background:var(--sky-600);border-radius:50%;margin-top:5px;}
+    .handoff li p{font-family:var(--font-mono);font-size:11px;color:rgba(255,255,255,.38);line-height:1.65;}
+    .handoff li p strong{color:rgba(255,255,255,.62);font-weight:400;}
+    .handoff li p code{color:var(--sky-400);background:rgba(43,176,237,.10);padding:1px 5px;border-radius:3px;font-size:10px;}
+  </style>
+</head>
+<body>
+
+<div class="screen-meta">Screen 07 · Staff App · Intake Inspection</div>
+
+<!-- Flutter: lib/features/inspection/screens/inspection_screen.dart
+     class InspectionScreen extends ConsumerStatefulWidget
+     Provider: inspectionProvider(jobUuid, phase:'intake')
+     Phase: 'intake' | 'delivery' — same widget, different data -->
+<div class="phone">
+  <div class="notch"></div>
+
+  <div class="status-bar">
+    <span class="s-time">9:41</span>
+    <div class="s-icons">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="6.5" width="3" height="4.5" rx=".6" fill="rgba(0,0,0,.45)"/><rect x="4.5" y="4" width="3" height="7" rx=".6" fill="rgba(0,0,0,.45)"/><rect x="9" y="1.8" width="3" height="9.2" rx=".6" fill="rgba(0,0,0,.45)"/><rect x="13.5" y="0" width="3" height="11" rx=".6" fill="rgba(0,0,0,.45)"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><path d="M8 9.5a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6z" fill="rgba(0,0,0,.45)"/><path d="M3.7 6.2a6.1 6.1 0 0 1 8.6 0" stroke="rgba(0,0,0,.45)" stroke-width="1.1" stroke-linecap="round" fill="none"/><path d="M1 3.5a10.3 10.3 0 0 1 14 0" stroke="rgba(0,0,0,.45)" stroke-width="1.1" stroke-linecap="round" fill="none"/></svg>
+      <svg width="27" height="12" viewBox="0 0 27 12" fill="none"><rect x=".5" y=".5" width="23" height="11" rx="2.5" stroke="rgba(0,0,0,.35)"/><rect x="2" y="2" width="17" height="8" rx="1.5" fill="rgba(0,0,0,.50)"/><path d="M25 4v4c.9-.4 1.5-1.1 1.5-2s-.6-1.6-1.5-2z" fill="rgba(0,0,0,.25)"/></svg>
+    </div>
+  </div>
+
+  <div class="app-bar">
+    <button class="back-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <div class="app-bar-center">
+      <div class="app-bar-title">Intake Inspection</div>
+      <div class="app-bar-sub">JOB-2847 · Maruti Swift · MH12AB1234</div>
+    </div>
+    <button class="icon-btn" onclick="showSnackbar('Inspection template options')">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="19" cy="12" r="1" fill="currentColor"/><circle cx="5" cy="12" r="1" fill="currentColor"/></svg>
+    </button>
+  </div>
+
+  <div class="scroll-area">
+    <div class="scroll-content">
+
+      <!-- Phase indicator -->
+      <!-- Flutter: Row(children:[PhaseStep('Intake',active:true), Arrow, PhaseStep('Delivery',active:false)]) -->
+      <div class="phase-bar">
+        <div class="phase-step active">
+          <div class="phase-dot"></div>
+          Intake
+        </div>
+        <span class="phase-arrow">→</span>
+        <div class="phase-step pending">
+          <div class="phase-dot"></div>
+          Delivery
+        </div>
+        <span class="phase-right">0 / 16 items</span>
+      </div>
+
+      <!-- Vehicle damage map -->
+      <!-- Flutter: GfCard > Stack[ CustomPaint(VehicleBodyPainter), GestureDetector zones, DamageLegend ] -->
+      <div class="card damage-map-card">
+        <div class="sec-hd">
+          <span class="sec-title">Damage Map</span>
+          <button class="sec-action" onclick="clearAllDamage()">Clear all</button>
+        </div>
+        <div class="map-container">
+          <!-- SVG top-down car silhouette with tappable zones -->
+          <div class="map-svg-wrap">
+            <svg id="carSvg" viewBox="0 0 100 190" width="100" height="190" style="cursor:pointer">
+              <!-- Body shadow -->
+              <rect x="12" y="12" width="78" height="168" rx="18" fill="rgba(10,14,20,.06)"/>
+              <!-- Main body -->
+              <rect x="10" y="10" width="78" height="168" rx="18" fill="#EEF2F6" stroke="#DDE5EC" stroke-width=".5"/>
+              <!-- Wheels -->
+              <rect x="2" y="38" width="12" height="24" rx="4" fill="#8898AA" opacity=".7"/>
+              <rect x="86" y="38" width="12" height="24" rx="4" fill="#8898AA" opacity=".7"/>
+              <rect x="2" y="128" width="12" height="24" rx="4" fill="#8898AA" opacity=".7"/>
+              <rect x="86" y="128" width="12" height="24" rx="4" fill="#8898AA" opacity=".7"/>
+              <!-- Hood -->
+              <rect x="14" y="14" width="70" height="40" rx="14" fill="#E0E8F0"/>
+              <!-- Windshield front -->
+              <rect x="18" y="54" width="62" height="12" rx="4" fill="#B8C5D0" opacity=".8"/>
+              <!-- Cabin roof -->
+              <rect x="16" y="66" width="66" height="48" rx="6" fill="#D4DCE5"/>
+              <!-- Rear windshield -->
+              <rect x="18" y="114" width="62" height="12" rx="4" fill="#B8C5D0" opacity=".8"/>
+              <!-- Trunk -->
+              <rect x="14" y="126" width="70" height="38" rx="12" fill="#E0E8F0"/>
+              <!-- Rear bumper -->
+              <rect x="10" y="158" width="78" height="20" rx="12" fill="#D4DCE5"/>
+
+              <!-- Tappable zones (transparent overlays) -->
+              <!-- Front bumper -->
+              <rect id="zone-front-bumper" class="car-zone" x="10" y="10" width="78" height="22" rx="14" fill="transparent" stroke="transparent" stroke-width="2" data-zone="Front Bumper" onclick="tapZone(this)" style="cursor:pointer"/>
+              <!-- Hood -->
+              <rect id="zone-hood" class="car-zone" x="14" y="20" width="70" height="34" rx="8" fill="transparent" stroke="transparent" stroke-width="2" data-zone="Hood" onclick="tapZone(this)" style="cursor:pointer"/>
+              <!-- Front left fender -->
+              <rect id="zone-fl-fender" class="car-zone" x="10" y="38" width="16" height="30" rx="4" fill="transparent" stroke="transparent" stroke-width="2" data-zone="Front Left Fender" onclick="tapZone(this)" style="cursor:pointer"/>
+              <!-- Front right fender -->
+              <rect id="zone-fr-fender" class="car-zone" x="72" y="38" width="16" height="30" rx="4" fill="transparent" stroke="transparent" stroke-width="2" data-zone="Front Right Fender" onclick="tapZone(this)" style="cursor:pointer"/>
+              <!-- Left door -->
+              <rect id="zone-left-door" class="car-zone" x="10" y="66" width="16" height="50" rx="4" fill="transparent" stroke="transparent" stroke-width="2" data-zone="Left Door" onclick="tapZone(this)" style="cursor:pointer"/>
+              <!-- Right door -->
+              <rect id="zone-right-door" class="car-zone" x="72" y="66" width="16" height="50" rx="4" fill="transparent" stroke="transparent" stroke-width="2" data-zone="Right Door" onclick="tapZone(this)" style="cursor:pointer"/>
+              <!-- Rear left fender -->
+              <rect id="zone-rl-fender" class="car-zone" x="10" y="114" width="16" height="28" rx="4" fill="transparent" stroke="transparent" stroke-width="2" data-zone="Rear Left Fender" onclick="tapZone(this)" style="cursor:pointer"/>
+              <!-- Rear right fender -->
+              <rect id="zone-rr-fender" class="car-zone" x="72" y="114" width="16" height="28" rx="4" fill="transparent" stroke="transparent" stroke-width="2" data-zone="Rear Right Fender" onclick="tapZone(this)" style="cursor:pointer"/>
+              <!-- Trunk -->
+              <rect id="zone-trunk" class="car-zone" x="14" y="126" width="70" height="34" rx="8" fill="transparent" stroke="transparent" stroke-width="2" data-zone="Boot/Trunk" onclick="tapZone(this)" style="cursor:pointer"/>
+              <!-- Rear bumper -->
+              <rect id="zone-rear-bumper" class="car-zone" x="10" y="156" width="78" height="22" rx="12" fill="transparent" stroke="transparent" stroke-width="2" data-zone="Rear Bumper" onclick="tapZone(this)" style="cursor:pointer"/>
+              <!-- Roof -->
+              <rect id="zone-roof" class="car-zone" x="22" y="66" width="54" height="48" rx="4" fill="transparent" stroke="transparent" stroke-width="2" data-zone="Roof" onclick="tapZone(this)" style="cursor:pointer"/>
+
+              <!-- Direction arrow (front = top) -->
+              <text x="49" y="7" text-anchor="middle" font-family="DM Sans" font-size="7" fill="#8898AA">▲ FRONT</text>
+
+              <!-- Damage overlays (added by JS) -->
+              <g id="damageOverlay"></g>
+            </svg>
+          </div>
+
+          <!-- Map legend + noted zones -->
+          <div class="map-legend">
+            <div class="map-legend-item"><div class="legend-dot" style="background:var(--amber-400)"></div>Minor</div>
+            <div class="map-legend-item"><div class="legend-dot" style="background:var(--rose-500,#EF4444)"></div>Major</div>
+            <div class="map-legend-item"><div class="legend-dot" style="background:var(--ink-5)"></div>N/A</div>
+            <div class="map-instructions">Tap car zones to mark damage. First tap = minor, second = major, third = clear.</div>
+            <div class="map-zone-list" id="zoneList">
+              <!-- Pre-existing damage -->
+              <div class="zone-damage-item">
+                <div class="legend-dot" style="background:var(--amber-400)"></div>
+                <span style="font-size:10.5px;color:var(--amber-800)">Left Door</span>
+              </div>
+              <div class="zone-damage-item">
+                <div class="legend-dot" style="background:var(--rose-400)"></div>
+                <span style="font-size:10.5px;color:var(--rose-800)">Rear Bumper</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inspection checklist -->
+      <!-- Flutter: InspectionChecklistWidget(template:inspectionTemplate, onConditionChange:_updateRecord) -->
+
+      <!-- EXTERIOR group -->
+      <div class="card">
+        <div class="group-header">Exterior</div>
+        <!-- Each row: Flutter: InspectionItemRow(component, onCondition, onPhoto) -->
+        <div class="insp-row" data-item="body">
+          <span class="insp-name">Body &amp; Paint</span>
+          <div class="cond-btns">
+            <button class="cond-btn" onclick="setCond(this,'ok')">OK</button>
+            <button class="cond-btn issue active-issue" onclick="setCond(this,'issue')">⚠</button>
+            <button class="cond-btn" onclick="setCond(this,'damage')">✗</button>
+          </div>
+          <button class="photo-add-btn has-photo" title="View photo" onclick="showSnackbar('Photo captured for Body & Paint')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </button>
+        </div>
+        <div class="insp-row" data-item="windshield-front">
+          <span class="insp-name">Front windshield</span>
+          <div class="cond-btns">
+            <button class="cond-btn ok" onclick="setCond(this,'ok')">OK</button>
+            <button class="cond-btn" onclick="setCond(this,'issue')">⚠</button>
+            <button class="cond-btn" onclick="setCond(this,'damage')">✗</button>
+          </div>
+          <button class="photo-add-btn" onclick="showSnackbar('Camera opening…')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </button>
+        </div>
+        <div class="insp-row" data-item="windshield-rear">
+          <span class="insp-name">Rear windshield</span>
+          <div class="cond-btns">
+            <button class="cond-btn ok" onclick="setCond(this,'ok')">OK</button>
+            <button class="cond-btn" onclick="setCond(this,'issue')">⚠</button>
+            <button class="cond-btn" onclick="setCond(this,'damage')">✗</button>
+          </div>
+          <button class="photo-add-btn" onclick="showSnackbar('Camera opening…')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </button>
+        </div>
+        <div class="insp-row" data-item="side-mirrors">
+          <span class="insp-name">Side mirrors</span>
+          <div class="cond-btns">
+            <button class="cond-btn ok" onclick="setCond(this,'ok')">OK</button>
+            <button class="cond-btn" onclick="setCond(this,'issue')">⚠</button>
+            <button class="cond-btn" onclick="setCond(this,'damage')">✗</button>
+          </div>
+          <button class="photo-add-btn" onclick="showSnackbar('Camera opening…')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </button>
+        </div>
+        <div class="insp-row" data-item="lights">
+          <span class="insp-name">Headlights &amp; tail lights</span>
+          <div class="cond-btns">
+            <button class="cond-btn ok" onclick="setCond(this,'ok')">OK</button>
+            <button class="cond-btn" onclick="setCond(this,'issue')">⚠</button>
+            <button class="cond-btn" onclick="setCond(this,'damage')">✗</button>
+          </div>
+          <button class="photo-add-btn" onclick="showSnackbar('Camera opening…')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- INTERIOR group -->
+      <div class="card">
+        <div class="group-header">Interior</div>
+        <div class="insp-row" data-item="dashboard">
+          <span class="insp-name">Dashboard &amp; console</span>
+          <div class="cond-btns">
+            <button class="cond-btn" onclick="setCond(this,'ok')">OK</button>
+            <button class="cond-btn" onclick="setCond(this,'issue')">⚠</button>
+            <button class="cond-btn damage" onclick="setCond(this,'damage')">✗</button>
+          </div>
+          <button class="photo-add-btn has-photo" onclick="showSnackbar('1 photo captured for Dashboard')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </button>
+        </div>
+        <div class="insp-row" data-item="steering">
+          <span class="insp-name">Steering wheel</span>
+          <div class="cond-btns">
+            <button class="cond-btn ok" onclick="setCond(this,'ok')">OK</button>
+            <button class="cond-btn" onclick="setCond(this,'issue')">⚠</button>
+            <button class="cond-btn" onclick="setCond(this,'damage')">✗</button>
+          </div>
+          <button class="photo-add-btn" onclick="showSnackbar('Camera opening…')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </button>
+        </div>
+        <div class="insp-row" data-item="seats">
+          <span class="insp-name">Seats &amp; upholstery</span>
+          <div class="cond-btns">
+            <button class="cond-btn ok" onclick="setCond(this,'ok')">OK</button>
+            <button class="cond-btn" onclick="setCond(this,'issue')">⚠</button>
+            <button class="cond-btn" onclick="setCond(this,'damage')">✗</button>
+          </div>
+          <button class="photo-add-btn" onclick="showSnackbar('Camera opening…')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- TYRES group -->
+      <div class="card">
+        <div class="group-header">Tyres &amp; Wheels</div>
+        <div class="insp-row"><span class="insp-name">Front Left</span><div class="cond-btns"><button class="cond-btn ok" onclick="setCond(this,'ok')">OK</button><button class="cond-btn" onclick="setCond(this,'issue')">Low</button><button class="cond-btn" onclick="setCond(this,'damage')">Replace</button></div><button class="photo-add-btn" onclick="showSnackbar('Camera opening…')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button></div>
+        <div class="insp-row"><span class="insp-name">Front Right</span><div class="cond-btns"><button class="cond-btn ok" onclick="setCond(this,'ok')">OK</button><button class="cond-btn" onclick="setCond(this,'issue')">Low</button><button class="cond-btn" onclick="setCond(this,'damage')">Replace</button></div><button class="photo-add-btn" onclick="showSnackbar('Camera opening…')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button></div>
+        <div class="insp-row"><span class="insp-name">Rear Left</span><div class="cond-btns"><button class="cond-btn" onclick="setCond(this,'ok')">OK</button><button class="cond-btn issue" onclick="setCond(this,'issue')">Low</button><button class="cond-btn" onclick="setCond(this,'damage')">Replace</button></div><button class="photo-add-btn" onclick="showSnackbar('Camera opening…')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button></div>
+        <div class="insp-row"><span class="insp-name">Rear Right</span><div class="cond-btns"><button class="cond-btn ok" onclick="setCond(this,'ok')">OK</button><button class="cond-btn" onclick="setCond(this,'issue')">Low</button><button class="cond-btn" onclick="setCond(this,'damage')">Replace</button></div><button class="photo-add-btn" onclick="showSnackbar('Camera opening…')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button></div>
+      </div>
+
+      <!-- FLUIDS group -->
+      <div class="card">
+        <div class="group-header">Fluids &amp; Battery</div>
+        <div class="insp-row"><span class="insp-name">Engine oil</span><div class="cond-btns"><button class="cond-btn" onclick="setCond(this,'ok')">OK</button><button class="cond-btn issue" onclick="setCond(this,'issue')">Low</button><button class="cond-btn" onclick="setCond(this,'damage')">Empty</button></div><button class="photo-add-btn" onclick="showSnackbar('Camera opening…')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button></div>
+        <div class="insp-row"><span class="insp-name">Coolant</span><div class="cond-btns"><button class="cond-btn ok" onclick="setCond(this,'ok')">OK</button><button class="cond-btn" onclick="setCond(this,'issue')">Low</button><button class="cond-btn" onclick="setCond(this,'damage')">Empty</button></div><button class="photo-add-btn" onclick="showSnackbar('Camera opening…')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button></div>
+        <div class="insp-row"><span class="insp-name">Battery</span><div class="cond-btns"><button class="cond-btn ok" onclick="setCond(this,'ok')">OK</button><button class="cond-btn" onclick="setCond(this,'issue')">Weak</button><button class="cond-btn" onclick="setCond(this,'damage')">Replace</button></div><button class="photo-add-btn" onclick="showSnackbar('Camera opening…')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button></div>
+      </div>
+
+      <!-- Photo capture grid -->
+      <!-- Flutter: GridView(crossAxisCount:3) > PhotoSlot widgets using camera package -->
+      <div class="card" style="overflow:hidden">
+        <div class="group-header" style="padding-bottom:4px">Inspection Photos <span style="font-family:var(--font-mono);font-weight:400;color:var(--ink-5)">4 captured</span></div>
+        <div class="photos-grid">
+          <div class="photo-slot">
+            <div class="photo-slot-img" style="background:var(--ink-7)">Front</div>
+            <div class="photo-slot-label">Front view</div>
+          </div>
+          <div class="photo-slot">
+            <div class="photo-slot-img" style="background:var(--amber-50)">Left Door</div>
+            <div class="photo-slot-label">Left door scratch</div>
+          </div>
+          <div class="photo-slot">
+            <div class="photo-slot-img" style="background:var(--ink-7)">Interior</div>
+            <div class="photo-slot-label">Interior</div>
+          </div>
+          <div class="photo-slot">
+            <div class="photo-slot-img" style="background:var(--rose-50)">Dash</div>
+            <div class="photo-slot-label">Dashboard scuff</div>
+          </div>
+          <div class="photo-slot-add" onclick="showSnackbar('Camera opening…')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <span>Add photo</span>
+          </div>
+          <div class="photo-slot-add" onclick="showSnackbar('Camera opening…')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <span>Add photo</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <!-- Flutter: GfInput(multiline:true, hint:'Technician observations…') -->
+      <div class="card notes-card">
+        <div class="field-label">Technician Notes</div>
+        <textarea class="gf-textarea" placeholder="Additional observations, customer-reported issues, special instructions for the team…" rows="3">Left door has a minor scratch near the handle — customer acknowledged pre-existing. Dashboard has a scuff mark on the passenger side, pre-existing per customer.</textarea>
+      </div>
+
+      <!-- Signature -->
+      <!-- Flutter: Signature(controller:_sigCtrl, backgroundColor:Colors.white, onDrawEnd:_markSigned) -->
+      <div class="card sig-card">
+        <div class="sig-label-row">
+          <div class="field-label" style="margin-bottom:0">Customer Signature</div>
+          <button class="sig-clear-btn" id="sigClearBtn" onclick="clearSig()">Clear</button>
+        </div>
+        <div class="sig-pad signed" id="sigPad" onclick="signPad()">
+          <!-- Pre-drawn signature SVG -->
+          <svg id="sigSvg" viewBox="0 0 280 80" width="280" height="80" style="position:absolute;inset:0">
+            <path d="M 20 55 C 30 30 50 25 65 45 C 75 58 80 38 95 35 C 108 32 115 50 125 48 C 138 45 145 30 158 38 C 170 45 175 55 185 52 C 195 49 200 38 212 42 C 222 45 228 55 238 50" fill="none" stroke="var(--ink-2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="sig-placeholder" id="sigPlaceholder" style="display:none">Tap to sign</span>
+          <div class="sig-x-line"></div>
+          <div class="sig-x-label">Signature</div>
+        </div>
+        <div class="sig-desc">By signing, the customer acknowledges the vehicle condition recorded at intake. A copy will be sent via WhatsApp.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Sticky CTA -->
+  <!-- Flutter: SafeArea > Row[ProgressInfo, SubmitButton] — enabled when all required fields filled -->
+  <div class="sticky-cta">
+    <div class="progress-info">
+      <div class="prog-count" id="progCount">11 / 16</div>
+      <div class="prog-sub">items assessed</div>
+    </div>
+    <button class="submit-btn ready" id="submitBtn" onclick="submitInspection()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      Submit Inspection
+    </button>
+  </div>
+
+  <div class="snackbar" id="snackbar"></div>
+  <div class="home-indicator"></div>
+</div>
+
+<!-- Handoff notes -->
+<div class="handoff">
+  <div class="handoff-header">
+    <span class="handoff-tag">Cursor</span>
+    <span class="handoff-title">Screen 07 · Intake Inspection</span>
+  </div>
+  <ul>
+    <li><div class="bullet"></div><p><strong>Provider:</strong> <code>inspectionProvider(jobUuid, phase)</code> holds <code>InspectionState { records:Map&lt;templateUuid,InspectionRecord&gt;, photos:Map&lt;templateUuid,List&lt;String&gt;&gt;, signatureBytes:Uint8List?, damageZones:List&lt;DamageZone&gt; }</code>. Pre-loads <code>GET /inspection-templates?category=vehicle</code> on mount. Auto-saves each record change via <code>debounce(500ms, () =&gt; _saveRecord(record))</code>.</p></li>
+    <li><div class="bullet"></div><p><strong>Camera:</strong> <code>image_picker</code> package — <code>ImagePicker().pickImage(source:ImageSource.camera, imageQuality:80)</code>. On pick: <code>POST /jobs/{uuid}/inspection/upload-media</code> multipart. Returned URL stored in record. Use <code>cached_network_image</code> for thumbnails. Show <code>CircularProgressIndicator</code> while uploading.</p></li>
+    <li><div class="bullet"></div><p><strong>Damage map:</strong> <code>CustomPainter</code> renders vehicle silhouette. <code>GestureDetector.onTapDown</code> hit-tests zone polygons. Tap cycles zone through: <code>clean → minor → major → clean</code>. Each zone stored as <code>DamageZone{zoneId, severity, x, y}</code>. Overlays painted as colored filled circles.</p></li>
+    <li><div class="bullet"></div><p><strong>Signature:</strong> <code>signature</code> package — <code>Signature(controller:_sigCtrl, width:double.infinity, height:90, backgroundColor:Colors.white)</code>. On complete: <code>_sigCtrl.toPngBytes()</code> → base64 → include in submit payload as <code>customerSignatureBase64</code>. Clear: <code>_sigCtrl.clear()</code>.</p></li>
+    <li><div class="bullet"></div><p><strong>Submit:</strong> Validates: all required components assessed + signature present. <code>POST /jobs/{uuid}/inspection</code> with full record payload. On success: update job status to <code>estimate_pending</code> (if tasks exist) or <code>in_progress</code>. <code>context.pop()</code> back to Job Detail. Show <code>SnackBar('Inspection submitted')</code>.</p></li>
+  </ul>
+</div>
+
+<script>
+  /* Damage map zone state: 0=clean, 1=minor, 2=major */
+  const zoneState = {};
+
+  function tapZone(el) {
+    const zone = el.dataset.zone;
+    const cur = zoneState[zone] || 0;
+    const next = (cur + 1) % 3;
+    zoneState[zone] = next;
+
+    /* Update overlay */
+    const overlay = document.getElementById('damageOverlay');
+    const existing = overlay.querySelector('[data-zone-overlay="' + zone + '"]');
+    if (existing) existing.remove();
+
+    if (next > 0) {
+      const bbox = el.getBBox();
+      const cx = bbox.x + bbox.width / 2;
+      const cy = bbox.y + bbox.height / 2;
+      const color = next === 1 ? '#F0A018' : '#EF4444';
+      const r = next === 1 ? 5 : 6;
+
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', cx);
+      circle.setAttribute('cy', cy);
+      circle.setAttribute('r', r);
+      circle.setAttribute('fill', color);
+      circle.setAttribute('opacity', '0.8');
+      circle.setAttribute('data-zone-overlay', zone);
+      circle.style.pointerEvents = 'none';
+      overlay.appendChild(circle);
+
+      /* Tinted zone fill */
+      el.setAttribute('fill', next === 1 ? 'rgba(240,160,24,0.15)' : 'rgba(239,68,68,0.15)');
+
+      updateZoneList();
+      showSnackbar(zone + ': ' + (next === 1 ? 'Minor damage noted' : 'Major damage noted'));
+    } else {
+      el.setAttribute('fill', 'transparent');
+      updateZoneList();
+    }
+  }
+
+  function updateZoneList() {
+    const list = document.getElementById('zoneList');
+    const entries = Object.entries(zoneState).filter(([, v]) => v > 0);
+    list.innerHTML = entries.map(([zone, sev]) => `
+      <div class="zone-damage-item">
+        <div class="legend-dot" style="background:${sev === 1 ? '#F0A018' : '#EF4444'}"></div>
+        <span style="font-size:10.5px;color:${sev === 1 ? 'var(--amber-800)' : 'var(--rose-800)'}">${zone}</span>
+      </div>`).join('');
+
+    /* Add initial pre-existing if list was cleared */
+    if (entries.length === 0) {
+      list.innerHTML = `<div style="font-size:10px;color:var(--ink-5);">No damage marked</div>`;
+    }
+  }
+
+  function clearAllDamage() {
+    Object.keys(zoneState).forEach(k => { zoneState[k] = 0; });
+    document.getElementById('damageOverlay').innerHTML = '';
+    document.querySelectorAll('.car-zone').forEach(el => el.setAttribute('fill', 'transparent'));
+    document.getElementById('zoneList').innerHTML = '<div style="font-size:10px;color:var(--ink-5);">No damage marked</div>';
+    showSnackbar('Damage map cleared');
+  }
+
+  /* Condition buttons */
+  function setCond(btn, type) {
+    const row = btn.closest('.insp-row') || btn.closest('.insp-row');
+    const btns = btn.closest('.cond-btns').querySelectorAll('.cond-btn');
+    btns.forEach(b => b.className = 'cond-btn');
+    btn.classList.add(type);
+    updateCount();
+  }
+
+  function updateCount() {
+    const total = document.querySelectorAll('.insp-row').length;
+    const done  = [...document.querySelectorAll('.insp-row')].filter(r =>
+      r.querySelector('.cond-btn.ok, .cond-btn.issue, .cond-btn.damage')
+    ).length;
+    document.getElementById('progCount').textContent = done + ' / ' + total;
+    document.querySelector('.phase-right').textContent = done + ' / ' + total + ' items';
+  }
+
+  /* Signature */
+  let isSigned = true; // pre-signed for demo
+  function signPad() {
+    if (!isSigned) {
+      document.getElementById('sigPlaceholder').style.display = 'none';
+      document.getElementById('sigSvg').style.display = 'block';
+      document.getElementById('sigPad').classList.add('signed');
+      isSigned = true;
+    }
+  }
+  function clearSig() {
+    document.getElementById('sigSvg').style.display = 'none';
+    document.getElementById('sigPlaceholder').style.display = 'block';
+    document.getElementById('sigPad').classList.remove('signed');
+    isSigned = false;
+  }
+
+  /* Submit */
+  function submitInspection() {
+    showSnackbar('Intake inspection submitted · Job moved to In Progress');
+    setTimeout(() => showSnackbar('Customer signature saved · WhatsApp notification sent'), 2000);
+  }
+
+  let snackT;
+  function showSnackbar(msg) {
+    const s = document.getElementById('snackbar');
+    s.textContent = msg; s.classList.add('visible');
+    clearTimeout(snackT);
+    snackT = setTimeout(() => s.classList.remove('visible'), 2600);
+  }
+
+  /* Pre-mark left door and rear bumper from Screen 06 state */
+  window.addEventListener('load', () => {
+    const leftDoor = document.getElementById('zone-left-door');
+    const rearBumper = document.getElementById('zone-rear-bumper');
+    if (leftDoor) {
+      zoneState['Left Door'] = 1;
+      leftDoor.setAttribute('fill', 'rgba(240,160,24,0.15)');
+      const bb = leftDoor.getBBox();
+      const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      c.setAttribute('cx', bb.x + bb.width/2); c.setAttribute('cy', bb.y + bb.height/2);
+      c.setAttribute('r','5'); c.setAttribute('fill','#F0A018'); c.setAttribute('opacity','.8');
+      c.setAttribute('data-zone-overlay','Left Door'); c.style.pointerEvents='none';
+      document.getElementById('damageOverlay').appendChild(c);
+    }
+    if (rearBumper) {
+      zoneState['Rear Bumper'] = 2;
+      rearBumper.setAttribute('fill', 'rgba(239,68,68,0.15)');
+      const bb = rearBumper.getBBox();
+      const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      c.setAttribute('cx', bb.x + bb.width/2); c.setAttribute('cy', bb.y + bb.height/2);
+      c.setAttribute('r','6'); c.setAttribute('fill','#EF4444'); c.setAttribute('opacity','.8');
+      c.setAttribute('data-zone-overlay','Rear Bumper'); c.style.pointerEvents='none';
+      document.getElementById('damageOverlay').appendChild(c);
+    }
+    updateCount();
+  });
+</script>
+
+</body>
+</html>

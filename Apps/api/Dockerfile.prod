@@ -1,0 +1,30 @@
+FROM php:8.2-fpm-alpine3.19
+
+RUN apk add --no-cache \
+    git curl libzip-dev unzip oniguruma-dev mysql-client \
+    autoconf g++ make linux-headers \
+    && docker-php-ext-install pdo_mysql mbstring bcmath zip pcntl opcache \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && apk del autoconf g++ make linux-headers
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+COPY docker/php.ini /usr/local/etc/php/conf.d/garageflow.ini
+COPY docker/entrypoint.prod.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+WORKDIR /var/www/html
+
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts
+
+COPY . .
+
+RUN composer dump-autoload --optimize \
+    && mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache
+
+USER root
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["php-fpm"]

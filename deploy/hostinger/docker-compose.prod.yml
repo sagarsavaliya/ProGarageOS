@@ -1,0 +1,95 @@
+# GarageFlow API — Hostinger KVM2 production stack
+# Path on server: /var/www/progarage/docker-compose.prod.yml
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: progarage_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - progarage_db_data:/var/lib/mysql
+    networks:
+      - progarage_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u${DB_USERNAME}", "-p${DB_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+
+  redis:
+    image: redis:7-alpine
+    container_name: progarage_redis
+    restart: always
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - progarage_redis_data:/data
+    networks:
+      - progarage_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build:
+      context: ../../Apps/api
+      dockerfile: Dockerfile.prod
+    image: progarage-api:latest
+    container_name: progarage_api
+    restart: always
+    env_file: .env
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      DB_HOST: db
+      REDIS_HOST: redis
+      MIGRATE_ON_START: "1"
+      OPTIMIZE_ON_START: "1"
+    volumes:
+      - progarage_storage:/var/www/html/storage
+      - progarage_bootstrap_cache:/var/www/html/bootstrap/cache
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - progarage_network
+    healthcheck:
+      test: ["CMD-SHELL", "php artisan --version >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 60s
+
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: progarage_nginx
+    restart: always
+    volumes:
+      - ./nginx/api.prod.conf:/etc/nginx/conf.d/default.conf:ro
+      - progarage_storage:/var/www/html/storage:ro
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - progarage_network
+      - proxy-net
+
+volumes:
+  progarage_db_data:
+  progarage_redis_data:
+  progarage_storage:
+  progarage_bootstrap_cache:
+
+networks:
+  progarage_network:
+    driver: bridge
+  proxy-net:
+    external: true

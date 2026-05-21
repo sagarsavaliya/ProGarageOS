@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProGarage · 09 — Customer Detail</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink-0:#0A0E14;--ink-1:#1C2230;--ink-2:#364052;--ink-3:#566076;
+      --ink-4:#8898AA;--ink-5:#B8C5D0;--ink-6:#DDE5EC;--ink-7:#EEF2F6;
+      --ink-8:#F7F9FB;--ink-9:#FFFFFF;
+      --sky-50:#E8F4FD;--sky-400:#2BB0ED;--sky-600:#0A7DBF;--sky-800:#065E91;
+      --teal-50:#EBF7F5;--teal-400:#26B8A8;--teal-600:#138878;
+      --sage-50:#EBF5EE;--sage-400:#3BAD5B;--sage-600:#1E7F3C;--sage-800:#0E5C26;
+      --amber-50:#FEF7EC;--amber-400:#F0A018;--amber-600:#C07A08;--amber-800:#8A5602;
+      --rose-50:#FEF0F0;--rose-400:#EF4444;--rose-600:#C01E1E;--rose-800:#8A1010;
+      --violet-50:#F0EFFE;--violet-100:#D4D0FC;--violet-400:#7C71F0;--violet-600:#4F46C8;--violet-800:#312E8A;
+      --shadow-sm:0 1px 3px rgba(10,14,20,.06),0 1px 2px rgba(10,14,20,.04);
+      --shadow-md:0 4px 12px rgba(10,14,20,.08),0 2px 4px rgba(10,14,20,.04);
+      --ease-feather:cubic-bezier(.16,1,.3,1);--ease-out:cubic-bezier(.25,1,.5,1);
+      --font-ui:'DM Sans',system-ui,sans-serif;--font-mono:'DM Mono',monospace;
+    }
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+    body{background:#111420;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:var(--font-ui);-webkit-font-smoothing:antialiased;gap:28px;padding:32px 16px 40px;}
+    .screen-meta{font-family:var(--font-mono);font-size:10px;color:rgba(255,255,255,.16);letter-spacing:.12em;text-transform:uppercase;}
+    .phone{width:375px;height:812px;background:var(--ink-8);border-radius:44px;overflow:hidden;position:relative;flex-shrink:0;box-shadow:0 0 0 .5px rgba(255,255,255,.07),inset 0 0 0 .5px rgba(0,0,0,.05),0 48px 120px rgba(0,0,0,.70),0 16px 40px rgba(0,0,0,.35);}
+    .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:30px;background:#0a0e14;border-radius:0 0 20px 20px;z-index:40;}
+
+    .status-bar{position:absolute;top:0;left:0;right:0;height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 24px 8px;z-index:30;background:var(--ink-9);}
+    .s-time{font-family:var(--font-mono);font-size:12px;color:var(--ink-1);letter-spacing:.02em;font-weight:500;}
+    .s-icons{display:flex;align-items:center;gap:5px;}
+
+    /* App bar */
+    .app-bar{position:absolute;top:44px;left:0;right:0;height:56px;background:var(--ink-9);border-bottom:.5px solid var(--ink-7);display:flex;align-items:center;gap:4px;padding:0 10px;z-index:25;}
+    .back-btn{width:36px;height:36px;border-radius:50%;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink-3);transition:background 140ms ease;}
+    .back-btn:hover{background:var(--ink-7);}
+    .app-bar-title{flex:1;font-size:16px;font-weight:500;color:var(--ink-0);letter-spacing:-.01em;padding-left:2px;}
+    .icon-btn{width:34px;height:34px;border-radius:50%;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink-3);transition:background 140ms ease;}
+    .icon-btn:hover{background:var(--ink-7);}
+
+    /* Scroll */
+    .scroll-area{position:absolute;top:100px;left:0;right:0;bottom:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+    .scroll-area::-webkit-scrollbar{display:none;}
+    .scroll-content{padding:0 0 32px;}
+
+    /* ── Profile hero ── */
+    /* Flutter: ProfileHeroWidget — Stack[GradientBg, Column[Avatar, Name, Badge, Stats, QuickActions]] */
+    .profile-hero{background:var(--ink-9);border-bottom:.5px solid var(--ink-7);padding:20px 20px 16px;}
+    .profile-top{display:flex;align-items:flex-start;gap:14px;margin-bottom:14px;}
+    .profile-av{
+      width:60px;height:60px;border-radius:50%;flex-shrink:0;
+      background:linear-gradient(135deg,var(--teal-50),var(--sky-50));
+      border:.5px solid rgba(38,184,168,.25);
+      display:flex;align-items:center;justify-content:center;
+      font-size:20px;font-weight:400;color:var(--teal-600);
+      box-shadow:0 2px 8px rgba(38,184,168,.15);
+    }
+    .profile-info{flex:1;}
+    .profile-name{font-size:18px;font-weight:400;color:var(--ink-0);letter-spacing:-.015em;line-height:1.2;margin-bottom:4px;}
+    .profile-tier{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;background:var(--violet-50);color:var(--violet-600);border-radius:9999px;font-size:10px;font-weight:500;margin-bottom:6px;}
+    .profile-since{font-size:11px;color:var(--ink-4);}
+    .profile-edit-btn{width:34px;height:34px;border-radius:50%;border:.5px solid var(--ink-6);background:var(--ink-9);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-3);transition:all 140ms ease;flex-shrink:0;}
+    .profile-edit-btn:hover{border-color:var(--sky-400);color:var(--sky-600);background:var(--sky-50);}
+
+    /* Stats row */
+    .profile-stats{display:flex;gap:0;padding:12px 0;border-top:.5px solid var(--ink-7);border-bottom:.5px solid var(--ink-7);margin-bottom:14px;}
+    .ps-cell{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;}
+    .ps-cell:not(:first-child){border-left:.5px solid var(--ink-7);}
+    .ps-val{font-family:var(--font-mono);font-size:14px;color:var(--ink-0);font-variant-numeric:tabular-nums;}
+    .ps-lbl{font-size:9px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-5);}
+
+    /* Quick actions */
+    /* Flutter: Row of OutlinedButton.icon */
+    .quick-actions{display:flex;gap:8px;}
+    .qa{flex:1;height:36px;border-radius:10px;border:.5px solid var(--ink-6);background:var(--ink-9);display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer;font-family:var(--font-ui);font-size:12px;font-weight:500;color:var(--ink-3);transition:all 140ms ease;}
+    .qa:hover{border-color:var(--ink-5);background:var(--ink-8);}
+    .qa.wa{color:var(--teal-600);}.qa.wa:hover{background:var(--teal-50);border-color:rgba(38,184,168,.30);}
+    .qa.call{color:var(--sky-600);}.qa.call:hover{background:var(--sky-50);border-color:rgba(43,176,237,.30);}
+
+    /* Contact card */
+    /* Flutter: InfoCard with contact rows */
+    .section-wrap{padding:16px 16px 0;}
+    .sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+    .sec-title{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);}
+    .sec-action{font-size:11px;font-weight:500;color:var(--sky-600);background:none;border:none;cursor:pointer;}
+    .card{background:var(--ink-9);border:.5px solid var(--ink-6);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-sm);}
+    .info-row{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:.5px solid var(--ink-7);}
+    .info-row:last-child{border-bottom:none;}
+    .info-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--ink-7);}
+    .info-col{flex:1;}
+    .info-val{font-size:13px;color:var(--ink-1);}
+    .info-val.mono{font-family:var(--font-mono);font-size:12px;}
+    .info-lbl{font-size:10px;color:var(--ink-5);margin-top:1px;}
+
+    /* Vehicle cards (horizontal scroll) */
+    /* Flutter: SizedBox(height:130) > ListView(scrollDir:horizontal) > VehicleCard */
+    .vehicle-scroll{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding:0 16px 2px;}
+    .vehicle-scroll::-webkit-scrollbar{display:none;}
+    .vehicle-card{
+      min-width:180px;padding:13px 13px 12px;flex-shrink:0;
+      background:var(--ink-9);border:.5px solid var(--ink-6);border-radius:14px;
+      cursor:pointer;box-shadow:var(--shadow-sm);
+      transition:all 140ms var(--ease-out);
+    }
+    .vehicle-card:hover{box-shadow:var(--shadow-md);border-color:var(--ink-5);transform:translateY(-1px);}
+    .vehicle-card.alert{border-color:rgba(192,122,8,.25);background:linear-gradient(135deg,var(--amber-50) 0%,var(--ink-9) 55%);}
+    .vc-plate{font-family:var(--font-mono);font-size:14px;font-weight:400;color:var(--ink-0);letter-spacing:.02em;margin-bottom:3px;}
+    .vc-model{font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:2px;}
+    .vc-year{font-size:11px;color:var(--ink-4);margin-bottom:8px;}
+    .vc-badges{display:flex;flex-wrap:wrap;gap:4px;}
+    .vc-badge{font-size:9.5px;font-weight:500;padding:2px 7px;border-radius:9999px;display:inline-flex;align-items:center;gap:3px;}
+    .vc-badge.ok{background:var(--sage-50);color:var(--sage-600);}
+    .vc-badge.warn{background:var(--amber-50);color:var(--amber-800);}
+    .vc-badge.expire{background:var(--rose-50);color:var(--rose-800);}
+    .vc-last{font-size:10px;color:var(--ink-5);margin-top:6px;font-family:var(--font-mono);}
+
+    /* Loyalty widget */
+    /* Flutter: LoyaltyWidget from design system spec — violet themed */
+    .loyalty-card{background:var(--violet-50);border:.5px solid rgba(79,70,200,.18);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-sm);}
+    .loyalty-header{padding:14px 16px 10px;display:flex;align-items:flex-start;justify-content:space-between;}
+    .loyalty-program-name{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--violet-600);margin-bottom:3px;}
+    .loyalty-balance{font-family:var(--font-mono);font-size:26px;font-weight:300;color:var(--violet-800);letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
+    .loyalty-tier-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:var(--violet-600);color:#fff;border-radius:9999px;font-size:10px;font-weight:500;}
+    .loyalty-progress-wrap{padding:0 16px 12px;}
+    .loyalty-prog-labels{display:flex;justify-content:space-between;margin-bottom:6px;}
+    .loyalty-prog-lbl{font-size:10px;font-weight:500;color:var(--violet-600);}
+    .loyalty-prog-next{font-size:10px;color:var(--violet-800);}
+    .loyalty-prog-track{height:4px;background:rgba(79,70,200,.15);border-radius:2px;overflow:hidden;}
+    .loyalty-prog-fill{height:100%;background:linear-gradient(90deg,var(--violet-400),var(--violet-600));border-radius:2px;transition:width 600ms var(--ease-feather) 300ms;}
+    .loyalty-expiry{margin:0 16px 12px;display:flex;align-items:center;gap:6px;padding:7px 10px;background:rgba(192,122,8,.08);border:.5px solid rgba(192,122,8,.20);border-radius:8px;}
+    .loyalty-expiry-text{font-size:11px;color:var(--amber-800);}
+    .loyalty-divider{height:.5px;background:rgba(79,70,200,.15);margin:0 16px 10px;}
+    .loyalty-txns{display:flex;flex-direction:column;}
+    .loyalty-txn{display:flex;align-items:center;gap:10px;padding:8px 16px;border-top:.5px solid rgba(79,70,200,.10);}
+    .loyalty-txn:first-child{border-top:none;}
+    .txn-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+    .txn-desc{flex:1;font-size:12px;color:var(--ink-2);}
+    .txn-pts{font-family:var(--font-mono);font-size:12px;font-weight:400;flex-shrink:0;}
+    .txn-pts.earn{color:var(--violet-600);}
+    .txn-pts.redeem{color:var(--ink-4);}
+    .txn-date{font-family:var(--font-mono);font-size:10px;color:var(--ink-5);flex-shrink:0;}
+    .txn-job{font-size:10px;color:var(--ink-4);}
+
+    /* Job history */
+    /* Flutter: RecentJobsWidget — ListView(shrinkWrap:true) */
+    .job-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:.5px solid var(--ink-7);cursor:pointer;transition:background 80ms ease;}
+    .job-row:last-child{border-bottom:none;}
+    .job-row:hover{background:var(--ink-8);}
+    .job-row-num{font-family:var(--font-mono);font-size:11px;color:var(--ink-4);flex-shrink:0;width:68px;}
+    .job-row-mid{flex:1;}
+    .job-row-svc{font-size:12px;font-weight:500;color:var(--ink-1);}
+    .job-row-date{font-size:10px;color:var(--ink-4);font-family:var(--font-mono);}
+    .status-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:9999px;font-size:9.5px;font-weight:500;}
+    .status-badge .dot{width:4px;height:4px;border-radius:50%;}
+    .sb-delivered{background:var(--sage-50);color:var(--sage-800);}
+    .sb-delivered .dot{background:var(--sage-400);}
+    .sb-in-progress{background:var(--sky-50);color:var(--sky-800);}
+    .sb-in-progress .dot{background:var(--sky-600);}
+    .job-row-amt{font-family:var(--font-mono);font-size:12px;color:var(--ink-2);flex-shrink:0;}
+
+    /* Notes */
+    /* Flutter: ExpandableNotesWidget */
+    .notes-card{padding:13px 14px;}
+    .notes-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+    .notes-title{font-size:12px;font-weight:500;color:var(--ink-1);}
+    .add-note-btn{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:500;color:var(--sky-600);background:none;border:none;cursor:pointer;}
+    .note-item{display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-bottom:.5px solid var(--ink-7);}
+    .note-item:last-child{border-bottom:none;}
+    .note-bullet{width:5px;height:5px;border-radius:50%;background:var(--ink-5);flex-shrink:0;margin-top:5px;}
+    .note-text{font-size:12px;color:var(--ink-2);line-height:1.55;}
+    .note-meta{font-size:10px;color:var(--ink-5);margin-top:2px;font-family:var(--font-mono);}
+
+    .home-indicator{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:118px;height:4px;background:rgba(0,0,0,.12);border-radius:2px;z-index:40;}
+    .snackbar{position:absolute;bottom:20px;left:16px;right:16px;padding:12px 16px;background:rgba(28,34,48,.96);border:.5px solid rgba(255,255,255,.08);border-radius:12px;font-size:12px;color:rgba(255,255,255,.80);text-align:center;z-index:50;opacity:0;transform:translateY(8px);transition:all 280ms var(--ease-feather);pointer-events:none;}
+    .snackbar.visible{opacity:1;transform:translateY(0);}
+    @keyframes cardReveal{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0ms!important;transition-duration:0ms!important}}
+
+    /* Handoff */
+    .handoff{width:375px;border:.5px solid rgba(255,255,255,.07);border-radius:12px;padding:20px 22px 22px;background:rgba(255,255,255,.022);}
+    .handoff-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+    .handoff-tag{font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--sky-400);background:rgba(43,176,237,.10);padding:3px 8px;border-radius:4px;}
+    .handoff-title{font-family:var(--font-mono);font-size:10px;color:rgba(255,255,255,.35);flex:1;}
+    .handoff ul{list-style:none;display:flex;flex-direction:column;gap:10px;}
+    .handoff li{display:grid;grid-template-columns:6px 1fr;gap:10px;align-items:baseline;}
+    .bullet{width:4px;height:4px;background:var(--sky-600);border-radius:50%;margin-top:5px;}
+    .handoff li p{font-family:var(--font-mono);font-size:11px;color:rgba(255,255,255,.38);line-height:1.65;}
+    .handoff li p strong{color:rgba(255,255,255,.62);font-weight:400;}
+    .handoff li p code{color:var(--sky-400);background:rgba(43,176,237,.10);padding:1px 5px;border-radius:3px;font-size:10px;}
+  </style>
+</head>
+<body>
+
+<div class="screen-meta">Screen 09 · Staff App · Customer Detail</div>
+
+<!-- Flutter: lib/features/customers/screens/customer_detail_screen.dart
+     class CustomerDetailScreen extends ConsumerStatefulWidget
+     Providers: customerDetailProvider(uuid), customerLoyaltyProvider(uuid) -->
+<div class="phone">
+  <div class="notch"></div>
+
+  <div class="status-bar">
+    <span class="s-time">9:41</span>
+    <div class="s-icons">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="6.5" width="3" height="4.5" rx=".6" fill="rgba(0,0,0,.45)"/><rect x="4.5" y="4" width="3" height="7" rx=".6" fill="rgba(0,0,0,.45)"/><rect x="9" y="1.8" width="3" height="9.2" rx=".6" fill="rgba(0,0,0,.45)"/><rect x="13.5" y="0" width="3" height="11" rx=".6" fill="rgba(0,0,0,.45)"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><path d="M8 9.5a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6z" fill="rgba(0,0,0,.45)"/><path d="M3.7 6.2a6.1 6.1 0 0 1 8.6 0" stroke="rgba(0,0,0,.45)" stroke-width="1.1" stroke-linecap="round" fill="none"/><path d="M1 3.5a10.3 10.3 0 0 1 14 0" stroke="rgba(0,0,0,.45)" stroke-width="1.1" stroke-linecap="round" fill="none"/></svg>
+      <svg width="27" height="12" viewBox="0 0 27 12" fill="none"><rect x=".5" y=".5" width="23" height="11" rx="2.5" stroke="rgba(0,0,0,.35)"/><rect x="2" y="2" width="17" height="8" rx="1.5" fill="rgba(0,0,0,.50)"/><path d="M25 4v4c.9-.4 1.5-1.1 1.5-2s-.6-1.6-1.5-2z" fill="rgba(0,0,0,.25)"/></svg>
+    </div>
+  </div>
+
+  <!-- App bar -->
+  <!-- Flutter: GfAppBar(title:'Rahul Sharma', actions:[EditButton, MoreButton]) -->
+  <div class="app-bar">
+    <button class="back-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <span class="app-bar-title">Rahul Sharma</span>
+    <button class="icon-btn" onclick="showSnackbar('Edit customer details')" title="Edit">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    </button>
+    <button class="icon-btn" onclick="showSnackbar('Customer actions')" title="More">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/></svg>
+    </button>
+  </div>
+
+  <!-- Scrollable content -->
+  <div class="scroll-area">
+    <div class="scroll-content">
+
+      <!-- ── PROFILE HERO ── -->
+      <!-- Flutter: ProfileHeroCard Widget -->
+      <div class="profile-hero" style="animation:cardReveal 380ms var(--ease-feather) both">
+        <div class="profile-top">
+          <!-- Flutter: Hero(tag:'customer-av-c1') > InitialsAvatar(name:'Rahul Sharma', size:60) -->
+          <div class="profile-av">RS</div>
+          <div class="profile-info">
+            <div class="profile-name">Rahul Sharma</div>
+            <div class="profile-tier">★ Preferred Customer</div>
+            <div class="profile-since">Member since Jan 2024 · Mumbai</div>
+          </div>
+          <div class="profile-edit-btn" onclick="showSnackbar('Edit customer')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </div>
+        </div>
+
+        <!-- Stats row -->
+        <!-- Flutter: Row(children:[StatCell × 4]) -->
+        <div class="profile-stats">
+          <div class="ps-cell">
+            <div class="ps-val">5</div>
+            <div class="ps-lbl">Visits</div>
+          </div>
+          <div class="ps-cell">
+            <div class="ps-val" style="font-size:13px">₹24.5K</div>
+            <div class="ps-lbl">Spent</div>
+          </div>
+          <div class="ps-cell">
+            <div class="ps-val" style="color:var(--violet-600)">850</div>
+            <div class="ps-lbl">Points</div>
+          </div>
+          <div class="ps-cell">
+            <div class="ps-val">2</div>
+            <div class="ps-lbl">Vehicles</div>
+          </div>
+        </div>
+
+        <!-- Quick actions -->
+        <!-- Flutter: Row > [OutlinedButton.icon(WhatsApp), OutlinedButton.icon(Call), OutlinedButton.icon(NewJob)] -->
+        <div class="quick-actions">
+          <button class="qa wa" onclick="showSnackbar('Opening WhatsApp…')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            WhatsApp
+          </button>
+          <button class="qa call" onclick="showSnackbar('Calling +91 98765 43210…')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.23h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.16 6.16l1.02-1.02a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            Call
+          </button>
+          <button class="qa" onclick="showSnackbar('→ Create job for Rahul Sharma')" style="color:var(--sky-600);">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="12" y1="12" x2="12" y2="18"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+            New Job
+          </button>
+        </div>
+      </div>
+
+      <!-- ── CONTACT INFO ── -->
+      <!-- Flutter: ContactInfoCard(customer) -->
+      <div class="section-wrap" style="padding-top:16px">
+        <div class="sec-hd"><span class="sec-title">Contact</span></div>
+        <div class="card" style="animation:cardReveal 380ms var(--ease-feather) 30ms both">
+          <div class="info-row">
+            <div class="info-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="1.8" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.23h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.16 6.16l1.02-1.02a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+            <div class="info-col"><div class="info-val mono">+91 98765 43210</div><div class="info-lbl">Primary phone</div></div>
+          </div>
+          <div class="info-row">
+            <div class="info-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="1.8" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+            <div class="info-col"><div class="info-val">rahul.sharma@gmail.com</div><div class="info-lbl">Email</div></div>
+          </div>
+          <div class="info-row">
+            <div class="info-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="1.8" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+            <div class="info-col"><div class="info-val">Andheri West, Mumbai 400 053</div><div class="info-lbl">Address</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── VEHICLES ── -->
+      <!-- Flutter: SizedBox(height:140) > ListView(scrollDir:horizontal) > VehicleCard widgets -->
+      <div class="section-wrap">
+        <div class="sec-hd">
+          <span class="sec-title">Vehicles</span>
+          <button class="sec-action" onclick="showSnackbar('Add vehicle for Rahul')">+ Add</button>
+        </div>
+      </div>
+      <div class="vehicle-scroll" style="padding-bottom:6px;animation:cardReveal 380ms var(--ease-feather) 60ms both">
+        <!-- Vehicle 1 — All OK -->
+        <!-- Flutter: VehicleCard(vehicle:v1, onTap:()=>context.go('/staff/vehicles/{uuid}')) -->
+        <div class="vehicle-card" onclick="showSnackbar('Opening MH12AB1234 detail')">
+          <div class="vc-plate">MH12AB1234</div>
+          <div class="vc-model">Maruti Swift VXI</div>
+          <div class="vc-year">2021 · 45,280 km</div>
+          <div class="vc-badges">
+            <span class="vc-badge ok">Insurance ✓</span>
+            <span class="vc-badge ok">PUC ✓</span>
+          </div>
+          <div class="vc-last">Last: Today · Bay A</div>
+        </div>
+        <!-- Vehicle 2 — Insurance expiring -->
+        <!-- Flutter: VehicleCard with ComplianceAlertChips -->
+        <div class="vehicle-card alert" onclick="showSnackbar('Opening MH12CD5678 detail — compliance alert')">
+          <div class="vc-plate">MH12CD5678</div>
+          <div class="vc-model">Honda City ZX</div>
+          <div class="vc-year">2019 · 61,450 km</div>
+          <div class="vc-badges">
+            <span class="vc-badge warn">Ins. 15 days</span>
+            <span class="vc-badge ok">PUC ✓</span>
+          </div>
+          <div class="vc-last">Last: 12 Apr 2026</div>
+        </div>
+      </div>
+
+      <!-- ── LOYALTY WIDGET ── -->
+      <!-- Flutter: LoyaltyWidget (from design system spec) — violet themed, GfCard variant -->
+      <div class="section-wrap">
+        <div class="sec-hd">
+          <span class="sec-title">Loyalty</span>
+          <button class="sec-action" onclick="showSnackbar('Manage loyalty points')">Adjust →</button>
+        </div>
+        <div class="loyalty-card" style="animation:cardReveal 380ms var(--ease-feather) 90ms both">
+          <div class="loyalty-header">
+            <div>
+              <div class="loyalty-program-name">ProRewards</div>
+              <div class="loyalty-balance">850 pts</div>
+            </div>
+            <span class="loyalty-tier-badge">★ Preferred</span>
+          </div>
+          <div class="loyalty-progress-wrap">
+            <div class="loyalty-prog-labels">
+              <span class="loyalty-prog-lbl">Preferred</span>
+              <span class="loyalty-prog-next">150 pts to Platinum →</span>
+            </div>
+            <div class="loyalty-prog-track">
+              <div class="loyalty-prog-fill" style="width:85%"></div>
+            </div>
+          </div>
+          <!-- Expiry notice -->
+          <div class="loyalty-expiry">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--amber-600)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span class="loyalty-expiry-text">200 pts expiring Aug 2026 — remind customer</span>
+          </div>
+          <!-- Recent transactions -->
+          <div class="loyalty-txns">
+            <div class="loyalty-txn">
+              <div class="txn-dot" style="background:var(--violet-400)"></div>
+              <div style="flex:1">
+                <div class="txn-desc">Engine oil change</div>
+                <div class="txn-job">JOB-2847</div>
+              </div>
+              <span class="txn-pts earn">+350</span>
+              <span class="txn-date">Today</span>
+            </div>
+            <div class="loyalty-txn">
+              <div class="txn-dot" style="background:var(--violet-400)"></div>
+              <div style="flex:1">
+                <div class="txn-desc">Body work complete</div>
+                <div class="txn-job">JOB-2631</div>
+              </div>
+              <span class="txn-pts earn">+500</span>
+              <span class="txn-date">15 Mar</span>
+            </div>
+            <div class="loyalty-txn">
+              <div class="txn-dot" style="background:var(--ink-5)"></div>
+              <div style="flex:1">
+                <div class="txn-desc">Points redeemed</div>
+                <div class="txn-job">₹200 discount</div>
+              </div>
+              <span class="txn-pts redeem">−200</span>
+              <span class="txn-date">20 Feb</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── JOB HISTORY ── -->
+      <!-- Flutter: RecentJobsList(customerUuid:uuid) — GET /jobs?customer_uuid=& -->
+      <div class="section-wrap">
+        <div class="sec-hd">
+          <span class="sec-title">Job History</span>
+          <button class="sec-action" onclick="showSnackbar('View all jobs for Rahul')">View all →</button>
+        </div>
+        <div class="card" style="animation:cardReveal 380ms var(--ease-feather) 120ms both">
+          <div class="job-row" onclick="showSnackbar('Opening JOB-2847')">
+            <span class="job-row-num">JOB-2847</span>
+            <div class="job-row-mid">
+              <div class="job-row-svc">Mechanical</div>
+              <div class="job-row-date">Today · 14 May</div>
+            </div>
+            <span class="status-badge sb-in-progress" style="margin-right:8px"><span class="dot"></span>Active</span>
+            <span class="job-row-amt">₹2,147</span>
+          </div>
+          <div class="job-row" onclick="showSnackbar('Opening JOB-2721')">
+            <span class="job-row-num">JOB-2721</span>
+            <div class="job-row-mid">
+              <div class="job-row-svc">Detailing</div>
+              <div class="job-row-date">12 Apr 2026</div>
+            </div>
+            <span class="status-badge sb-delivered" style="margin-right:8px"><span class="dot"></span>Done</span>
+            <span class="job-row-amt">₹3,850</span>
+          </div>
+          <div class="job-row" onclick="showSnackbar('Opening JOB-2680')">
+            <span class="job-row-num">JOB-2680</span>
+            <div class="job-row-mid">
+              <div class="job-row-svc">Wash &amp; Clean</div>
+              <div class="job-row-date">28 Mar 2026</div>
+            </div>
+            <span class="status-badge sb-delivered" style="margin-right:8px"><span class="dot"></span>Done</span>
+            <span class="job-row-amt">₹1,200</span>
+          </div>
+          <div class="job-row" onclick="showSnackbar('Opening JOB-2631')">
+            <span class="job-row-num">JOB-2631</span>
+            <div class="job-row-mid">
+              <div class="job-row-svc">Body Work</div>
+              <div class="job-row-date">15 Mar 2026</div>
+            </div>
+            <span class="status-badge sb-delivered" style="margin-right:8px"><span class="dot"></span>Done</span>
+            <span class="job-row-amt">₹8,400</span>
+          </div>
+          <div class="job-row" onclick="showSnackbar('Opening JOB-2540')">
+            <span class="job-row-num">JOB-2540</span>
+            <div class="job-row-mid">
+              <div class="job-row-svc">Mechanical</div>
+              <div class="job-row-date">20 Feb 2026</div>
+            </div>
+            <span class="status-badge sb-delivered" style="margin-right:8px"><span class="dot"></span>Done</span>
+            <span class="job-row-amt">₹4,800</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── STAFF NOTES ── -->
+      <!-- Flutter: ExpandableNotesCard — InternalNotesWidget -->
+      <div class="section-wrap" style="padding-bottom:16px">
+        <div class="sec-hd">
+          <span class="sec-title">Staff Notes</span>
+        </div>
+        <div class="card notes-card" style="animation:cardReveal 380ms var(--ease-feather) 150ms both">
+          <div class="notes-header">
+            <span class="notes-title">Internal notes (not visible to customer)</span>
+            <button class="add-note-btn" onclick="showSnackbar('Adding staff note…')">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add
+            </button>
+          </div>
+          <div class="note-item">
+            <div class="note-bullet"></div>
+            <div>
+              <div class="note-text">Prefers Saturday morning appointments. Call before confirming any weekday slots.</div>
+              <div class="note-meta">Suresh More · 12 Apr 2026</div>
+            </div>
+          </div>
+          <div class="note-item">
+            <div class="note-bullet"></div>
+            <div>
+              <div class="note-text">Mentioned AC not cooling well in last visit — suggest AC service at next intake.</div>
+              <div class="note-meta">Amit Kamble · 15 Mar 2026</div>
+            </div>
+          </div>
+          <div class="note-item">
+            <div class="note-bullet"></div>
+            <div>
+              <div class="note-text">Honda City (MH12CD5678) insurance due Aug 2026 — flag during next appointment.</div>
+              <div class="note-meta">System · 28 Mar 2026</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="snackbar" id="snackbar"></div>
+  <div class="home-indicator"></div>
+</div>
+
+<!-- Handoff notes -->
+<div class="handoff">
+  <div class="handoff-header">
+    <span class="handoff-tag">Cursor</span>
+    <span class="handoff-title">Screen 09 · Customer Detail</span>
+  </div>
+  <ul>
+    <li><div class="bullet"></div><p><strong>Providers:</strong> <code>customerDetailProvider(uuid)</code> → <code>GET /customers/{uuid}</code> (full Customer model with garageProfile). <code>customerLoyaltyProvider(uuid)</code> → <code>GET /customers/{uuid}/loyalty</code> returns <code>LoyaltyBalance</code> with transactions. <code>customerJobsProvider(uuid)</code> → <code>GET /jobs?customer_uuid=&per_page=5&sort=created_at_desc</code>.</p></li>
+    <li><div class="bullet"></div><p><strong>Hero animation:</strong> <code>Hero(tag:'customer-av-{uuid}')</code> on avatar — matches the tag in <code>CustomersListScreen</code> for smooth shared-element transition on push. Use <code>context.push()</code> (not <code>go()</code>) so back navigation restores list position.</p></li>
+    <li><div class="bullet"></div><p><strong>Vehicles:</strong> Loaded from <code>GET /customers/{uuid}/vehicles</code>. Each vehicle's <code>complianceAlerts</code> array drives badge rendering. Tap → <code>context.go('/staff/vehicles/{vehicleUuid}')</code>. Add vehicle → inline form sheet (same as Create Job Step 1).</p></li>
+    <li><div class="bullet"></div><p><strong>Loyalty widget:</strong> <code>LoyaltyWidget</code> shared component — same widget embedded in Job Detail sidebar (web). Tier thresholds from <code>ref.watch(loyaltyProgramProvider)</code>. Progress bar: <code>AnimatedContainer(width:pts/nextTierPts * barWidth, duration:kSlow)</code> on mount.</p></li>
+    <li><div class="bullet"></div><p><strong>Notes:</strong> <code>PATCH /customers/{uuid}</code> with <code>{ garageProfile: { internalNotes: '...' } }</code>. Auto-save with 1s debounce. Notes are staff-only — never exposed in customer app API. Add note → append with timestamp + current user name.</p></li>
+  </ul>
+</div>
+
+<script>
+  let snackT;
+  function showSnackbar(msg){const s=document.getElementById('snackbar');s.textContent=msg;s.classList.add('visible');clearTimeout(snackT);snackT=setTimeout(()=>s.classList.remove('visible'),2600);}
+</script>
+
+</body>
+</html>

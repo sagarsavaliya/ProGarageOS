@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProGarage · 03 — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+  <style>
+    /* ═══════════════════════════════════════════════
+       PROGARAGE DESIGN TOKENS — GarageFlow DS v1.0
+    ═══════════════════════════════════════════════ */
+    :root {
+      --ink-0:#0A0E14; --ink-1:#1C2230; --ink-2:#364052; --ink-3:#566076;
+      --ink-4:#8898AA; --ink-5:#B8C5D0; --ink-6:#DDE5EC; --ink-7:#EEF2F6;
+      --ink-8:#F7F9FB; --ink-9:#FFFFFF;
+      --sky-50:#E8F4FD; --sky-200:#90C8F2; --sky-400:#2BB0ED; --sky-600:#0A7DBF; --sky-800:#065E91;
+      --teal-50:#EBF7F5; --teal-400:#26B8A8; --teal-600:#138878; --teal-800:#076358;
+      --sage-50:#EBF5EE; --sage-400:#3BAD5B; --sage-600:#1E7F3C; --sage-800:#0E5C26;
+      --amber-50:#FEF7EC; --amber-400:#F0A018; --amber-600:#C07A08; --amber-800:#8A5602;
+      --rose-50:#FEF0F0; --rose-400:#EF4444; --rose-600:#C01E1E; --rose-800:#8A1010;
+      --violet-50:#F0EFFE; --violet-400:#7C71F0; --violet-600:#4F46C8;
+      --slate-600:#486581; --slate-800:#243B53; --slate-900:#102A43;
+      --shadow-sm: 0 1px 3px rgba(10,14,20,0.06), 0 1px 2px rgba(10,14,20,0.04);
+      --shadow-md: 0 4px 12px rgba(10,14,20,0.08), 0 2px 4px rgba(10,14,20,0.04);
+      --ease-feather:   cubic-bezier(0.16, 1,    0.3,  1);
+      --ease-out-quart: cubic-bezier(0.25, 1,    0.5,  1);
+      --ease-spring:    cubic-bezier(0.34, 1.56, 0.64, 1);
+      --font-ui:   'DM Sans',  system-ui, sans-serif;
+      --font-mono: 'DM Mono',  monospace;
+    }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background: #111420;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; min-height: 100vh;
+      font-family: var(--font-ui); -webkit-font-smoothing: antialiased;
+      gap: 28px; padding: 32px 16px 40px;
+    }
+    .screen-meta {
+      font-family: var(--font-mono); font-size: 10px;
+      color: rgba(255,255,255,0.16); letter-spacing: 0.12em; text-transform: uppercase;
+    }
+
+    /* ═══════════════════════════════════════════════
+       PHONE FRAME
+    ═══════════════════════════════════════════════ */
+    .phone {
+      width: 375px; height: 812px;
+      background: var(--ink-8);
+      border-radius: 44px; overflow: hidden; position: relative; flex-shrink: 0;
+      box-shadow: 0 0 0 0.5px rgba(255,255,255,0.07), inset 0 0 0 0.5px rgba(0,0,0,0.05),
+                  0 48px 120px rgba(0,0,0,0.70), 0 16px 40px rgba(0,0,0,0.35);
+    }
+    .notch {
+      position: absolute; top:0; left:50%; transform: translateX(-50%);
+      width: 120px; height: 30px; background: #0a0e14;
+      border-radius: 0 0 20px 20px; z-index: 40;
+    }
+
+    /* ═══════════════════════════════════════════════
+       STATUS BAR — Light theme
+       Flutter: SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark)
+    ═══════════════════════════════════════════════ */
+    .status-bar {
+      position: absolute; top:0; left:0; right:0; height:44px;
+      display: flex; align-items: flex-end; justify-content: space-between;
+      padding: 0 24px 8px; z-index: 30; background: var(--ink-9);
+    }
+    .s-time { font-family:var(--font-mono); font-size:12px; color:var(--ink-1); letter-spacing:0.02em; font-weight:500; }
+    .s-icons { display:flex; align-items:center; gap:5px; }
+
+    /* ═══════════════════════════════════════════════
+       APP BAR
+       Flutter: GfAppBar(title:'Good morning, Rajesh', subtitle:'Wed, 14 May 2026', actions:[BellIcon, AvatarButton])
+    ═══════════════════════════════════════════════ */
+    .app-bar {
+      position: absolute; top:44px; left:0; right:0; height:58px;
+      background: var(--ink-9);
+      border-bottom: 0.5px solid var(--ink-7);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px; z-index: 25;
+    }
+    .app-bar-left { display:flex; flex-direction:column; gap:1px; }
+    .greeting {
+      font-size: 15px; font-weight: 400; color: var(--ink-0); letter-spacing: -0.01em; line-height:1.2;
+    }
+    .greeting strong { font-weight: 500; }
+    .greeting-date {
+      font-size: 10px; font-weight: 500; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--ink-4);
+    }
+    .app-bar-right { display:flex; align-items:center; gap:12px; }
+    .notif-btn {
+      position: relative; width:34px; height:34px;
+      background: transparent; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%;
+      transition: background 140ms ease;
+    }
+    .notif-btn:hover { background: var(--ink-7); }
+    .notif-badge {
+      position: absolute; top:5px; right:5px;
+      width:8px; height:8px; border-radius:50%;
+      background: var(--rose-600);
+      border: 1.5px solid var(--ink-9);
+    }
+    .user-avatar-btn {
+      width:32px; height:32px; border-radius:50%;
+      background: var(--sky-50);
+      border: 0.5px solid rgba(43,176,237,0.30);
+      display:flex; align-items:center; justify-content:center;
+      font-size:11px; font-weight:500; color:var(--sky-600);
+      cursor: pointer; transition: box-shadow 140ms ease;
+    }
+    .user-avatar-btn:hover { box-shadow: 0 0 0 2px rgba(43,176,237,0.25); }
+
+    /* ═══════════════════════════════════════════════
+       SCROLL AREA
+       Flutter: CustomScrollView with SliverList / SliverPadding
+    ═══════════════════════════════════════════════ */
+    .scroll-area {
+      position: absolute; top:102px; left:0; right:0; bottom:62px;
+      overflow-y: auto; overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .scroll-area::-webkit-scrollbar { display: none; }
+    .scroll-content { padding: 16px 0 24px; }
+
+    /* ─── Period Selector ─── */
+    /* Flutter: SingleChildScrollView(scrollDir:horizontal) > Row of FilterChip */
+    .period-row {
+      display: flex; gap: 8px;
+      padding: 0 16px 16px;
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .period-row::-webkit-scrollbar { display:none; }
+    .period-chip {
+      display: flex; align-items: center; gap: 5px;
+      padding: 6px 14px;
+      border: 0.5px solid var(--ink-6); border-radius: 9999px;
+      background: var(--ink-9);
+      font-size: 12px; font-weight: 500; color: var(--ink-3);
+      cursor: pointer; white-space: nowrap;
+      transition: all 140ms var(--ease-out-quart);
+    }
+    .period-chip.active {
+      background: var(--sky-600); border-color: var(--sky-600);
+      color: #fff;
+    }
+    .period-chip:not(.active):hover { border-color: var(--ink-5); color: var(--ink-1); }
+
+    /* ─── KPI Cards horizontal scroll ─── */
+    /* Flutter: SizedBox(height:96) > ListView.builder(scrollDir:horizontal, itemCount:4) */
+    .kpi-scroll {
+      display: flex; gap: 10px;
+      padding: 0 16px 16px;
+      overflow-x: auto; overflow-y: visible;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .kpi-scroll::-webkit-scrollbar { display:none; }
+    /* Flutter: KpiCard Widget (StatCard) */
+    .kpi-card {
+      min-width: 138px; flex-shrink: 0;
+      background: var(--ink-9);
+      border: 0.5px solid var(--ink-6);
+      border-radius: 16px;
+      padding: 16px 14px 14px;
+      scroll-snap-align: start;
+      box-shadow: var(--shadow-sm);
+      display: flex; flex-direction: column; gap: 6px;
+      animation: cardReveal 380ms var(--ease-feather) both;
+      transition: border-color 140ms ease, box-shadow 140ms ease;
+    }
+    .kpi-card:hover { box-shadow: var(--shadow-md); border-color: var(--ink-5); }
+    .kpi-card:nth-child(1) { animation-delay: 0ms; }
+    .kpi-card:nth-child(2) { animation-delay: 30ms; }
+    .kpi-card:nth-child(3) { animation-delay: 60ms; }
+    .kpi-card:nth-child(4) { animation-delay: 90ms; }
+    .kpi-card.warn  { background: var(--amber-50); border-color: rgba(192,122,8,0.20); }
+    .kpi-card.danger{ background: var(--rose-50);  border-color: rgba(192,30,30,0.18); }
+    .kpi-label {
+      font-size: 10px; font-weight: 500; letter-spacing: 0.07em;
+      text-transform: uppercase; color: var(--ink-4); line-height: 1;
+    }
+    .kpi-card.warn  .kpi-label  { color: var(--amber-600); }
+    .kpi-card.danger .kpi-label { color: var(--rose-600); }
+    .kpi-value {
+      font-family: var(--font-ui); font-size: 26px; font-weight: 300;
+      letter-spacing: -0.025em; color: var(--ink-0);
+      font-variant-numeric: tabular-nums; line-height: 1;
+      transition: opacity 200ms ease;
+    }
+    .kpi-card.warn  .kpi-value  { color: var(--amber-800); }
+    .kpi-card.danger .kpi-value { color: var(--rose-800); }
+    .kpi-delta {
+      font-size: 11px; font-weight: 500; color: var(--ink-4);
+      line-height: 1.3; transition: opacity 200ms ease;
+    }
+    .kpi-delta.up   { color: var(--sage-600); }
+    .kpi-delta.down { color: var(--rose-600); }
+    .kpi-delta.neutral { color: var(--ink-4); }
+
+    /* ─── Section Header ─── */
+    /* Flutter: SectionHeader(title, action) Widget */
+    .section-hd {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 16px 10px;
+    }
+    .section-hd-title {
+      font-size: 10px; font-weight: 500;
+      letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-4);
+    }
+    .section-hd-action {
+      font-size: 12px; font-weight: 500; color: var(--sky-600);
+      text-decoration: none; cursor: pointer;
+      transition: color 140ms ease;
+    }
+    .section-hd-action:hover { color: var(--sky-800); }
+
+    /* ─── Revenue Sparkline Card ─── */
+    /* Flutter: GfCard > Column > [ChartHeader, SfCartesianChart(SplineSeries)] */
+    .chart-card {
+      margin: 0 16px 20px;
+      background: var(--ink-9);
+      border: 0.5px solid var(--ink-6); border-radius: 16px;
+      padding: 16px 16px 12px;
+      box-shadow: var(--shadow-sm);
+      animation: cardReveal 380ms var(--ease-feather) 60ms both;
+    }
+    .chart-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .chart-hd-left {}
+    .chart-title { font-size: 13px; font-weight: 500; color: var(--ink-1); letter-spacing: -0.01em; }
+    .chart-sub   { font-size: 10px; font-weight: 500; color: var(--ink-4); letter-spacing: 0.04em; text-transform: uppercase; margin-top: 2px; }
+    .chart-kpi {
+      text-align: right;
+    }
+    .chart-kpi-val {
+      font-family: var(--font-mono); font-size: 18px; font-weight: 400;
+      color: var(--ink-0); font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+    }
+    .chart-kpi-delta {
+      font-size: 11px; font-weight: 500; color: var(--sage-600);
+      margin-top: 2px;
+    }
+    .chart-svg-wrap { overflow: hidden; }
+
+    /* ─── Bay Grid ─── */
+    /* Flutter: GridView.count(crossAxisCount:2, spacing:10) > BayCard widgets */
+    .bay-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px; padding: 0 16px 20px;
+    }
+    .bay-card {
+      background: var(--ink-9);
+      border: 0.5px solid var(--ink-6); border-radius: 14px;
+      padding: 12px 12px 0; overflow: hidden;
+      cursor: pointer; position: relative;
+      box-shadow: var(--shadow-sm);
+      animation: cardReveal 380ms var(--ease-feather) both;
+      transition: border-color 140ms ease, box-shadow 140ms ease, transform 240ms var(--ease-feather);
+    }
+    .bay-card:hover { box-shadow: var(--shadow-md); border-color: var(--ink-5); transform: translateY(-2px); }
+    .bay-card:nth-child(1) { animation-delay: 0ms; }
+    .bay-card:nth-child(2) { animation-delay: 30ms; }
+    .bay-card:nth-child(3) { animation-delay: 60ms; }
+    .bay-card:nth-child(4) { animation-delay: 90ms; }
+    .bay-row1 { display:flex; align-items:center; justify-content:space-between; margin-bottom:3px; }
+    .bay-name { font-size: 12px; font-weight: 500; color: var(--ink-0); }
+    .bay-type { font-size: 10px; color: var(--ink-4); margin-bottom: 8px; }
+    .bay-status-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 7px; border-radius: 9999px;
+      font-size: 9.5px; font-weight: 500; letter-spacing: 0.03em;
+    }
+    .bay-status-chip .dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+    .bay-chip-available { background:var(--sage-50); color:var(--sage-800); }
+    .bay-chip-available .dot { background:var(--sage-400); }
+    .bay-chip-occupied   { background:var(--sky-50);  color:var(--sky-800);  }
+    .bay-chip-occupied .dot   { background:var(--sky-600); }
+    .bay-chip-maintenance{ background:var(--amber-50); color:var(--amber-800); }
+    .bay-chip-maintenance .dot { background:var(--amber-400); }
+    .bay-vehicle-plate {
+      font-family: var(--font-mono); font-size: 11px;
+      color: var(--ink-2); letter-spacing: 0.02em;
+    }
+    .bay-vehicle-model { font-size: 11px; color: var(--ink-4); margin-bottom: 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .bay-progress-wrap { height:3px; background:var(--ink-7); margin: 0 -12px; }
+    .bay-progress-bar  {
+      height:3px;
+      border-radius:0 2px 2px 0;
+      transition: width 600ms var(--ease-feather) 100ms;
+    }
+    .bay-empty-hint { font-size:11px; color:var(--ink-5); padding-bottom:14px; font-style:italic; }
+    .bay-maintenance-hint { font-size:11px; color:var(--amber-600); padding-bottom:14px; }
+
+    /* ─── Job Cards ─── */
+    /* Flutter: JobCardTile Widget — flutter_slidable wrapper */
+    .job-list { display:flex; flex-direction:column; gap:8px; padding: 0 16px 8px; }
+    .job-card {
+      background: var(--ink-9);
+      border: 0.5px solid var(--ink-6); border-radius: 16px;
+      overflow: hidden; cursor: pointer;
+      box-shadow: var(--shadow-sm);
+      animation: cardReveal 380ms var(--ease-feather) both;
+      transition: border-color 140ms ease, box-shadow 240ms var(--ease-feather), transform 240ms var(--ease-feather);
+    }
+    .job-card:hover { box-shadow: var(--shadow-md); border-color: var(--ink-5); transform: translateY(-2px); }
+    .job-card:nth-child(1) { animation-delay: 0ms; }
+    .job-card:nth-child(2) { animation-delay: 30ms; }
+    .job-card:nth-child(3) { animation-delay: 60ms; }
+    .job-card:nth-child(4) { animation-delay: 90ms; }
+    .job-card:nth-child(5) { animation-delay: 120ms; }
+    .job-card-body { padding: 14px 16px 12px; }
+    .job-row1 { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+    .job-num  { font-family:var(--font-mono); font-size:12px; color:var(--ink-3); letter-spacing:0.02em; }
+    .job-row2 { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+    .job-customer { font-size:14px; font-weight:500; color:var(--ink-0); letter-spacing:-0.01em; }
+    .job-vehicle  { font-size:11px; color:var(--ink-4); margin-bottom: 8px; }
+    .job-plate    { font-family:var(--font-mono); font-size:11px; color:var(--ink-3); }
+    .job-row3 { display:flex; align-items:center; justify-content:space-between; }
+    .job-tech { display:flex; align-items:center; gap:5px; }
+    .tech-initials {
+      width:22px; height:22px; border-radius:50%;
+      background:var(--teal-50); color:var(--teal-600);
+      font-size:9px; font-weight:500;
+      display:flex; align-items:center; justify-content:center;
+      border: 0.5px solid rgba(38,184,168,0.25);
+    }
+    .tech-name { font-size:11px; color:var(--ink-4); }
+    .job-eta { font-family:var(--font-mono); font-size:10px; color:var(--ink-5); }
+    /* Status badge */
+    .status-badge {
+      display:inline-flex; align-items:center; gap:4px;
+      padding: 3px 8px; border-radius:9999px;
+      font-size:10px; font-weight:500; letter-spacing:0.02em;
+      white-space:nowrap;
+    }
+    .status-badge .dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+    /* Job progress bar — bottom of card (Feather Principle: fills on mount) */
+    .job-progress { height:2.5px; width:100%; }
+
+    /* Status color classes */
+    .s-in-progress       { background:var(--sky-50);   color:var(--sky-800); }
+    .s-in-progress .dot  { background:var(--sky-600); }
+    .s-in-progress-bar   { background: linear-gradient(90deg, var(--sky-400), var(--teal-400)); }
+
+    .s-estimate-pending      { background:var(--amber-50); color:var(--amber-800); }
+    .s-estimate-pending .dot { background:var(--amber-400); }
+    .s-estimate-pending-bar  { background: var(--amber-400); }
+
+    .s-qc-pending      { background:var(--teal-50); color:var(--teal-800); }
+    .s-qc-pending .dot { background:var(--teal-400); }
+    .s-qc-pending-bar  { background: var(--teal-400); }
+
+    .s-ready-for-delivery      { background:var(--teal-50); color:var(--teal-800); }
+    .s-ready-for-delivery .dot { background:var(--teal-600); }
+    .s-ready-for-delivery-bar  { background: var(--teal-600); }
+
+    /* ─── Bottom Navigation ─── */
+    /* Flutter: BottomNavigationBar(type:fixed, items:[home,jobs,customers,more]) */
+    .bottom-nav {
+      position: absolute; bottom:0; left:0; right:0; height:62px;
+      background: var(--ink-9);
+      border-top: 0.5px solid var(--ink-7);
+      display: flex; align-items: flex-start; padding-top: 8px;
+      z-index: 25;
+    }
+    .nav-item {
+      flex: 1; display:flex; flex-direction:column; align-items:center;
+      gap: 3px; cursor: pointer; padding: 4px 0;
+      transition: opacity 140ms ease;
+    }
+    .nav-item:hover { opacity: 0.8; }
+    .nav-icon { width:22px; height:22px; display:flex; align-items:center; justify-content:center; }
+    .nav-label {
+      font-size: 10px; font-weight: 500;
+      letter-spacing: 0.03em; color: var(--ink-4);
+    }
+    .nav-item.active .nav-label { color: var(--sky-600); }
+    .nav-item.active svg { stroke: var(--sky-600) !important; }
+    .nav-dot {
+      width:4px; height:4px; border-radius:50%;
+      background: var(--sky-600); margin-top:-2px;
+    }
+    .home-indicator {
+      position: absolute; bottom:8px; left:50%; transform:translateX(-50%);
+      width:118px; height:4px; background:rgba(0,0,0,0.15); border-radius:2px; z-index:40;
+    }
+
+    /* ─── Notification Panel ─── */
+    /* Flutter: Positioned overlay > AnimatedSlide from top */
+    .notif-panel {
+      position: absolute; top:102px; left:0; right:0;
+      background: var(--ink-9);
+      border-bottom: 0.5px solid var(--ink-6);
+      border-radius: 0 0 20px 20px;
+      z-index: 35;
+      box-shadow: 0 8px 24px rgba(10,14,20,0.12);
+      transform: translateY(-108%);
+      opacity: 0;
+      transition: transform 300ms var(--ease-feather), opacity 200ms ease;
+      pointer-events: none;
+    }
+    .notif-panel.open { transform: translateY(0); opacity: 1; pointer-events: all; }
+    .notif-panel-header {
+      display:flex; align-items:center; justify-content:space-between;
+      padding: 14px 16px 10px;
+      border-bottom: 0.5px solid var(--ink-7);
+    }
+    .notif-panel-title { font-size:13px; font-weight:500; color:var(--ink-0); }
+    .notif-mark-read { font-size:11px; font-weight:500; color:var(--sky-600); background:none; border:none; cursor:pointer; }
+    .notif-item {
+      display:flex; gap:12px; align-items:flex-start;
+      padding: 12px 16px;
+      border-bottom: 0.5px solid var(--ink-7);
+      transition: background 80ms ease;
+    }
+    .notif-item:last-child { border-bottom: none; }
+    .notif-item:hover { background: var(--ink-8); }
+    .notif-dot-wrap { padding-top:3px; }
+    .notif-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+    .notif-text { flex:1; }
+    .notif-msg  { font-size:12px; color:var(--ink-2); line-height:1.5; }
+    .notif-time { font-family:var(--font-mono); font-size:10px; color:var(--ink-5); margin-top:2px; }
+    .notif-close {
+      position:absolute; top:12px; right:14px;
+      background:none; border:none; cursor:pointer;
+      color:var(--ink-4); font-size:18px; line-height:1;
+      padding: 4px;
+    }
+    .notif-close:hover { color:var(--ink-2); }
+
+    /* ─── Animations ─── */
+    @keyframes cardReveal {
+      from { opacity:0; transform:translateY(8px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    @keyframes fadeSlideUp {
+      from { opacity:0; transform:translateY(10px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    @keyframes kpiFlash {
+      0%   { opacity:1; }
+      30%  { opacity:0.3; }
+      100% { opacity:1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration:0ms !important; transition-duration:0ms !important; }
+    }
+
+    /* ═══════════════════════════════════════════════
+       CURSOR HANDOFF NOTES
+    ═══════════════════════════════════════════════ */
+    .handoff {
+      width:375px; border:0.5px solid rgba(255,255,255,0.07); border-radius:12px;
+      padding:20px 22px 22px; background:rgba(255,255,255,0.022);
+    }
+    .handoff-header { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+    .handoff-tag {
+      font-family:var(--font-mono); font-size:9px; letter-spacing:0.12em;
+      text-transform:uppercase; color:var(--sky-400);
+      background:rgba(43,176,237,0.10); padding:3px 8px; border-radius:4px;
+    }
+    .handoff-title { font-family:var(--font-mono); font-size:10px; color:rgba(255,255,255,0.35); flex:1; }
+    .handoff ul   { list-style:none; display:flex; flex-direction:column; gap:10px; }
+    .handoff li   { display:grid; grid-template-columns:6px 1fr; gap:10px; align-items:baseline; }
+    .bullet       { width:4px; height:4px; background:var(--sky-600); border-radius:50%; margin-top:5px; }
+    .handoff li p { font-family:var(--font-mono); font-size:11px; color:rgba(255,255,255,0.38); line-height:1.65; }
+    .handoff li p strong { color:rgba(255,255,255,0.62); font-weight:400; }
+    .handoff li p code { color:var(--sky-400); background:rgba(43,176,237,0.10); padding:1px 5px; border-radius:3px; font-size:10px; }
+  </style>
+</head>
+<body>
+
+<div class="screen-meta">Screen 03 · Staff App · Dashboard</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     Flutter: lib/features/dashboard/screens/dashboard_screen.dart
+     class DashboardScreen extends ConsumerStatefulWidget
+     Provider: dashboardProvider (DashboardNotifier)
+     Realtime: ref.listen(realtimeProvider, _handleWsEvent)
+     ═══════════════════════════════════════════════════════════ -->
+<div class="phone" id="phone">
+  <div class="notch"></div>
+
+  <!-- Flutter: SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark) -->
+  <div class="status-bar">
+    <span class="s-time">9:41</span>
+    <div class="s-icons">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="none">
+        <rect x="0"    y="6.5" width="3"   height="4.5" rx="0.6" fill="rgba(0,0,0,0.45)"/>
+        <rect x="4.5"  y="4"   width="3"   height="7"   rx="0.6" fill="rgba(0,0,0,0.45)"/>
+        <rect x="9"    y="1.8" width="3"   height="9.2" rx="0.6" fill="rgba(0,0,0,0.45)"/>
+        <rect x="13.5" y="0"   width="3"   height="11"  rx="0.6" fill="rgba(0,0,0,0.45)"/>
+      </svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+        <path d="M8 9.5a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6z" fill="rgba(0,0,0,0.45)"/>
+        <path d="M3.7 6.2a6.1 6.1 0 0 1 8.6 0" stroke="rgba(0,0,0,0.45)" stroke-width="1.1" stroke-linecap="round" fill="none"/>
+        <path d="M1 3.5a10.3 10.3 0 0 1 14 0" stroke="rgba(0,0,0,0.45)" stroke-width="1.1" stroke-linecap="round" fill="none"/>
+      </svg>
+      <svg width="27" height="12" viewBox="0 0 27 12" fill="none">
+        <rect x="0.5" y="0.5" width="23" height="11" rx="2.5" stroke="rgba(0,0,0,0.35)"/>
+        <rect x="2" y="2" width="17" height="8" rx="1.5" fill="rgba(0,0,0,0.50)"/>
+        <path d="M25 4v4c.9-.4 1.5-1.1 1.5-2s-.6-1.6-1.5-2z" fill="rgba(0,0,0,0.25)"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- APP BAR -->
+  <!-- Flutter: GfAppBar(showBack:false, title:'Good morning, Rajesh', subtitle:'Wed, 14 May', actions:[NotifButton, AvatarButton]) -->
+  <div class="app-bar">
+    <div class="app-bar-left">
+      <div class="greeting">Good morning, <strong>Rajesh</strong></div>
+      <div class="greeting-date">Wed · 14 May 2026</div>
+    </div>
+    <div class="app-bar-right">
+      <!-- Flutter: IconButton(icon:Icon(LucideIcons.bell), onPressed:_toggleNotifPanel) + Badge -->
+      <button class="notif-btn" id="notifBtn" aria-label="Notifications">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+        <span class="notif-badge" id="notifBadge"></span>
+      </button>
+      <!-- Flutter: InitialsAvatar(name:'Rajesh Kumar', size:32, onTap:_goToProfile) -->
+      <div class="user-avatar-btn">RK</div>
+    </div>
+  </div>
+
+  <!-- NOTIFICATION PANEL -->
+  <!-- Flutter: AnimatedSlide(offset:Offset(0, _open?0:-1)) > NotifPanel -->
+  <div class="notif-panel" id="notifPanel">
+    <div class="notif-panel-header">
+      <span class="notif-panel-title">Notifications</span>
+      <button class="notif-mark-read" id="markAllRead">Mark all read</button>
+    </div>
+    <div class="notif-item">
+      <div class="notif-dot-wrap"><div class="notif-dot" style="background:var(--amber-400)"></div></div>
+      <div class="notif-text">
+        <div class="notif-msg">Estimate pending approval from <strong>Priya Patel</strong> — ₹18,500</div>
+        <div class="notif-time">5 min ago</div>
+      </div>
+    </div>
+    <div class="notif-item">
+      <div class="notif-dot-wrap"><div class="notif-dot" style="background:var(--rose-400)"></div></div>
+      <div class="notif-text">
+        <div class="notif-msg">Low stock alert: <strong>Engine Oil 10W-40</strong> — 2 units remaining</div>
+        <div class="notif-time">15 min ago</div>
+      </div>
+    </div>
+    <div class="notif-item">
+      <div class="notif-dot-wrap"><div class="notif-dot" style="background:var(--teal-400)"></div></div>
+      <div class="notif-text">
+        <div class="notif-msg">JOB-2844 is ready for delivery — <strong>Toyota Innova</strong> · Sunita Gupta</div>
+        <div class="notif-time">32 min ago</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCROLLABLE CONTENT -->
+  <!-- Flutter: CustomScrollView(slivers:[SliverPadding, SliverList, ...]) -->
+  <div class="scroll-area" id="scrollArea">
+    <div class="scroll-content">
+
+      <!-- PERIOD CHIPS -->
+      <!-- Flutter: SingleChildScrollView > Row > [FilterChip × 3], onSelected: dashboardNotifier.setPeriod(p) -->
+      <div class="period-row">
+        <div class="period-chip active" data-period="today">Today</div>
+        <div class="period-chip" data-period="week">This Week</div>
+        <div class="period-chip" data-period="month">This Month</div>
+      </div>
+
+      <!-- KPI CARDS -->
+      <!-- Flutter: SizedBox(height:106) > ListView.builder(scrollDirection:Axis.horizontal) -->
+      <div class="kpi-scroll">
+        <!-- Flutter: KpiCard(label:'Jobs Today', value:'12', delta:'+3 from yesterday', deltaType:up) -->
+        <div class="kpi-card">
+          <div class="kpi-label">Jobs Today</div>
+          <div class="kpi-value" id="kv-jobs">12</div>
+          <div class="kpi-delta up" id="kd-jobs">↑ 3 from yesterday</div>
+        </div>
+        <!-- Flutter: KpiCard(label:'Revenue MTD', value:'₹2,84,500', isMono:true) -->
+        <div class="kpi-card">
+          <div class="kpi-label">Revenue MTD</div>
+          <div class="kpi-value" id="kv-rev" style="font-family:var(--font-mono);font-size:20px;">₹2,84,500</div>
+          <div class="kpi-delta up" id="kd-rev">↑ 8.2% this month</div>
+        </div>
+        <!-- Flutter: KpiCard(label:'Pending', value:'3', variant:warn) -->
+        <div class="kpi-card warn">
+          <div class="kpi-label">Pending</div>
+          <div class="kpi-value" id="kv-pending">3</div>
+          <div class="kpi-delta neutral" id="kd-pending">Estimates & approvals</div>
+        </div>
+        <!-- Flutter: KpiCard(label:'Low Stock', value:'5', variant:danger) -->
+        <div class="kpi-card danger">
+          <div class="kpi-label">Low Stock</div>
+          <div class="kpi-value" id="kv-stock">5 items</div>
+          <div class="kpi-delta neutral" id="kd-stock">Reorder needed</div>
+        </div>
+      </div>
+
+      <!-- REVENUE CHART -->
+      <!-- Flutter: GfCard > Column > [ChartHeader, SfCartesianChart(SplineSeries, SplineAreaSeries)] -->
+      <div class="section-hd" style="padding-bottom:8px;">
+        <span class="section-hd-title">Revenue · 7 Days</span>
+        <a class="section-hd-action" href="#">Full report →</a>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-hd-left">
+            <div class="chart-title">Daily revenue</div>
+            <div class="chart-sub">Thu 8 → Wed 14 May</div>
+          </div>
+          <div class="chart-kpi">
+            <div class="chart-kpi-val" id="chartKpiVal">₹2,84,500</div>
+            <div class="chart-kpi-delta" id="chartKpiDelta">↑ 8.2% vs last week</div>
+          </div>
+        </div>
+        <!-- Flutter: SfCartesianChart — SplineAreaSeries(sky gradient fill) + SplineSeries(sky400 stroke) -->
+        <div class="chart-svg-wrap">
+          <svg width="100%" viewBox="0 0 311 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"   stop-color="#2BB0ED" stop-opacity="0.14"/>
+                <stop offset="100%" stop-color="#2BB0ED" stop-opacity="0.01"/>
+              </linearGradient>
+            </defs>
+            <!-- Area fill path — Thu:35px, Fri:29px, Sat:23px, Sun:48px, Mon:25px, Tue:15px, Wed:9px (y from top, 60px chart height) -->
+            <path d="M0,35 C10,33 42,30 52,29 C62,28 94,24 104,22 C114,21 146,47 156,48 C166,49 198,24 208,24 C218,24 250,15 260,14 C270,13 302,9 311,9 L311,70 L0,70 Z"
+                  fill="url(#chartGrad)"/>
+            <!-- Line -->
+            <path d="M0,35 C10,33 42,30 52,29 C62,28 94,24 104,22 C114,21 146,47 156,48 C166,49 198,24 208,24 C218,24 250,15 260,14 C270,13 302,9 311,9"
+                  fill="none" stroke="#2BB0ED" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- Data points (subtle, intermediate) -->
+            <circle cx="0"   cy="35" r="2.5" fill="#90C8F2"/>
+            <circle cx="52"  cy="29" r="2.5" fill="#90C8F2"/>
+            <circle cx="104" cy="22" r="2.5" fill="#90C8F2"/>
+            <circle cx="156" cy="48" r="2.5" fill="#90C8F2"/>
+            <circle cx="208" cy="24" r="2.5" fill="#90C8F2"/>
+            <circle cx="260" cy="14" r="2.5" fill="#90C8F2"/>
+            <!-- Today highlight -->
+            <circle cx="311" cy="9"  r="4"   fill="#0A7DBF"/>
+            <circle cx="311" cy="9"  r="7.5" fill="rgba(10,125,191,0.15)"/>
+            <!-- X-axis labels -->
+            <text x="0"   y="78" font-family="DM Mono" font-size="8" fill="#8898AA" text-anchor="middle">Thu</text>
+            <text x="52"  y="78" font-family="DM Mono" font-size="8" fill="#8898AA" text-anchor="middle">Fri</text>
+            <text x="104" y="78" font-family="DM Mono" font-size="8" fill="#8898AA" text-anchor="middle">Sat</text>
+            <text x="156" y="78" font-family="DM Mono" font-size="8" fill="#8898AA" text-anchor="middle">Sun</text>
+            <text x="208" y="78" font-family="DM Mono" font-size="8" fill="#8898AA" text-anchor="middle">Mon</text>
+            <text x="260" y="78" font-family="DM Mono" font-size="8" fill="#8898AA" text-anchor="middle">Tue</text>
+            <text x="308" y="78" font-family="DM Mono" font-size="8" fill="#0A7DBF" font-weight="500" text-anchor="end">Today</text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- SERVICE BAYS -->
+      <!-- Flutter: SectionHeader + GridView.count(crossAxisCount:2, childAspectRatio:1.1) -->
+      <div class="section-hd">
+        <span class="section-hd-title">Service Bays</span>
+        <a class="section-hd-action" href="#">Manage →</a>
+      </div>
+      <div class="bay-grid">
+        <!-- Bay A — Occupied -->
+        <!-- Flutter: BayCard(bay:bay1, onTap:()=>context.go('/staff/jobs/${bay1.currentJob.uuid}')) -->
+        <div class="bay-card">
+          <div class="bay-row1">
+            <span class="bay-name">Bay A</span>
+            <span class="bay-status-chip bay-chip-occupied">
+              <span class="dot"></span>Occupied
+            </span>
+          </div>
+          <div class="bay-type">Mechanical</div>
+          <div class="bay-vehicle-plate">MH12AB1234</div>
+          <div class="bay-vehicle-model">Maruti Swift · JOB-2847</div>
+          <div class="bay-progress-wrap">
+            <div class="bay-progress-bar s-in-progress-bar" style="width:65%"></div>
+          </div>
+        </div>
+        <!-- Bay B — Occupied -->
+        <div class="bay-card">
+          <div class="bay-row1">
+            <span class="bay-name">Bay B</span>
+            <span class="bay-status-chip bay-chip-occupied">
+              <span class="dot"></span>Occupied
+            </span>
+          </div>
+          <div class="bay-type">Body Work</div>
+          <div class="bay-vehicle-plate">DL8CAF9876</div>
+          <div class="bay-vehicle-model">Hyundai i20 · JOB-2846</div>
+          <div class="bay-progress-wrap">
+            <div class="bay-progress-bar s-estimate-pending-bar" style="width:20%"></div>
+          </div>
+        </div>
+        <!-- Bay C — Available -->
+        <!-- Flutter: BayCard(status:available, onTap:()=>_showBookBaySheet()) -->
+        <div class="bay-card">
+          <div class="bay-row1">
+            <span class="bay-name">Bay C</span>
+            <span class="bay-status-chip bay-chip-available">
+              <span class="dot"></span>Available
+            </span>
+          </div>
+          <div class="bay-type">Detailing</div>
+          <div class="bay-empty-hint" style="margin-top:6px;">Ready for vehicle</div>
+          <div class="bay-progress-wrap">
+            <div class="bay-progress-bar" style="width:0%;background:transparent"></div>
+          </div>
+        </div>
+        <!-- Bay D — Maintenance -->
+        <div class="bay-card">
+          <div class="bay-row1">
+            <span class="bay-name">Bay D</span>
+            <span class="bay-status-chip bay-chip-maintenance">
+              <span class="dot"></span>Maint.
+            </span>
+          </div>
+          <div class="bay-type">Tyre &amp; Alignment</div>
+          <div class="bay-maintenance-hint" style="margin-top:6px;">ETA ~2 hours</div>
+          <div class="bay-progress-wrap">
+            <div class="bay-progress-bar" style="width:0%;background:transparent"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACTIVE JOBS -->
+      <!-- Flutter: SectionHeader + ListView.builder(itemCount:5) > JobCardTile -->
+      <div class="section-hd">
+        <span class="section-hd-title">Active Jobs</span>
+        <a class="section-hd-action" href="#">View all →</a>
+      </div>
+      <div class="job-list">
+
+        <!-- JOB-2847 — in_progress -->
+        <!-- Flutter: JobCardTile(job:job1, onTap:()=>context.go('/staff/jobs/${job1.uuid}')) -->
+        <div class="job-card">
+          <div class="job-card-body">
+            <div class="job-row1">
+              <span class="job-num">JOB-2847</span>
+              <span class="status-badge s-in-progress">
+                <span class="dot"></span>In Progress
+              </span>
+            </div>
+            <div class="job-customer">Rahul Sharma</div>
+            <div class="job-vehicle">Maruti Swift VXI · <span class="job-plate">MH12AB1234</span></div>
+            <div class="job-row3">
+              <div class="job-tech">
+                <div class="tech-initials">AK</div>
+                <span class="tech-name">Amit Kamble</span>
+              </div>
+              <span class="job-eta">ETA 3:30 PM</span>
+            </div>
+          </div>
+          <div class="job-progress s-in-progress-bar" style="width:65%"></div>
+        </div>
+
+        <!-- JOB-2846 — estimate_pending -->
+        <div class="job-card">
+          <div class="job-card-body">
+            <div class="job-row1">
+              <span class="job-num">JOB-2846</span>
+              <span class="status-badge s-estimate-pending">
+                <span class="dot"></span>Est. Pending
+              </span>
+            </div>
+            <div class="job-customer">Priya Patel</div>
+            <div class="job-vehicle">Hyundai i20 Asta · <span class="job-plate">DL8CAF9876</span></div>
+            <div class="job-row3">
+              <div class="job-tech">
+                <div class="tech-initials">SM</div>
+                <span class="tech-name">Suresh More</span>
+              </div>
+              <span class="job-eta">Tomorrow</span>
+            </div>
+          </div>
+          <div class="job-progress s-estimate-pending-bar" style="width:18%"></div>
+        </div>
+
+        <!-- JOB-2845 — qc_pending -->
+        <div class="job-card">
+          <div class="job-card-body">
+            <div class="job-row1">
+              <span class="job-num">JOB-2845</span>
+              <span class="status-badge s-qc-pending">
+                <span class="dot"></span>QC Pending
+              </span>
+            </div>
+            <div class="job-customer">Kavya Reddy</div>
+            <div class="job-vehicle">Honda City ZX · <span class="job-plate">KA01MX5678</span></div>
+            <div class="job-row3">
+              <div class="job-tech">
+                <div class="tech-initials">RP</div>
+                <span class="tech-name">Rajan Patil</span>
+              </div>
+              <span class="job-eta">ETA 5:00 PM</span>
+            </div>
+          </div>
+          <div class="job-progress s-qc-pending-bar" style="width:88%"></div>
+        </div>
+
+        <!-- JOB-2844 — ready_for_delivery -->
+        <div class="job-card">
+          <div class="job-card-body">
+            <div class="job-row1">
+              <span class="job-num">JOB-2844</span>
+              <span class="status-badge s-ready-for-delivery">
+                <span class="dot"></span>Ready
+              </span>
+            </div>
+            <div class="job-customer">Sunita Gupta</div>
+            <div class="job-vehicle">Toyota Innova Crysta · <span class="job-plate">TN09BD3210</span></div>
+            <div class="job-row3">
+              <div class="job-tech">
+                <div class="tech-initials">AK</div>
+                <span class="tech-name">Amit Kamble</span>
+              </div>
+              <span class="job-eta" style="color:var(--teal-600);font-weight:500;">Ready now</span>
+            </div>
+          </div>
+          <div class="job-progress s-ready-for-delivery-bar" style="width:100%"></div>
+        </div>
+
+        <!-- JOB-2843 — in_progress -->
+        <div class="job-card">
+          <div class="job-card-body">
+            <div class="job-row1">
+              <span class="job-num">JOB-2843</span>
+              <span class="status-badge s-in-progress">
+                <span class="dot"></span>In Progress
+              </span>
+            </div>
+            <div class="job-customer">Vikram Mehta</div>
+            <div class="job-vehicle">Mahindra Thar LX · <span class="job-plate">MH01ZP4567</span></div>
+            <div class="job-row3">
+              <div class="job-tech">
+                <div class="tech-initials">DS</div>
+                <span class="tech-name">Deepak Shinde</span>
+              </div>
+              <span class="job-eta">ETA 6:30 PM</span>
+            </div>
+          </div>
+          <div class="job-progress s-in-progress-bar" style="width:42%"></div>
+        </div>
+
+      </div><!-- /job-list -->
+    </div><!-- /scroll-content -->
+  </div><!-- /scroll-area -->
+
+  <!-- BOTTOM NAVIGATION -->
+  <!-- Flutter: BottomNavigationBar(currentIndex:0, onTap:_onNavTap, type:BottomNavigationBarType.fixed) -->
+  <div class="bottom-nav">
+    <div class="nav-item active" data-tab="dashboard">
+      <div class="nav-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--sky-600)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+          <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+          <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+          <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+        </svg>
+      </div>
+      <span class="nav-label">Dashboard</span>
+      <div class="nav-dot"></div>
+    </div>
+    <div class="nav-item" data-tab="jobs">
+      <div class="nav-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink-5)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+          <rect x="9" y="3" width="6" height="4" rx="1"/>
+          <line x1="9" y1="12" x2="15" y2="12"/>
+          <line x1="9" y1="16" x2="13" y2="16"/>
+        </svg>
+      </div>
+      <span class="nav-label">Jobs</span>
+    </div>
+    <div class="nav-item" data-tab="customers">
+      <div class="nav-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink-5)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      </div>
+      <span class="nav-label">Customers</span>
+    </div>
+    <div class="nav-item" data-tab="more">
+      <div class="nav-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink-5)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="5"  r="1.2" fill="var(--ink-5)"/>
+          <circle cx="12" cy="12" r="1.2" fill="var(--ink-5)"/>
+          <circle cx="12" cy="19" r="1.2" fill="var(--ink-5)"/>
+        </svg>
+      </div>
+      <span class="nav-label">More</span>
+    </div>
+  </div>
+
+  <div class="home-indicator"></div>
+</div><!-- /phone -->
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     CURSOR HANDOFF NOTES
+═══════════════════════════════════════════════════════════ -->
+<div class="handoff">
+  <div class="handoff-header">
+    <span class="handoff-tag">Cursor</span>
+    <span class="handoff-title">Screen 03 · Dashboard · Owner/Manager</span>
+  </div>
+  <ul>
+    <li>
+      <div class="bullet"></div>
+      <p><strong>Providers:</strong> <code>dashboardProvider</code> (DashboardNotifier) — holds <code>DashboardState { period, summary:DashboardSummary, bays:List&lt;ServiceBay&gt;, activeJobs:List&lt;ServiceJobListItem&gt; }</code>. Call <code>GET /dashboard/summary?period=today</code> + <code>GET /service-bays</code> in parallel on init via <code>Future.wait([])</code>. Realtime: <code>ref.listen(realtimeProvider)</code> handles <code>job.status.updated</code> → surgically update job in list.</p>
+    </li>
+    <li>
+      <div class="bullet"></div>
+      <p><strong>KPI animation:</strong> On period change, flash all <code>KpiCard</code> values with <code>AnimatedSwitcher(duration:kFast, transitionBuilder:FadeTransition)</code>. For realtime updates (e.g. new payment): <code>AnimatedContainer</code> color flash — sky-50 background for 400ms then return to white. Use <code>TickerProviderStateMixin</code>.</p>
+    </li>
+    <li>
+      <div class="bullet"></div>
+      <p><strong>Charts:</strong> Revenue sparkline uses <code>fl_chart</code> package — <code>LineChart(LineChartData(lineBarsData:[LineChartBarData(spots:[...], isCurved:true, gradient:LinearGradient(sky800→sky400), belowBarData:BarAreaData(gradient:sky50→transparent))]))</code>. X-axis: 7 days, abbreviated. Y-axis hidden. Data from <code>DashboardSummary.revenue.daily</code>.</p>
+    </li>
+    <li>
+      <div class="bullet"></div>
+      <p><strong>Bay grid:</strong> <code>GET /service-bays</code> returns bays with <code>currentJob:JobSummary?</code>. Tap on occupied bay → <code>context.go('/staff/jobs/\${bay.currentJob!.uuid}')</code>. Tap available bay → show <code>showModalBottomSheet</code> with quick job creation or appointment booking. Progress bar: <code>LinearProgressIndicator(value:job.progressPercent, color:statusDot(status))</code>.</p>
+    </li>
+    <li>
+      <div class="bullet"></div>
+      <p><strong>Navigation:</strong> <code>BottomNavigationBar</code> wired to GoRouter shell route — <code>/staff/dashboard</code>, <code>/staff/jobs</code>, <code>/staff/customers</code>, <code>/staff/more</code>. Use <code>GoRouter</code> shell with persistent bottom nav. Active tab: <code>ref.watch(navIndexProvider)</code>. Notification panel: <code>AnimatedSlide(offset:Offset(0, _open?0:-1), duration:kNormal)</code>.</p>
+    </li>
+  </ul>
+</div>
+
+<script>
+  /* ═══════════════════════════════════════════════
+     DASHBOARD INTERACTIONS
+     Mirrors: DashboardNotifier (Riverpod) in Dart
+  ═══════════════════════════════════════════════ */
+
+  /* KPI data per period */
+  const kpiData = {
+    today: {
+      jobs: ['12', '↑ 3 from yesterday', 'up'],
+      rev:  ['₹2,84,500', '↑ 8.2% this month', 'up'],
+      pend: ['3', 'Estimates & approvals', 'neutral'],
+      stock:['5 items', 'Reorder needed', 'neutral'],
+      chartVal: '₹2,84,500', chartDelta: '↑ 8.2% vs last week',
+    },
+    week: {
+      jobs: ['64', '↑ 12 from last week', 'up'],
+      rev:  ['₹14,20,000', '↑ 5.8% vs prior week', 'up'],
+      pend: ['8', 'Across all technicians', 'neutral'],
+      stock:['5 items', 'Reorder needed', 'neutral'],
+      chartVal: '₹14,20,000', chartDelta: '↑ 5.8% vs prior week',
+    },
+    month: {
+      jobs: ['248', '↑ 28 from last month', 'up'],
+      rev:  ['₹52,80,000', '↑ 14.2% vs prior month', 'up'],
+      pend: ['12', 'Requires attention', 'neutral'],
+      stock:['5 items', 'Reorder needed', 'neutral'],
+      chartVal: '₹52,80,000', chartDelta: '↑ 14.2% vs prior month',
+    }
+  };
+
+  /* Period chips */
+  document.querySelectorAll('.period-chip').forEach(chip => {
+    chip.addEventListener('click', function() {
+      document.querySelectorAll('.period-chip').forEach(c => c.classList.remove('active'));
+      this.classList.add('active');
+      updateKpis(this.dataset.period);
+    });
+  });
+
+  function updateKpis(period) {
+    const d = kpiData[period];
+    const ids = [
+      ['kv-jobs','kd-jobs', d.jobs],
+      ['kv-rev', 'kd-rev',  d.rev ],
+      ['kv-pending','kd-pending', d.pend ],
+      ['kv-stock','kd-stock', d.stock],
+    ];
+    ids.forEach(([vid, did, data]) => {
+      const vEl = document.getElementById(vid);
+      const dEl = document.getElementById(did);
+      /* Feather flash animation */
+      vEl.style.animation = 'kpiFlash 240ms ease both';
+      dEl.style.animation = 'kpiFlash 240ms ease both';
+      setTimeout(() => {
+        vEl.textContent = data[0];
+        dEl.textContent = data[1];
+        dEl.className = 'kpi-delta ' + data[2];
+        vEl.style.animation = ''; dEl.style.animation = '';
+      }, 120);
+    });
+    document.getElementById('chartKpiVal').textContent   = d.chartVal;
+    document.getElementById('chartKpiDelta').textContent = d.chartDelta;
+  }
+
+  /* Notification panel */
+  const notifBtn   = document.getElementById('notifBtn');
+  const notifPanel = document.getElementById('notifPanel');
+  const notifBadge = document.getElementById('notifBadge');
+
+  notifBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    notifPanel.classList.toggle('open');
+  });
+  document.getElementById('markAllRead').addEventListener('click', () => {
+    notifBadge.style.display = 'none';
+    notifPanel.classList.remove('open');
+  });
+  /* Close on outside click */
+  document.getElementById('scrollArea').addEventListener('click', () => {
+    notifPanel.classList.remove('open');
+  });
+
+  /* Bottom nav tabs */
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', function() {
+      document.querySelectorAll('.nav-item').forEach(n => {
+        n.classList.remove('active');
+        n.querySelector('.nav-dot')?.remove();
+        const svg = n.querySelector('svg');
+        if (svg) svg.style.stroke = 'var(--ink-5)';
+        n.querySelector('.nav-label').style.color = '';
+      });
+      this.classList.add('active');
+      const lbl = this.querySelector('.nav-label');
+      lbl.style.color = 'var(--sky-600)';
+      const svg = this.querySelector('svg');
+      if (svg) svg.style.stroke = 'var(--sky-600)';
+      if (!this.querySelector('.nav-dot')) {
+        const dot = document.createElement('div');
+        dot.className = 'nav-dot';
+        this.appendChild(dot);
+      }
+    });
+  });
+
+  /* Job card tap ripple */
+  document.querySelectorAll('.job-card').forEach(card => {
+    card.addEventListener('click', function() {
+      this.style.transform   = 'scale(0.985)';
+      this.style.transition  = 'transform 80ms ease-in';
+      setTimeout(() => {
+        this.style.transform  = '';
+        this.style.transition = 'border-color 140ms ease, box-shadow 240ms var(--ease-feather), transform 240ms var(--ease-feather)';
+      }, 100);
+    });
+  });
+
+  /* Bay card tap */
+  document.querySelectorAll('.bay-card').forEach(card => {
+    card.addEventListener('click', function() {
+      this.style.transform  = 'scale(0.97)';
+      this.style.transition = 'transform 80ms ease-in';
+      setTimeout(() => {
+        this.style.transform  = '';
+        this.style.transition = 'border-color 140ms ease, box-shadow 240ms var(--ease-feather), transform 240ms var(--ease-feather)';
+      }, 100);
+    });
+  });
+</script>
+
+</body>
+</html>

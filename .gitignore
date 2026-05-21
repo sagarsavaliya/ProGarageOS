@@ -1,0 +1,40 @@
+# Environment & secrets
+**/.env
+**/.env.local
+**/.env.production
+!**/.env.example
+
+# Laravel
+Apps/api/vendor/
+Apps/api/node_modules/
+Apps/api/public/build/
+Apps/api/public/hot/
+Apps/api/public/storage
+Apps/api/storage/*.key
+Apps/api/.phpunit.cache
+
+# Flutter
+Apps/flutter/.dart_tool/
+Apps/flutter/build/
+Apps/flutter/.flutter-plugins
+Apps/flutter/.flutter-plugins-dependencies
+Apps/flutter/.packages
+
+# Web / landing
+Apps/web/node_modules/
+Apps/web/dist/
+Apps/landing/node_modules/
+Apps/landing/dist/
+
+# IDE & OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Briefs binary
+Briefs/*.zip
+
+# Claude local
+.claude/

@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProGarage · 01 — Splash Screen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+  <style>
+    /* ═══════════════════════════════════════════════
+       PROGARAGE DESIGN TOKENS — GarageFlow DS v1.0
+    ═══════════════════════════════════════════════ */
+    :root {
+      --ink-0: #0A0E14; --ink-1: #1C2230; --ink-2: #364052; --ink-3: #566076;
+      --ink-4: #8898AA; --ink-5: #B8C5D0; --ink-6: #DDE5EC; --ink-7: #EEF2F6;
+      --ink-8: #F7F9FB; --ink-9: #FFFFFF;
+      --sky-50: #E8F4FD; --sky-200: #90C8F2;
+      --sky-400: #2BB0ED; --sky-600: #0A7DBF; --sky-800: #065E91; --sky-900: #033D61;
+      --teal-400: #26B8A8; --teal-600: #138878;
+      --slate-600: #486581; --slate-800: #243B53; --slate-900: #102A43;
+      --ease-feather:   cubic-bezier(0.16, 1,   0.3, 1);
+      --ease-out-quart: cubic-bezier(0.25, 1,   0.5, 1);
+      --ease-spring:    cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ease-exit:      cubic-bezier(0.40, 0,   1.0, 1);
+      --font-ui:   'DM Sans',  system-ui, sans-serif;
+      --font-mono: 'DM Mono',  monospace;
+    }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #111420;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: var(--font-ui);
+      -webkit-font-smoothing: antialiased;
+      gap: 28px;
+      padding: 32px 16px 40px;
+    }
+
+    /* ─── Page meta label ─── */
+    .screen-meta {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: rgba(255,255,255,0.16);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    /* ═══════════════════════════════════════════════
+       PHONE FRAME
+       Flutter: MaterialApp root, theme: AppTheme.dark()
+    ═══════════════════════════════════════════════ */
+    .phone {
+      width: 375px;
+      height: 812px;
+      background: var(--slate-900);
+      border-radius: 44px;
+      overflow: hidden;
+      position: relative;
+      flex-shrink: 0;
+      box-shadow:
+        0 0 0 0.5px rgba(255, 255, 255, 0.07),
+        inset 0 0 0 0.5px rgba(255, 255, 255, 0.03),
+        0 48px 120px rgba(0, 0, 0, 0.80),
+        0 16px 40px  rgba(0, 0, 0, 0.40);
+    }
+
+    /* ─── Notch ─── */
+    /* Flutter: handled by SystemChrome.setSystemUIOverlayStyle */
+    .notch {
+      position: absolute;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 120px; height: 30px;
+      background: #0a0e14;
+      border-radius: 0 0 20px 20px;
+      z-index: 30;
+    }
+
+    /* ─── Dot-grid texture ───
+       Flutter: CustomPaint(painter: DotGridPainter())
+       DotGridPainter.paint(): nested for-loop, Canvas.drawCircle(
+         offset, radius: 1.2,
+         paint: Paint()..color = Colors.white.withOpacity(0.028)
+       ) on a 28×28 grid. */
+    .dot-grid {
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(
+        circle, rgba(255,255,255,0.030) 1.2px, transparent 1.2px
+      );
+      background-size: 28px 28px;
+      background-position: 14px 14px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── Ambient sky glow behind wordmark ───
+       Flutter: Container(decoration: BoxDecoration(
+         gradient: RadialGradient(
+           colors: [Color(0x1A0A7DBF), Colors.transparent],
+           radius: 0.7
+         )
+       )) */
+    .ambient-glow {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 380px; height: 380px;
+      transform: translate(-50%, -58%);
+      background: radial-gradient(
+        circle,
+        rgba(10,125,191,0.11) 0%,
+        rgba(10,125,191,0.04) 40%,
+        transparent 70%
+      );
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ═══════════════════════════════════════════════
+       STATUS BAR
+       Flutter: SafeArea(bottom:false) > Padding(horizontal:28, top:12) > Row
+    ═══════════════════════════════════════════════ */
+    .status-bar {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 50px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      padding: 0 28px 9px;
+      z-index: 20;
+    }
+    .s-time {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: rgba(255,255,255,0.50);
+      letter-spacing: 0.02em;
+    }
+    .s-icons {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* ═══════════════════════════════════════════════
+       SPLASH BODY — centered wordmark
+       Flutter: Positioned.fill > Center > WordmarkWidget
+    ═══════════════════════════════════════════════ */
+    .splash-body {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+    }
+
+    /* ─── Wordmark group ───
+       Flutter: FadeTransition(opacity: _fadeAnim) >
+                SlideTransition(position: Tween(Offset(0,.04)→Offset.zero).animate(_fadeAnim)) >
+                Column(mainAxisSize: min, spacing: 14) */
+    .wordmark-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      animation: fadeSlideUp 680ms var(--ease-feather) 320ms both;
+    }
+
+    /* Accent bar: ──● ── (centered decorative element)
+       Flutter: Row(mainAxisSize.min) > [
+         Container(w:22, h:0.5, color:sky400@45%),
+         SizedBox(6),
+         _PulsingDot(),
+         SizedBox(6),
+         Container(w:22, h:0.5, color:sky400@45%),
+       ] */
+    .accent-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .a-line {
+      width: 22px;
+      height: 0.5px;
+      background: rgba(43, 176, 237, 0.45);
+      border-radius: 1px;
+    }
+    .a-dot {
+      width: 4px; height: 4px;
+      background: var(--sky-400);
+      border-radius: 50%;
+      animation: gentlePulse 2.6s ease-in-out 1.4s infinite;
+    }
+
+    /* Main wordmark text
+       Flutter: Text.rich(TextSpan(children: [
+         TextSpan('Pro', style: TextStyle(color: white.withOpacity(0.92))),
+         TextSpan('Garage', style: TextStyle(color: AppColors.sky400)),
+       ]), style: AppTypography.display.copyWith(fontSize: 40, fontWeight: w300)) */
+    .wordmark {
+      font-family: var(--font-ui);
+      font-size: 40px;
+      font-weight: 300;
+      letter-spacing: -0.026em;
+      line-height: 1;
+    }
+    .w-pro    { color: rgba(255,255,255,0.92); }
+    .w-garage { color: var(--sky-400); }
+
+    /* Tagline
+       Flutter: Text('GARAGE OPERATIONS PLATFORM',
+         style: AppTypography.label.copyWith(color: white.withOpacity(0.22), letterSpacing: 0.14em)) */
+    .tagline {
+      font-family: var(--font-ui);
+      font-size: 9.5px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.22);
+      margin-top: -2px;
+    }
+
+    /* ═══════════════════════════════════════════════
+       BOTTOM ELEMENTS
+    ═══════════════════════════════════════════════ */
+
+    /* Continue button wrapper — animates as a unit
+       Flutter: AnimatedOpacity(opacity: _showCTA ? 1 : 0, duration: kFast) >
+                Positioned(bottom: 76, left: 32, right: 32) >
+                GfButton(variant: ghost, label: 'Continue to Login', trailing: Icon(arrowRight)) */
+    .continue-wrap {
+      position: absolute;
+      bottom: 74px;
+      left: 0; right: 0;
+      display: flex;
+      justify-content: center;
+      z-index: 10;
+      animation: fadeSlideUp 380ms var(--ease-feather) 3050ms both;
+    }
+    .continue-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 0 24px;
+      height: 38px;
+      border: 0.5px solid rgba(43,176,237,0.36);
+      border-radius: 10px;
+      background: transparent;
+      color: var(--sky-400);
+      font-family: var(--font-ui);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      transition:
+        background  140ms var(--ease-out-quart),
+        border-color 140ms var(--ease-out-quart),
+        transform    80ms ease-in;
+    }
+    .continue-btn:hover {
+      background: rgba(43,176,237,0.07);
+      border-color: rgba(43,176,237,0.60);
+    }
+    .continue-btn:active {
+      transform: scale(0.97);
+      transition: transform 80ms ease-in;
+    }
+    .continue-btn:not(:active) {
+      transition:
+        background    140ms var(--ease-out-quart),
+        border-color  140ms var(--ease-out-quart),
+        transform     140ms var(--ease-spring);
+    }
+
+    /* Progress bar track
+       Flutter: Positioned(bottom:50, left:138, right:138) >
+                LinearProgressIndicator(
+                  value: _progressAnim.value,
+                  backgroundColor: white.withOpacity(0.06),
+                  valueColor: AlwaysStoppedAnimation(AppColors.sky400)
+                ) */
+    .progress-track {
+      position: absolute;
+      bottom: 50px;
+      left: 50%; transform: translateX(-50%);
+      width: 100px; height: 1.5px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 1px;
+      overflow: hidden;
+      z-index: 1;
+      animation: fadeIn 280ms ease 620ms both;
+    }
+    .progress-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, var(--sky-800) 0%, var(--sky-400) 100%);
+      border-radius: 1px;
+      animation: fillProgress 2150ms var(--ease-feather) 740ms both;
+    }
+
+    /* Version label
+       Flutter: Positioned(bottom:30) > Text('v1.0.0 · staff', AppTypography.micro) */
+    .version-label {
+      position: absolute;
+      bottom: 30px;
+      left: 50%; transform: translateX(-50%);
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: rgba(255,255,255,0.13);
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+      z-index: 1;
+      animation: fadeIn 280ms ease 740ms both;
+    }
+
+    /* Home indicator
+       Flutter: system UI — iOS home indicator, Android gesture bar */
+    .home-indicator {
+      position: absolute;
+      bottom: 10px; left: 50%;
+      transform: translateX(-50%);
+      width: 118px; height: 4px;
+      background: rgba(255,255,255,0.18);
+      border-radius: 2px;
+      z-index: 20;
+    }
+
+    /* ═══════════════════════════════════════════════
+       KEYFRAME ANIMATIONS
+       — "The Feather Principle" from GarageFlow DS
+    ═══════════════════════════════════════════════ */
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0);    }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes fillProgress {
+      from { width: 0%;   }
+      to   { width: 100%; }
+    }
+    @keyframes gentlePulse {
+      0%, 100% { opacity: 1;    transform: scale(1);   }
+      50%      { opacity: 0.30; transform: scale(0.65); }
+    }
+    @keyframes phoneExit {
+      from { opacity: 1; transform: scale(1); }
+      to   { opacity: 0; transform: scale(0.96); }
+    }
+    @keyframes phoneEnter {
+      from { opacity: 0; transform: scale(0.96); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    /* ═══════════════════════════════════════════════
+       CURSOR HANDOFF NOTES CARD
+    ═══════════════════════════════════════════════ */
+    .handoff {
+      width: 375px;
+      border: 0.5px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 20px 22px 22px;
+      background: rgba(255,255,255,0.022);
+    }
+    .handoff-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .handoff-tag {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--sky-400);
+      background: rgba(43,176,237,0.10);
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+    .handoff-title {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: rgba(255,255,255,0.35);
+      letter-spacing: 0.04em;
+      flex: 1;
+    }
+    .handoff ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .handoff li {
+      display: grid;
+      grid-template-columns: 6px 1fr;
+      gap: 10px;
+      align-items: baseline;
+    }
+    .handoff li .bullet {
+      width: 4px; height: 4px;
+      background: var(--sky-600);
+      border-radius: 50%;
+      margin-top: 5px;
+      flex-shrink: 0;
+    }
+    .handoff li p {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: rgba(255,255,255,0.38);
+      line-height: 1.65;
+    }
+    .handoff li p strong {
+      color: rgba(255,255,255,0.62);
+      font-weight: 400;
+    }
+    .handoff li p code {
+      color: var(--sky-400);
+      background: rgba(43,176,237,0.10);
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-size: 10px;
+    }
+  </style>
+</head>
+<body style="font-family: &quot;DM Sans&quot;">
+
+  <div class="screen-meta">Screen 01 · Staff App · Splash Screen</div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       Flutter: main.dart
+       void main() => runApp(ProviderScope(child: ProGarageApp()))
+       class ProGarageApp extends ConsumerWidget {
+         Widget build(ctx, ref) => MaterialApp.router(
+           routerConfig: ref.watch(appRouterProvider),
+           theme: AppTheme.light(), darkTheme: AppTheme.dark(),
+           themeMode: ThemeMode.system,
+         );
+       }
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="phone" id="phone">
+
+    <!-- Flutter: Stack(fit: StackFit.expand, children: [...]) -->
+    <div class="dot-grid"></div>
+    <div class="ambient-glow"></div>
+
+    <!-- Device notch -->
+    <div class="notch"></div>
+
+    <!-- ─── Status Bar ─── -->
+    <!-- Flutter: SafeArea(bottom: false) > Padding > Row(mainAxisAlignment.spaceBetween) -->
+    <div class="status-bar">
+      <span class="s-time">9:41</span>
+      <div class="s-icons">
+        <!-- Cellular signal bars  -->
+        <svg width="17" height="11" viewBox="0 0 17 11" fill="none" aria-hidden="true">
+          <rect x="0"    y="6.5" width="3"   height="4.5" rx="0.6" fill="rgba(255,255,255,0.45)"/>
+          <rect x="4.5"  y="4"   width="3"   height="7"   rx="0.6" fill="rgba(255,255,255,0.45)"/>
+          <rect x="9"    y="1.8" width="3"   height="9.2" rx="0.6" fill="rgba(255,255,255,0.45)"/>
+          <rect x="13.5" y="0"   width="3"   height="11"  rx="0.6" fill="rgba(255,255,255,0.45)"/>
+        </svg>
+        <!-- WiFi -->
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+          <path d="M8 9.5a1.3 1.3 0 1 1 0 2.6A1.3 1.3 0 0 1 8 9.5z" fill="rgba(255,255,255,0.45)"/>
+          <path d="M3.7 6.2a6.1 6.1 0 0 1 8.6 0" stroke="rgba(255,255,255,0.45)" stroke-width="1.15" stroke-linecap="round" fill="none"/>
+          <path d="M1 3.5a10.3 10.3 0 0 1 14 0" stroke="rgba(255,255,255,0.45)" stroke-width="1.15" stroke-linecap="round" fill="none"/>
+        </svg>
+        <!-- Battery -->
+        <svg width="27" height="12" viewBox="0 0 27 12" fill="none" aria-hidden="true">
+          <rect x="0.5" y="0.5" width="23" height="11" rx="2.5" stroke="rgba(255,255,255,0.35)"/>
+          <rect x="2" y="2" width="17" height="8" rx="1.5" fill="rgba(255,255,255,0.55)"/>
+          <path d="M25 4v4c.9-.4 1.5-1.1 1.5-2S25.9 4.4 25 4z" fill="rgba(255,255,255,0.30)"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- ─── Splash Body ─── -->
+    <!-- Flutter: Positioned.fill > Center > WordmarkWidget() -->
+    <div class="splash-body">
+
+      <!-- Flutter: class WordmarkWidget extends StatelessWidget
+           Uses: FadeTransition + SlideTransition, parent controller -->
+      <div class="wordmark-group">
+
+        <!-- Flutter: Row(mainAxisSize.min, children: [_Line(), SizedBox(6), _PulsingDot(), SizedBox(6), _Line()]) -->
+        <div class="accent-bar">
+          <div class="a-line"></div>
+          <div class="a-dot"></div>
+          <div class="a-line"></div>
+        </div>
+
+        <!-- Flutter: Text.rich(TextSpan(children: [
+               TextSpan('Pro', style: ts(color: white.withOpacity(0.92))),
+               TextSpan('Garage', style: ts(color: AppColors.sky400)),
+             ]), style: AppTypography.display.copyWith(fontSize: 40, fontWeight: w300, letterSpacing: -0.026*40)) -->
+        <div class="wordmark">
+          <span class="w-pro">Pro</span><span class="w-garage">Garage</span>
+        </div>
+
+        <!-- Flutter: Text('GARAGE OPERATIONS PLATFORM', style: AppTypography.label.copyWith(
+               color: Colors.white.withOpacity(0.22), letterSpacing: 0.14 * 9.5)) -->
+        <div class="tagline">Garage Operations Platform</div>
+
+      </div>
+    </div>
+
+    <!-- ─── Continue CTA (appears after load) ─── -->
+    <!-- Flutter: AnimatedOpacity(opacity: _loadDone ? 1.0 : 0.0, duration: AppMotion.fast)
+         > Positioned(bottom: 74, left: 32, right: 32)
+         > GfButton(variant: ghost, size: lg, label: 'Continue to Login', trailing: Icon(Icons.arrow_forward)) -->
+    <div class="continue-wrap">
+      <button class="continue-btn" id="continueBtn" aria-label="Continue to Staff Login">
+        Continue to Login
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+          <path d="M2.5 7h9M11.5 7L8 3.5M11.5 7L8 10.5"
+                stroke="currentColor" stroke-width="1.3"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- ─── Progress bar ─── -->
+    <!-- Flutter: Positioned(bottom:50, left:138, right:138)
+         > LinearProgressIndicator(
+             value: _progressAnim.value,
+             backgroundColor: Colors.white.withOpacity(0.06),
+             valueColor: AlwaysStoppedAnimation<Color>(AppColors.sky400),
+             borderRadius: BorderRadius.circular(1),
+           ) -->
+    <div class="progress-track" aria-hidden="true">
+      <div class="progress-fill"></div>
+    </div>
+
+    <!-- Flutter: Positioned(bottom:30, left:0, right:0) > Center > Text('v1.0.0 · staff', AppTypography.micro) -->
+    <div class="version-label" aria-hidden="true">v1.0.0 · staff</div>
+
+    <!-- Flutter: iOS: UIStatusBar home indicator (system). Android: gestureNavigationBar via SystemChrome -->
+    <div class="home-indicator" aria-hidden="true"></div>
+
+  </div><!-- /phone -->
+
+  <!-- ═══════════════════════════════════════════════════════════
+       CURSOR HANDOFF NOTES
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="handoff" role="complementary" aria-label="Cursor handoff notes">
+    <div class="handoff-header">
+      <span class="handoff-tag">Cursor</span>
+      <span class="handoff-title">Screen 01 · Splash Screen · Staff App</span>
+    </div>
+    <ul>
+      <li>
+        <div class="bullet"></div>
+        <p><strong>State management:</strong> No Riverpod provider needed. Pure <code>StatefulWidget</code> with <code>AnimationController(vsync: this, duration: 3000ms)</code>. Auto-navigate via <code>Future.delayed(const Duration(milliseconds: 2500), () => context.go('/staff/login'))</code>.</p>
+      </li>
+      <li>
+        <div class="bullet"></div>
+        <p><strong>Widget tree:</strong> <code>Scaffold(backgroundColor: AppColors.slate900)</code> → <code>Stack</code> [ <code>DotGridPainter(CustomPainter)</code>, <code>AmbientGlowWidget</code>, <code>SafeArea → StatusRow</code>, <code>Center → WordmarkColumn</code>, <code>Positioned(bottom:74) → ContinueButton</code>, <code>Positioned(bottom:50) → ProgressBar</code>, <code>Positioned(bottom:30) → VersionText</code>, <code>HomeIndicator</code> ].</p>
+      </li>
+      <li>
+        <div class="bullet"></div>
+        <p><strong>DotGridPainter:</strong> <code>CustomPainter override paint(Canvas c, Size s)</code> — nested <code>for</code> loops across <code>x: 0..s.width/28</code> and <code>y: 0..s.height/28</code>. Each iteration: <code>c.drawCircle(Offset(x*28+14, y*28+14), 1.2, paint)</code> where <code>paint.color = Colors.white.withOpacity(0.028)</code>.</p>
+      </li>
+      <li>
+        <div class="bullet"></div>
+        <p><strong>Animation sequence:</strong> <code>_ctrl.forward()</code> drives three intervals: <code>0–0.23</code> → wordmark <code>FadeTransition + SlideTransition(Offset(0, 0.04)→zero)</code>; <code>0.25–0.95</code> → <code>LinearProgressIndicator.value</code>; <code>0.95–1.0</code> → CTA <code>AnimatedOpacity</code>. Use <code>CurvedAnimation(parent: _ctrl, curve: Interval(...))</code> per stage.</p>
+      </li>
+      <li>
+        <div class="bullet"></div>
+        <p><strong>Navigation:</strong> <code>context.go('/staff/login')</code> called from timer OR button tap (first wins). Route defined in <code>AppRouter</code> — <code>/staff/login → StaffLoginScreen()</code>. Transition: <code>CustomTransitionPage</code> with fade + scale(0.97→1).</p>
+      </li>
+    </ul>
+  </div>
+
+  <script>
+    /* ── Splash screen interactions ──────────────────────────
+       Flutter equivalent: see AnimationController + GoRouter above.
+       This JS mirrors the timing of the Dart animation sequence.
+    ──────────────────────────────────────────────────────── */
+    const phone     = document.getElementById('phone');
+    const continueBtn = document.getElementById('continueBtn');
+
+    /* Page exit animation — mirrors Flutter's CustomTransitionPage */
+    function doNavigate(e) {
+      if (e) e.preventDefault();
+
+      phone.style.animation = 'phoneExit 300ms cubic-bezier(0.4,0,1,1) forwards';
+
+      setTimeout(() => {
+        /* Navigate to Screen 02 when available */
+        /* In production: window.location.href = '02-Staff-Login.html'; */
+
+        /* Demo: replay with feather re-entrance */
+        phone.style.animation = 'none';
+        void phone.offsetWidth; /* force reflow to restart animations */
+
+        /* Reset animated children */
+        phone.querySelectorAll('[style*="animation"]').forEach(el => {
+          el.style.animation = 'none';
+          void el.offsetWidth;
+          el.style.animation = '';
+        });
+
+        phone.style.animation = 'phoneEnter 380ms cubic-bezier(0.16,1,0.3,1) forwards';
+        setTimeout(() => { phone.style.animation = ''; }, 400);
+      }, 310);
+    }
+
+    continueBtn.addEventListener('click', doNavigate);
+
+    /* Touch press scale for mobile preview */
+    continueBtn.addEventListener('touchstart', function() {
+      this.style.transform = 'scale(0.97)';
+      this.style.transition = 'transform 80ms ease-in';
+    }, { passive: true });
+    continueBtn.addEventListener('touchend', function() {
+      this.style.transform = 'scale(1)';
+      this.style.transition = 'transform 140ms cubic-bezier(0.34,1.56,0.64,1)';
+      setTimeout(() => { this.style.transform = ''; this.style.transition = ''; }, 150);
+    }, { passive: true });
+  </script>
+
+</body>
+</html>

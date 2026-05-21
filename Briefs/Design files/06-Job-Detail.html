@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProGarage · 06 — Job Detail</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink-0:#0A0E14;--ink-1:#1C2230;--ink-2:#364052;--ink-3:#566076;
+      --ink-4:#8898AA;--ink-5:#B8C5D0;--ink-6:#DDE5EC;--ink-7:#EEF2F6;
+      --ink-8:#F7F9FB;--ink-9:#FFFFFF;
+      --sky-50:#E8F4FD;--sky-400:#2BB0ED;--sky-600:#0A7DBF;--sky-800:#065E91;
+      --teal-50:#EBF7F5;--teal-400:#26B8A8;--teal-600:#138878;--teal-800:#076358;
+      --sage-50:#EBF5EE;--sage-400:#3BAD5B;--sage-600:#1E7F3C;--sage-800:#0E5C26;
+      --amber-50:#FEF7EC;--amber-400:#F0A018;--amber-600:#C07A08;--amber-800:#8A5602;
+      --rose-50:#FEF0F0;--rose-400:#EF4444;--rose-600:#C01E1E;
+      --violet-50:#F0EFFE;--violet-600:#4F46C8;
+      --slate-900:#102A43;
+      --shadow-sm:0 1px 3px rgba(10,14,20,.06),0 1px 2px rgba(10,14,20,.04);
+      --shadow-md:0 4px 12px rgba(10,14,20,.08),0 2px 4px rgba(10,14,20,.04);
+      --ease-feather:cubic-bezier(.16,1,.3,1);
+      --ease-out:cubic-bezier(.25,1,.5,1);
+      --ease-spring:cubic-bezier(.34,1.56,.64,1);
+      --font-ui:'DM Sans',system-ui,sans-serif;
+      --font-mono:'DM Mono',monospace;
+    }
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+    body{background:#111420;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:var(--font-ui);-webkit-font-smoothing:antialiased;gap:28px;padding:32px 16px 40px;}
+    .screen-meta{font-family:var(--font-mono);font-size:10px;color:rgba(255,255,255,.16);letter-spacing:.12em;text-transform:uppercase;}
+    .phone{width:375px;height:812px;background:var(--ink-8);border-radius:44px;overflow:hidden;position:relative;flex-shrink:0;box-shadow:0 0 0 .5px rgba(255,255,255,.07),inset 0 0 0 .5px rgba(0,0,0,.05),0 48px 120px rgba(0,0,0,.70),0 16px 40px rgba(0,0,0,.35);}
+    .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:30px;background:#0a0e14;border-radius:0 0 20px 20px;z-index:40;}
+
+    /* ── Status bar ── */
+    .status-bar{position:absolute;top:0;left:0;right:0;height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 24px 8px;z-index:30;background:var(--ink-9);}
+    .s-time{font-family:var(--font-mono);font-size:12px;color:var(--ink-1);letter-spacing:.02em;font-weight:500;}
+    .s-icons{display:flex;align-items:center;gap:5px;}
+
+    /* ── App bar ── */
+    /* Flutter: GfAppBar(showBack:true, title:'JOB-2847', titleMono:true, actions:[ShareButton, MoreButton]) */
+    .app-bar{position:absolute;top:44px;left:0;right:0;height:56px;background:var(--ink-9);border-bottom:.5px solid var(--ink-7);display:flex;align-items:center;gap:4px;padding:0 10px;z-index:25;}
+    .back-btn{width:36px;height:36px;border-radius:50%;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink-3);transition:background 140ms ease;}
+    .back-btn:hover{background:var(--ink-7);}
+    .app-bar-title{font-family:var(--font-mono);font-size:15px;color:var(--ink-0);flex:1;letter-spacing:.01em;}
+    .app-bar-status-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:9999px;font-family:var(--font-ui);font-size:10px;font-weight:500;background:var(--sky-50);color:var(--sky-800);}
+    .app-bar-status-badge .dot{width:5px;height:5px;border-radius:50%;background:var(--sky-600);}
+    .icon-btn{width:34px;height:34px;border-radius:50%;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink-3);transition:background 140ms ease;}
+    .icon-btn:hover{background:var(--ink-7);}
+
+    /* ── Scroll area ── */
+    .scroll-area{position:absolute;top:100px;left:0;right:0;bottom:72px;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+    .scroll-area::-webkit-scrollbar{display:none;}
+    .scroll-content{padding:14px 16px 24px;display:flex;flex-direction:column;gap:12px;}
+
+    /* ── Card base ── */
+    .card{background:var(--ink-9);border:.5px solid var(--ink-6);border-radius:16px;overflow:hidden;box-shadow:var(--shadow-sm);}
+
+    /* ── Job header ── */
+    /* Flutter: JobHeaderCard Widget */
+    .job-header-card{padding:16px 16px 0;}
+    .jh-row1{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+    .jh-id{font-family:var(--font-mono);font-size:18px;font-weight:400;color:var(--ink-0);letter-spacing:.01em;}
+    .jh-badges{display:flex;align-items:center;gap:6px;}
+    .jh-vehicle{font-size:14px;font-weight:500;color:var(--ink-1);margin-bottom:2px;letter-spacing:-.01em;}
+    .jh-plate{font-family:var(--font-mono);font-size:12px;color:var(--ink-3);margin-bottom:8px;}
+    .jh-chips{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+    .jh-chip{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:500;padding:3px 8px;border-radius:9999px;}
+    .chip-bay  {background:var(--ink-7);color:var(--ink-3);}
+    .chip-prio {background:var(--sky-50);color:var(--sky-800);}
+    .chip-tech {background:var(--teal-50);color:var(--teal-800);}
+    .jh-divider{height:.5px;background:var(--ink-7);margin:0 -16px;}
+    .jh-footer{display:flex;align-items:center;justify-content:space-between;padding:10px 0;}
+    .jh-timer{font-size:11px;color:var(--ink-4);display:flex;align-items:center;gap:4px;}
+    .jh-timer-dot{width:5px;height:5px;border-radius:50%;background:var(--sky-600);animation:timerPulse 2s ease-in-out infinite;}
+    .jh-eta{font-family:var(--font-mono);font-size:11px;color:var(--ink-3);}
+    .jh-progress-wrap{height:.5px;background:var(--ink-7);margin:0 -16px;}
+    .jh-progress-bar{height:3px;background:linear-gradient(90deg,var(--sky-400),var(--teal-400));transition:width 600ms var(--ease-feather) 200ms;}
+
+    /* Status badge */
+    .status-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:9999px;font-size:10px;font-weight:500;}
+    .status-badge .dot{width:5px;height:5px;border-radius:50%;}
+    .sb-in-progress{background:var(--sky-50);color:var(--sky-800);}
+    .sb-in-progress .dot{background:var(--sky-600);}
+    .sb-completed{background:var(--sage-50);color:var(--sage-800);}
+    .sb-completed .dot{background:var(--sage-400);}
+    .sb-pending{background:var(--ink-7);color:var(--ink-3);}
+    .sb-pending .dot{background:var(--ink-5);}
+    .sb-estimate-pending{background:var(--amber-50);color:var(--amber-800);}
+    .sb-estimate-pending .dot{background:var(--amber-400);}
+    .sb-qc-pending{background:var(--teal-50);color:var(--teal-800);}
+    .sb-qc-pending .dot{background:var(--teal-400);}
+
+    /* ── Section header ── */
+    .sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+    .sec-title{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4);}
+    .sec-action{font-size:12px;font-weight:500;color:var(--sky-600);background:none;border:none;cursor:pointer;transition:color 140ms ease;}
+    .sec-action:hover{color:var(--sky-800);}
+
+    /* ── Task list ── */
+    /* Flutter: ExpansionTile or custom AnimatedContainer per task */
+    .task-item{border-bottom:.5px solid var(--ink-7);overflow:hidden;}
+    .task-item:last-child{border-bottom:none;}
+    .task-header{display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;transition:background 80ms ease;}
+    .task-header:hover{background:var(--ink-8);}
+    .task-cb{
+      width:20px;height:20px;border-radius:6px;flex-shrink:0;
+      border:.5px solid var(--ink-5);background:transparent;
+      display:flex;align-items:center;justify-content:center;
+      cursor:pointer;transition:all 140ms var(--ease-spring);
+    }
+    .task-cb.checked{background:var(--teal-600);border-color:var(--teal-600);}
+    .task-body-row{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+    .task-name{font-size:13px;font-weight:400;color:var(--ink-1);transition:color 200ms ease;}
+    .task-name.done{text-decoration:line-through;color:var(--ink-4);}
+    .task-meta{display:flex;align-items:center;gap:6px;}
+    .task-tech-name{font-size:10px;color:var(--ink-4);}
+    .task-price{font-family:var(--font-mono);font-size:11px;color:var(--ink-3);margin-left:auto;flex-shrink:0;}
+    .task-price.free{color:var(--ink-5);}
+    .expand-icon{width:16px;height:16px;color:var(--ink-5);transition:transform 200ms var(--ease-feather);flex-shrink:0;}
+    .task-item.open .expand-icon{transform:rotate(180deg);}
+    .task-details{
+      padding:0 16px 12px 46px;display:none;
+      background:var(--ink-8);border-top:.5px solid var(--ink-7);
+    }
+    .task-item.open .task-details{display:block;}
+    .task-desc{font-size:12px;color:var(--ink-3);line-height:1.65;margin-bottom:8px;}
+    .task-actions{display:flex;gap:6px;}
+    .task-action-btn{padding:5px 12px;border-radius:8px;border:.5px solid var(--ink-6);background:var(--ink-9);font-family:var(--font-ui);font-size:11px;font-weight:500;color:var(--sky-600);cursor:pointer;transition:all 140ms ease;}
+    .task-action-btn:hover{background:var(--sky-50);border-color:var(--sky-400);}
+
+    /* ── Estimate alert ── */
+    /* Flutter: EstimateApprovalCard (amber surface) */
+    .estimate-card{padding:14px 16px;}
+    .est-header{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;}
+    .est-alert-icon{width:28px;height:28px;border-radius:8px;background:var(--amber-50);border:.5px solid rgba(192,122,8,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .est-title{font-size:13px;font-weight:500;color:var(--amber-800);}
+    .est-sub{font-size:11px;color:var(--amber-600);margin-top:1px;}
+    .est-line{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:.5px solid rgba(192,122,8,.12);}
+    .est-line:last-of-type{border-bottom:none;}
+    .est-line-name{font-size:12px;color:var(--ink-2);}
+    .est-line-price{font-family:var(--font-mono);font-size:12px;color:var(--amber-800);font-weight:500;}
+    .est-actions{display:flex;gap:8px;margin-top:12px;}
+    .est-btn-primary{flex:1;height:36px;border-radius:10px;border:none;background:var(--amber-600);color:#fff;font-family:var(--font-ui);font-size:13px;font-weight:500;cursor:pointer;transition:background 140ms ease;}
+    .est-btn-primary:hover{background:var(--amber-800);}
+    .est-btn-ghost{height:36px;padding:0 14px;border-radius:10px;border:.5px solid rgba(192,122,8,.35);background:transparent;color:var(--amber-600);font-family:var(--font-ui);font-size:13px;font-weight:500;cursor:pointer;transition:all 140ms ease;}
+    .est-btn-ghost:hover{background:var(--amber-50);}
+
+    /* ── Billing summary ── */
+    /* Flutter: BillingCard Widget */
+    .billing-card{padding:14px 16px 16px;}
+    .billing-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+    .billing-title{font-size:13px;font-weight:500;color:var(--ink-1);}
+    .billing-status{font-size:10px;font-weight:500;padding:3px 8px;border-radius:9999px;}
+    .billing-status.unpaid{background:var(--amber-50);color:var(--amber-800);}
+    .billing-status.paid{background:var(--sage-50);color:var(--sage-600);}
+    .billing-row{display:flex;align-items:center;justify-content:space-between;padding:3px 0;}
+    .billing-label{font-size:12px;color:var(--ink-4);}
+    .billing-amount{font-family:var(--font-mono);font-size:12px;color:var(--ink-2);}
+    .billing-divider{height:.5px;background:var(--ink-7);margin:8px 0;}
+    .billing-total-row{display:flex;align-items:baseline;justify-content:space-between;padding:2px 0;}
+    .billing-total-label{font-size:13px;font-weight:500;color:var(--ink-1);}
+    .billing-total-amount{font-family:var(--font-mono);font-size:16px;color:var(--sky-600);font-weight:400;}
+    .billing-actions{display:flex;gap:8px;margin-top:12px;}
+    .bill-btn{flex:1;height:36px;border-radius:10px;border:.5px solid var(--ink-6);background:var(--ink-9);font-family:var(--font-ui);font-size:12px;font-weight:500;color:var(--ink-2);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:all 140ms ease;}
+    .bill-btn:hover{border-color:var(--ink-5);background:var(--ink-8);}
+    .bill-btn.primary{background:var(--sky-600);border-color:var(--sky-600);color:#fff;}
+    .bill-btn.primary:hover{background:var(--sky-800);}
+
+    /* ── Customer card ── */
+    /* Flutter: CustomerMiniCard Widget */
+    .customer-card{padding:13px 16px;}
+    .cust-row{display:flex;align-items:center;gap:12px;}
+    .cust-av{width:40px;height:40px;border-radius:50%;flex-shrink:0;background:var(--teal-50);color:var(--teal-600);border:.5px solid rgba(38,184,168,.22);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;}
+    .cust-info-col{flex:1;}
+    .cust-name{font-size:14px;font-weight:500;color:var(--ink-0);letter-spacing:-.01em;}
+    .cust-sub{font-size:11px;color:var(--ink-4);margin-top:1px;}
+    .cust-cta-row{display:flex;gap:6px;margin-left:auto;}
+    .cust-action{width:32px;height:32px;border-radius:50%;border:.5px solid var(--ink-6);background:var(--ink-9);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 140ms ease;}
+    .cust-action:hover{border-color:var(--ink-5);background:var(--ink-8);}
+    .cust-loyalty-row{display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:.5px solid var(--ink-7);}
+    .loyalty-pts{font-family:var(--font-mono);font-size:13px;color:var(--violet-600);font-weight:400;}
+    .loyalty-label{font-size:11px;color:var(--ink-4);}
+    .visit-badge{margin-left:auto;font-size:10px;font-weight:500;padding:2px 8px;background:var(--violet-50);color:var(--violet-600);border-radius:9999px;}
+
+    /* ── Quick actions ── */
+    /* Flutter: Row of OutlinedButton.icon widgets */
+    .quick-actions{display:flex;gap:8px;}
+    .qa-btn{flex:1;height:40px;border-radius:12px;border:.5px solid var(--ink-6);background:var(--ink-9);display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-family:var(--font-ui);font-size:12px;font-weight:500;color:var(--ink-3);transition:all 140ms ease;}
+    .qa-btn:hover{border-color:var(--ink-5);background:var(--ink-8);}
+    .qa-btn.wa{color:var(--teal-600);}
+    .qa-btn.wa:hover{background:var(--teal-50);border-color:rgba(38,184,168,.30);}
+    .qa-btn.call{color:var(--sky-600);}
+    .qa-btn.call:hover{background:var(--sky-50);border-color:rgba(43,176,237,.30);}
+
+    /* ── Inspection ── */
+    /* Flutter: DefaultTabController > TabBar + TabBarView */
+    .insp-tabs{display:flex;gap:0;margin-bottom:10px;border-bottom:.5px solid var(--ink-7);}
+    .insp-tab{flex:1;padding:8px 0;text-align:center;font-size:12px;font-weight:500;color:var(--ink-4);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 140ms ease;}
+    .insp-tab.active{color:var(--sky-600);border-bottom-color:var(--sky-600);}
+    .photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+    .photo-cell{border-radius:10px;overflow:hidden;cursor:pointer;transition:transform 140ms var(--ease-out);}
+    .photo-cell:hover{transform:scale(1.02);}
+    .photo-img{width:100%;height:80px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;}
+    .photo-label{display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:var(--ink-9);border:.5px solid var(--ink-7);border-top:none;border-radius:0 0 10px 10px;}
+    .photo-component{font-size:10px;color:var(--ink-2);}
+    .photo-cond{font-size:9.5px;font-weight:500;padding:1px 6px;border-radius:9999px;}
+    .cond-ok{background:var(--sage-50);color:var(--sage-600);}
+    .cond-note{background:var(--amber-50);color:var(--amber-800);}
+    .cond-dmg{background:var(--rose-50);color:var(--rose-800);}
+
+    /* ── Activity timeline ── */
+    /* Flutter: ListView(shrinkWrap:true) > TimelineItem */
+    .timeline-list{display:flex;flex-direction:column;padding:4px 16px;}
+    .timeline-item{display:flex;gap:12px;align-items:flex-start;padding:8px 0;position:relative;}
+    .timeline-item:not(:last-child)::before{content:'';position:absolute;left:7px;top:20px;bottom:-8px;width:.5px;background:var(--ink-6);}
+    .tl-dot{width:15px;height:15px;border-radius:50%;flex-shrink:0;margin-top:2px;border:.5px solid var(--ink-6);background:var(--ink-9);display:flex;align-items:center;justify-content:center;}
+    .tl-dot.filled{background:var(--sky-600);border-color:var(--sky-600);}
+    .tl-dot.active{background:var(--sky-600);border-color:var(--sky-600);box-shadow:0 0 0 3px rgba(43,176,237,.20);}
+    .tl-dot.done{background:var(--teal-600);border-color:var(--teal-600);}
+    .tl-body{flex:1;}
+    .tl-title{font-size:12px;font-weight:500;color:var(--ink-1);}
+    .tl-sub{font-size:11px;color:var(--ink-4);margin-top:1px;line-height:1.4;}
+    .tl-time{font-family:var(--font-mono);font-size:10px;color:var(--ink-5);margin-top:2px;}
+
+    /* ── Sticky CTA ── */
+    /* Flutter: Positioned(bottom:0) > Container > SafeArea > Row */
+    .sticky-cta{position:absolute;bottom:0;left:0;right:0;background:var(--ink-9);border-top:.5px solid var(--ink-7);padding:10px 16px 18px;z-index:25;display:flex;gap:10px;}
+    .cta-status-pill{display:flex;align-items:center;gap:6px;padding:0 14px;height:46px;border:.5px solid var(--ink-6);border-radius:14px;font-size:12px;font-weight:500;color:var(--ink-3);white-space:nowrap;}
+    .cta-main-btn{flex:1;height:46px;border-radius:14px;border:none;background:var(--sky-600);color:#fff;font-family:var(--font-ui);font-size:14px;font-weight:500;cursor:pointer;transition:all 140ms ease;display:flex;align-items:center;justify-content:center;gap:6px;}
+    .cta-main-btn:hover{background:var(--sky-800);}
+    .cta-main-btn:disabled{opacity:.45;cursor:not-allowed;}
+    .cta-main-btn.done{background:var(--teal-600);}
+    .cta-main-btn.done:hover{background:var(--teal-800);}
+
+    .home-indicator{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:118px;height:4px;background:rgba(0,0,0,.12);border-radius:2px;z-index:40;}
+
+    /* Snackbar */
+    .snackbar{position:absolute;bottom:78px;left:16px;right:16px;padding:12px 16px;background:rgba(28,34,48,.96);border:.5px solid rgba(255,255,255,.08);border-radius:12px;font-size:12px;color:rgba(255,255,255,.80);text-align:center;z-index:50;opacity:0;transform:translateY(8px);transition:all 280ms var(--ease-feather);pointer-events:none;}
+    .snackbar.visible{opacity:1;transform:translateY(0);}
+
+    @keyframes timerPulse{0%,100%{opacity:1}50%{opacity:.3}}
+    @keyframes cardReveal{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0ms!important;transition-duration:0ms!important}}
+
+    /* ── Handoff card ── */
+    .handoff{width:375px;border:.5px solid rgba(255,255,255,.07);border-radius:12px;padding:20px 22px 22px;background:rgba(255,255,255,.022);}
+    .handoff-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+    .handoff-tag{font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--sky-400);background:rgba(43,176,237,.10);padding:3px 8px;border-radius:4px;}
+    .handoff-title{font-family:var(--font-mono);font-size:10px;color:rgba(255,255,255,.35);flex:1;}
+    .handoff ul{list-style:none;display:flex;flex-direction:column;gap:10px;}
+    .handoff li{display:grid;grid-template-columns:6px 1fr;gap:10px;align-items:baseline;}
+    .bullet{width:4px;height:4px;background:var(--sky-600);border-radius:50%;margin-top:5px;}
+    .handoff li p{font-family:var(--font-mono);font-size:11px;color:rgba(255,255,255,.38);line-height:1.65;}
+    .handoff li p strong{color:rgba(255,255,255,.62);font-weight:400;}
+    .handoff li p code{color:var(--sky-400);background:rgba(43,176,237,.10);padding:1px 5px;border-radius:3px;font-size:10px;}
+  </style>
+</head>
+<body>
+
+<div class="screen-meta">Screen 06 · Staff App · Job Detail</div>
+
+<!-- Flutter: lib/features/jobs/screens/job_detail_screen.dart
+     class JobDetailScreen extends ConsumerStatefulWidget
+     Provider: jobDetailProvider(jobUuid) (JobDetailNotifier)
+     Realtime: private-tenant channel, job.status.updated events -->
+<div class="phone" id="phone">
+  <div class="notch"></div>
+
+  <div class="status-bar">
+    <span class="s-time">9:41</span>
+    <div class="s-icons">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="6.5" width="3" height="4.5" rx=".6" fill="rgba(0,0,0,.45)"/><rect x="4.5" y="4" width="3" height="7" rx=".6" fill="rgba(0,0,0,.45)"/><rect x="9" y="1.8" width="3" height="9.2" rx=".6" fill="rgba(0,0,0,.45)"/><rect x="13.5" y="0" width="3" height="11" rx=".6" fill="rgba(0,0,0,.45)"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><path d="M8 9.5a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6z" fill="rgba(0,0,0,.45)"/><path d="M3.7 6.2a6.1 6.1 0 0 1 8.6 0" stroke="rgba(0,0,0,.45)" stroke-width="1.1" stroke-linecap="round" fill="none"/><path d="M1 3.5a10.3 10.3 0 0 1 14 0" stroke="rgba(0,0,0,.45)" stroke-width="1.1" stroke-linecap="round" fill="none"/></svg>
+      <svg width="27" height="12" viewBox="0 0 27 12" fill="none"><rect x=".5" y=".5" width="23" height="11" rx="2.5" stroke="rgba(0,0,0,.35)"/><rect x="2" y="2" width="17" height="8" rx="1.5" fill="rgba(0,0,0,.50)"/><path d="M25 4v4c.9-.4 1.5-1.1 1.5-2s-.6-1.6-1.5-2z" fill="rgba(0,0,0,.25)"/></svg>
+    </div>
+  </div>
+
+  <!-- App bar -->
+  <!-- Flutter: GfAppBar(title:'JOB-2847', titleStyle:mono, actions:[ShareButton, MoreMenuButton]) -->
+  <div class="app-bar">
+    <button class="back-btn" aria-label="Back to jobs list">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <span class="app-bar-title">JOB-2847</span>
+    <div class="app-bar-status-badge" id="headerStatusBadge">
+      <span class="dot"></span>In Progress
+    </div>
+    <button class="icon-btn" title="Share" onclick="showSnackbar('Share link copied')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+    </button>
+    <button class="icon-btn" title="More options" onclick="showSnackbar('Job actions menu')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/></svg>
+    </button>
+  </div>
+
+  <!-- Scrollable content -->
+  <div class="scroll-area">
+    <div class="scroll-content">
+
+      <!-- ── JOB HEADER CARD ── -->
+      <!-- Flutter: JobHeaderCard(job:job, onStatusChange:_updateStatus) -->
+      <div class="card job-header-card" style="animation:cardReveal 380ms var(--ease-feather) both">
+        <div class="jh-row1">
+          <span class="jh-id">JOB-2847</span>
+          <div class="jh-badges">
+            <span class="status-badge sb-in-progress"><span class="dot"></span>In Progress</span>
+          </div>
+        </div>
+        <div class="jh-vehicle">Maruti Swift VXI</div>
+        <div class="jh-plate">MH12AB1234 · 2021 · 45,280 km</div>
+        <div class="jh-chips">
+          <span class="jh-chip chip-tech">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Amit Kamble
+          </span>
+          <span class="jh-chip chip-bay">Bay A</span>
+          <span class="jh-chip chip-prio">Normal</span>
+        </div>
+        <div class="jh-divider"></div>
+        <div class="jh-footer">
+          <div class="jh-timer">
+            <div class="jh-timer-dot"></div>
+            Started 2 hrs 14 min ago
+          </div>
+          <span class="jh-eta">ETA 3:30 PM</span>
+        </div>
+        <div class="jh-progress-wrap">
+          <div class="jh-progress-bar" id="headerProgressBar" style="width:40%"></div>
+        </div>
+      </div>
+
+      <!-- ── TASKS ── -->
+      <!-- Flutter: Card > Column > ExpansionTile per task -->
+      <div>
+        <div class="sec-hd">
+          <span class="sec-title">Tasks <span id="taskCount" style="font-family:var(--font-mono);font-weight:400">2 / 5 done</span></span>
+          <button class="sec-action" onclick="showSnackbar('Add task sheet')">+ Add task</button>
+        </div>
+        <div class="card" style="animation:cardReveal 380ms var(--ease-feather) 30ms both">
+
+          <div class="task-item open" id="task-t1" data-done="false">
+            <div class="task-header" onclick="toggleTask('t1')">
+              <div class="task-cb" id="cb-t1" onclick="toggleDone(event,'t1')"></div>
+              <div class="task-body-row">
+                <span class="task-name" id="name-t1">Engine oil change</span>
+                <div class="task-meta">
+                  <span class="status-badge sb-in-progress" style="font-size:9px;padding:2px 6px"><span class="dot"></span>In Progress</span>
+                  <span class="task-tech-name">· Amit K.</span>
+                </div>
+              </div>
+              <span class="task-price" id="price-t1">₹850</span>
+              <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="task-details">
+              <p class="task-desc">Drain and replace engine oil. Fill 4L Castrol 10W-40. Replace oil filter with OEM Maruti part.</p>
+              <div class="task-actions">
+                <button class="task-action-btn" onclick="markTaskComplete('t1')">Mark Complete</button>
+                <button class="task-action-btn" onclick="showSnackbar('Reassign task')">Reassign</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="task-item" id="task-t2" data-done="true">
+            <div class="task-header" onclick="toggleTask('t2')">
+              <div class="task-cb checked" id="cb-t2" onclick="toggleDone(event,'t2')">
+                <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><polyline points="2 6 5 9 10 3"/></svg>
+              </div>
+              <div class="task-body-row">
+                <span class="task-name done" id="name-t2">Air filter replacement</span>
+                <div class="task-meta">
+                  <span class="status-badge sb-completed" style="font-size:9px;padding:2px 6px"><span class="dot"></span>Done</span>
+                  <span class="task-tech-name">· Amit K.</span>
+                </div>
+              </div>
+              <span class="task-price" id="price-t2">₹650</span>
+              <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="task-details">
+              <p class="task-desc">Replaced with OEM Maruti air filter. Completed at 10:48 AM.</p>
+              <div class="task-actions">
+                <button class="task-action-btn" style="color:var(--ink-4)">Completed</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="task-item" id="task-t3" data-done="true">
+            <div class="task-header" onclick="toggleTask('t3')">
+              <div class="task-cb checked" id="cb-t3" onclick="toggleDone(event,'t3')">
+                <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><polyline points="2 6 5 9 10 3"/></svg>
+              </div>
+              <div class="task-body-row">
+                <span class="task-name done" id="name-t3">Brake pad inspection</span>
+                <div class="task-meta">
+                  <span class="status-badge sb-completed" style="font-size:9px;padding:2px 6px"><span class="dot"></span>Done</span>
+                  <span class="task-tech-name">· Rajan P.</span>
+                </div>
+              </div>
+              <span class="task-price free" id="price-t3">Inspection</span>
+              <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="task-details">
+              <p class="task-desc">Front pads at 20% life — replacement recommended. Rear pads OK (65% remaining).</p>
+            </div>
+          </div>
+
+          <div class="task-item" id="task-t4" data-done="false">
+            <div class="task-header" onclick="toggleTask('t4')">
+              <div class="task-cb" id="cb-t4" onclick="toggleDone(event,'t4')"></div>
+              <div class="task-body-row">
+                <span class="task-name" id="name-t4">Coolant top-up</span>
+                <div class="task-meta">
+                  <span class="status-badge sb-pending" style="font-size:9px;padding:2px 6px"><span class="dot"></span>Pending</span>
+                  <span class="task-tech-name">· Suresh M.</span>
+                </div>
+              </div>
+              <span class="task-price" id="price-t4">₹320</span>
+              <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="task-details">
+              <p class="task-desc">Top up coolant reservoir to max level. Check for leaks.</p>
+              <div class="task-actions">
+                <button class="task-action-btn" onclick="markTaskComplete('t4')">Mark Complete</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Approval-required task -->
+          <div class="task-item" id="task-t5" data-done="false">
+            <div class="task-header" onclick="toggleTask('t5')">
+              <div class="task-cb" id="cb-t5" onclick="toggleDone(event,'t5')" style="border-color:var(--amber-400)"></div>
+              <div class="task-body-row">
+                <span class="task-name" id="name-t5">Front brake pad replacement</span>
+                <div class="task-meta">
+                  <span class="status-badge sb-estimate-pending" style="font-size:9px;padding:2px 6px"><span class="dot"></span>Awaiting approval</span>
+                </div>
+              </div>
+              <span class="task-price" style="color:var(--amber-800)" id="price-t5">₹2,800</span>
+              <svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="task-details" style="background:var(--amber-50)">
+              <p class="task-desc" style="color:var(--amber-800)">Requires customer approval. Estimate sent via WhatsApp at 11:02 AM. Awaiting response.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── ESTIMATE ALERT ── -->
+      <!-- Flutter: EstimateApprovalCard (shown when tasks with requiresApproval exist and not yet approved) -->
+      <div class="card estimate-card" style="background:var(--amber-50);border-color:rgba(192,122,8,.18);animation:cardReveal 380ms var(--ease-feather) 60ms both" id="estimateCard">
+        <div class="est-header">
+          <div class="est-alert-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--amber-600)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div>
+            <div class="est-title">Estimate Pending Approval</div>
+            <div class="est-sub">Sent to Rahul via WhatsApp · 11:02 AM</div>
+          </div>
+        </div>
+        <div class="est-line">
+          <span class="est-line-name">Front brake pad replacement</span>
+          <span class="est-line-price">₹2,800</span>
+        </div>
+        <div class="est-line">
+          <span class="est-line-name">GST (18%)</span>
+          <span class="est-line-price">₹504</span>
+        </div>
+        <div class="est-actions">
+          <button class="est-btn-primary" onclick="showSnackbar('Resending estimate via WhatsApp…')">Resend Estimate</button>
+          <button class="est-btn-ghost" onclick="showSnackbar('Opening full estimate view')">View →</button>
+        </div>
+      </div>
+
+      <!-- ── BILLING SUMMARY ── -->
+      <!-- Flutter: BillingSummaryCard(invoice:job.invoice, onCollect:_collectPayment) -->
+      <div>
+        <div class="sec-hd">
+          <span class="sec-title">Billing</span>
+        </div>
+        <div class="card billing-card" style="animation:cardReveal 380ms var(--ease-feather) 90ms both">
+          <div class="billing-header">
+            <span class="billing-title">Invoice Summary</span>
+            <span class="billing-status unpaid">Unpaid</span>
+          </div>
+          <div class="billing-row">
+            <span class="billing-label">Services (4 items)</span>
+            <span class="billing-amount">₹1,820.00</span>
+          </div>
+          <div class="billing-row">
+            <span class="billing-label">CGST 9%</span>
+            <span class="billing-amount">₹163.80</span>
+          </div>
+          <div class="billing-row">
+            <span class="billing-label">SGST 9%</span>
+            <span class="billing-amount">₹163.80</span>
+          </div>
+          <div class="billing-divider"></div>
+          <div class="billing-total-row">
+            <span class="billing-total-label">Total (incl. GST)</span>
+            <span class="billing-total-amount">₹2,147.60</span>
+          </div>
+          <div class="billing-actions">
+            <button class="bill-btn primary" onclick="showSnackbar('Opening payment collection')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+              Collect Payment
+            </button>
+            <button class="bill-btn" onclick="showSnackbar('Generating PDF invoice')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Invoice
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── CUSTOMER ── -->
+      <!-- Flutter: CustomerMiniCard(customer:job.customer, onWhatsApp:_wa, onCall:_call) -->
+      <div>
+        <div class="sec-hd"><span class="sec-title">Customer</span></div>
+        <div class="card customer-card" style="animation:cardReveal 380ms var(--ease-feather) 120ms both">
+          <div class="cust-row">
+            <div class="cust-av">RS</div>
+            <div class="cust-info-col">
+              <div class="cust-name">Rahul Sharma</div>
+              <div class="cust-sub">+91 98765 43210 · 5th visit</div>
+            </div>
+            <div class="cust-cta-row">
+              <div class="cust-action" title="WhatsApp" onclick="showSnackbar('Opening WhatsApp chat')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--teal-600)" stroke-width="1.8" stroke-linecap="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+              </div>
+              <div class="cust-action" title="Call" onclick="showSnackbar('Calling +91 98765 43210')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sky-600)" stroke-width="1.8" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.23h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.16 6.16l1.02-1.02a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="cust-loyalty-row">
+            <div>
+              <div class="loyalty-pts">850 pts</div>
+              <div class="loyalty-label">Loyalty balance</div>
+            </div>
+            <div style="flex:1;margin:0 12px">
+              <div style="height:3px;background:var(--ink-7);border-radius:2px;overflow:hidden">
+                <div style="width:68%;height:100%;background:var(--violet-600);border-radius:2px"></div>
+              </div>
+              <div style="font-size:9px;color:var(--ink-5);margin-top:3px">150 pts to Platinum</div>
+            </div>
+            <span class="visit-badge">Preferred</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── INSPECTION PHOTOS ── -->
+      <!-- Flutter: DefaultTabController > TabBar(Intake/Delivery) + TabBarView > PhotoGrid -->
+      <div>
+        <div class="sec-hd">
+          <span class="sec-title">Inspection</span>
+          <button class="sec-action" onclick="showSnackbar('Opening intake inspection')">Add photos →</button>
+        </div>
+        <div class="card" style="padding:14px 16px;animation:cardReveal 380ms var(--ease-feather) 150ms both">
+          <div class="insp-tabs">
+            <div class="insp-tab active" id="tab-intake" onclick="switchTab('intake')">Intake</div>
+            <div class="insp-tab" id="tab-delivery" onclick="switchTab('delivery')">Delivery</div>
+          </div>
+          <div id="tab-content-intake" class="photo-grid">
+            <div class="photo-cell">
+              <div class="photo-img" style="background:var(--ink-7);color:var(--ink-4)">Front View</div>
+              <div class="photo-label">
+                <span class="photo-component">Front bumper</span>
+                <span class="photo-cond cond-ok">OK</span>
+              </div>
+            </div>
+            <div class="photo-cell">
+              <div class="photo-img" style="background:var(--amber-50);color:var(--amber-600)">Left Side</div>
+              <div class="photo-label">
+                <span class="photo-component">Left door</span>
+                <span class="photo-cond cond-note">Noted</span>
+              </div>
+            </div>
+            <div class="photo-cell">
+              <div class="photo-img" style="background:var(--ink-7);color:var(--ink-4)">Rear</div>
+              <div class="photo-label">
+                <span class="photo-component">Rear bumper</span>
+                <span class="photo-cond cond-ok">OK</span>
+              </div>
+            </div>
+            <div class="photo-cell">
+              <div class="photo-img" style="background:var(--rose-50);color:var(--rose-600)">Interior</div>
+              <div class="photo-label">
+                <span class="photo-component">Dashboard</span>
+                <span class="photo-cond cond-dmg">Noted</span>
+              </div>
+            </div>
+          </div>
+          <div id="tab-content-delivery" class="photo-grid" style="display:none">
+            <div class="photo-cell">
+              <div class="photo-img" style="background:var(--ink-7);color:var(--ink-5);font-style:italic">No photos yet</div>
+              <div class="photo-label"><span class="photo-component">Delivery inspection</span><span class="photo-cond" style="background:var(--ink-7);color:var(--ink-4)">Pending</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ACTIVITY TIMELINE ── -->
+      <!-- Flutter: TimelineWidget(events:job.auditLog) — custom SliverList -->
+      <div>
+        <div class="sec-hd">
+          <span class="sec-title">Activity</span>
+          <button class="sec-action" onclick="showSnackbar('Full audit log')">Full log →</button>
+        </div>
+        <div class="card" style="animation:cardReveal 380ms var(--ease-feather) 180ms both">
+          <div class="timeline-list">
+            <div class="timeline-item">
+              <div class="tl-dot done"><svg width="7" height="7" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><polyline points="2 6 5 9 10 3"/></svg></div>
+              <div class="tl-body">
+                <div class="tl-title">Job received · Rahul Sharma checked in</div>
+                <div class="tl-sub">Bay A assigned · Odometer 45,280 km</div>
+                <div class="tl-time">9:15 AM · Suresh More</div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="tl-dot done"><svg width="7" height="7" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><polyline points="2 6 5 9 10 3"/></svg></div>
+              <div class="tl-body">
+                <div class="tl-title">Intake inspection completed</div>
+                <div class="tl-sub">4 photos · 1 pre-existing damage noted</div>
+                <div class="tl-time">9:42 AM · Amit Kamble</div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="tl-dot done"><svg width="7" height="7" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><polyline points="2 6 5 9 10 3"/></svg></div>
+              <div class="tl-body">
+                <div class="tl-title">Estimate sent to customer</div>
+                <div class="tl-sub">Brake pad replacement · ₹2,800 · via WhatsApp</div>
+                <div class="tl-time">11:02 AM · System</div>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="tl-dot active"><div style="width:5px;height:5px;border-radius:50%;background:white"></div></div>
+              <div class="tl-body">
+                <div class="tl-title" style="color:var(--sky-600)">In Progress · 2 of 5 tasks complete</div>
+                <div class="tl-sub">Engine oil change in progress · Awaiting customer approval</div>
+                <div class="tl-time">Now · Amit Kamble</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /scroll-content -->
+  </div><!-- /scroll-area -->
+
+  <!-- ── STICKY CTA ── -->
+  <!-- Flutter: Positioned(bottom:0) > SafeArea > Row > [StatusPill, PrimaryActionButton] -->
+  <div class="sticky-cta">
+    <div class="cta-status-pill">
+      <div style="width:6px;height:6px;border-radius:50%;background:var(--sky-600)"></div>
+      In Progress
+    </div>
+    <button class="cta-main-btn" id="ctaBtn" disabled>
+      <span id="ctaBtnText">3 tasks remaining</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+
+  <div class="snackbar" id="snackbar"></div>
+  <div class="home-indicator"></div>
+</div>
+
+<!-- Handoff notes -->
+<div class="handoff">
+  <div class="handoff-header">
+    <span class="handoff-tag">Cursor</span>
+    <span class="handoff-title">Screen 06 · Job Detail · Full view</span>
+  </div>
+  <ul>
+    <li><div class="bullet"></div><p><strong>Provider:</strong> <code>jobDetailProvider(jobUuid)</code> — <code>AsyncNotifier&lt;ServiceJob&gt;</code>. Realtime: <code>ref.listen(realtimeProvider)</code> → <code>job.status.updated</code>, <code>job.task.status.updated</code>, <code>payment.received</code> — surgically mutate state without full refetch. WebSocket channel: <code>private-tenant.{uuid}</code>.</p></li>
+    <li><div class="bullet"></div><p><strong>Task interactions:</strong> <code>updateTaskStatus(jobUuid, taskUuid, 'completed')</code> → PATCH <code>/jobs/{uuid}/tasks/{tUuid}/status</code>. On success: animate checkbox → teal, strikethrough name via <code>AnimatedDefaultTextStyle</code>. Recalculate progress bar width. Check if all tasks done → enable CTA button.</p></li>
+    <li><div class="bullet"></div><p><strong>Billing:</strong> Invoice pulled from <code>GET /jobs/{uuid}/invoice</code>. GST breakdown: CGST + SGST each at 9% (18% total). <code>AmountText</code> widget for all monetary values. <code>InvoiceStatusBadge</code> shows paid/unpaid/partial. Collect payment → <code>showModalBottomSheet(RecordPaymentSheet)</code>.</p></li>
+    <li><div class="bullet"></div><p><strong>Inspection:</strong> Photos loaded from <code>GET /jobs/{uuid}/inspection</code>. Phase tabs: intake/delivery via <code>DefaultTabController</code>. Photo tap → <code>showDialog(HeroPhotoViewer)</code> with Hero animation. Add photos → <code>InspectionScreen</code> (Screen 07).</p></li>
+    <li><div class="bullet"></div><p><strong>CTA button:</strong> Computed property from job state — enabled when <code>allRequiredTasksDone</code>. Label and action change by status: <code>in_progress → 'Move to QC'</code>, <code>qc_pending → 'Mark Ready'</code>, <code>ready_for_delivery → 'Complete Delivery'</code>. Action calls <code>PATCH /jobs/{uuid}/status</code>.</p></li>
+  </ul>
+</div>
+
+<script>
+  /* ══ Task interactions ══ */
+  const taskDone = { t1: false, t2: true, t3: true, t4: false, t5: false };
+  const taskNames = { t1:'Engine oil change', t2:'Air filter replacement', t3:'Brake pad inspection', t4:'Coolant top-up', t5:'Front brake pad replacement' };
+
+  function toggleTask(id) {
+    const item = document.getElementById('task-' + id);
+    item.classList.toggle('open');
+  }
+
+  function toggleDone(e, id) {
+    e.stopPropagation();
+    taskDone[id] = !taskDone[id];
+    updateTaskUI(id);
+    updateProgress();
+  }
+
+  function markTaskComplete(id) {
+    taskDone[id] = true;
+    updateTaskUI(id);
+    updateProgress();
+    showSnackbar(taskNames[id] + ' marked complete');
+  }
+
+  function updateTaskUI(id) {
+    const done = taskDone[id];
+    const cb   = document.getElementById('cb-' + id);
+    const nm   = document.getElementById('name-' + id);
+    cb.classList.toggle('checked', done);
+    cb.innerHTML = done ? '<svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><polyline points="2 6 5 9 10 3"/></svg>' : '';
+    nm.classList.toggle('done', done);
+  }
+
+  function updateProgress() {
+    const doneCount = Object.values(taskDone).filter(Boolean).length;
+    const total = Object.keys(taskDone).length;
+    const pct = (doneCount / total) * 100;
+
+    document.getElementById('taskCount').textContent = doneCount + ' / ' + total + ' done';
+    document.getElementById('headerProgressBar').style.width = pct + '%';
+
+    const ctaBtn  = document.getElementById('ctaBtn');
+    const ctaTxt  = document.getElementById('ctaBtnText');
+    const remaining = total - doneCount;
+
+    if (remaining === 0) {
+      ctaBtn.disabled = false;
+      ctaBtn.classList.add('done');
+      ctaTxt.textContent = 'Move to QC Pending';
+    } else {
+      ctaBtn.disabled = true;
+      ctaBtn.classList.remove('done');
+      ctaTxt.textContent = remaining + ' task' + (remaining > 1 ? 's' : '') + ' remaining';
+    }
+  }
+
+  /* CTA action */
+  document.getElementById('ctaBtn').addEventListener('click', function() {
+    if (!this.disabled) {
+      showSnackbar('Status updated → QC Pending · Notifying quality team');
+      this.classList.remove('done');
+      this.disabled = true;
+      document.getElementById('ctaBtnText').textContent = 'QC Pending';
+
+      /* Update status badges */
+      document.getElementById('headerStatusBadge').innerHTML = '<span class="dot" style="background:var(--teal-400)"></span>QC Pending';
+      document.getElementById('headerStatusBadge').style.background = 'var(--teal-50)';
+      document.getElementById('headerStatusBadge').style.color = 'var(--teal-800)';
+    }
+  });
+
+  /* Inspection tabs */
+  function switchTab(tab) {
+    document.getElementById('tab-intake').classList.toggle('active', tab === 'intake');
+    document.getElementById('tab-delivery').classList.toggle('active', tab === 'delivery');
+    document.getElementById('tab-content-intake').style.display   = tab === 'intake'   ? 'grid' : 'none';
+    document.getElementById('tab-content-delivery').style.display = tab === 'delivery' ? 'grid' : 'none';
+  }
+
+  /* Snackbar */
+  let snackT;
+  function showSnackbar(msg) {
+    const s = document.getElementById('snackbar');
+    s.textContent = msg; s.classList.add('visible');
+    clearTimeout(snackT);
+    snackT = setTimeout(() => s.classList.remove('visible'), 2800);
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProGarage · 10 — Invoice Detail</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink-0:#0A0E14;--ink-1:#1C2230;--ink-2:#364052;--ink-3:#566076;
+      --ink-4:#8898AA;--ink-5:#B8C5D0;--ink-6:#DDE5EC;--ink-7:#EEF2F6;
+      --ink-8:#F7F9FB;--ink-9:#FFFFFF;
+      --sky-50:#E8F4FD;--sky-400:#2BB0ED;--sky-600:#0A7DBF;--sky-800:#065E91;
+      --teal-50:#EBF7F5;--teal-600:#138878;
+      --sage-50:#EBF5EE;--sage-100:#C3E6CA;--sage-200:#95D3A2;--sage-400:#3BAD5B;--sage-600:#1E7F3C;--sage-800:#0E5C26;
+      --amber-50:#FEF7EC;--amber-600:#C07A08;--amber-800:#8A5602;
+      --rose-50:#FEF0F0;--rose-600:#C01E1E;
+      --violet-50:#F0EFFE;--violet-600:#4F46C8;
+      --shadow-sm:0 1px 3px rgba(10,14,20,.06),0 1px 2px rgba(10,14,20,.04);
+      --shadow-md:0 4px 12px rgba(10,14,20,.08),0 2px 4px rgba(10,14,20,.04);
+      --ease-feather:cubic-bezier(.16,1,.3,1);--ease-out:cubic-bezier(.25,1,.5,1);
+      --font-ui:'DM Sans',system-ui,sans-serif;--font-mono:'DM Mono',monospace;
+    }
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+    body{background:#111420;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:var(--font-ui);-webkit-font-smoothing:antialiased;gap:28px;padding:32px 16px 40px;}
+    .screen-meta{font-family:var(--font-mono);font-size:10px;color:rgba(255,255,255,.16);letter-spacing:.12em;text-transform:uppercase;}
+    .phone{width:375px;height:812px;background:var(--ink-8);border-radius:44px;overflow:hidden;position:relative;flex-shrink:0;box-shadow:0 0 0 .5px rgba(255,255,255,.07),inset 0 0 0 .5px rgba(0,0,0,.05),0 48px 120px rgba(0,0,0,.70),0 16px 40px rgba(0,0,0,.35);}
+    .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:30px;background:#0a0e14;border-radius:0 0 20px 20px;z-index:40;}
+
+    .status-bar{position:absolute;top:0;left:0;right:0;height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 24px 8px;z-index:30;background:var(--ink-9);}
+    .s-time{font-family:var(--font-mono);font-size:12px;color:var(--ink-1);letter-spacing:.02em;font-weight:500;}
+    .s-icons{display:flex;align-items:center;gap:5px;}
+
+    /* App bar */
+    .app-bar{position:absolute;top:44px;left:0;right:0;height:56px;background:var(--ink-9);border-bottom:.5px solid var(--ink-7);display:flex;align-items:center;gap:4px;padding:0 10px;z-index:25;}
+    .back-btn{width:36px;height:36px;border-radius:50%;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink-3);transition:background 140ms ease;}
+    .back-btn:hover{background:var(--ink-7);}
+    .app-bar-title{flex:1;font-size:16px;font-weight:500;color:var(--ink-0);letter-spacing:-.01em;padding-left:2px;}
+    .app-bar-sub{font-family:var(--font-mono);font-size:10px;color:var(--ink-4);}
+    .icon-btn{width:34px;height:34px;border-radius:50%;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink-3);transition:background 140ms ease;}
+    .icon-btn:hover{background:var(--ink-7);}
+
+    /* Scroll */
+    .scroll-area{position:absolute;top:100px;left:0;right:0;bottom:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+    .scroll-area::-webkit-scrollbar{display:none;}
+    .scroll-content{padding:16px 16px 40px;display:flex;flex-direction:column;gap:12px;}
+
+    /* ── Invoice card ── */
+    /* Flutter: GfCard — full invoice with PAID watermark via Stack */
+    .invoice-card{background:var(--ink-9);border:.5px solid var(--ink-6);border-radius:16px;overflow:hidden;box-shadow:var(--shadow-sm);position:relative;}
+
+    /* PAID watermark */
+    /* Flutter: IgnorePointer > Positioned.fill > Center > Transform.rotate(-0.6rad) > Text('PAID', style:sage200, opacity:0.15) */
+    .paid-watermark{
+      position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+      pointer-events:none;z-index:0;overflow:hidden;
+    }
+    .paid-text{
+      font-size:80px;font-weight:300;letter-spacing:.2em;
+      color:var(--sage-200);opacity:0.22;
+      transform:rotate(-32deg);white-space:nowrap;
+      transition:opacity 400ms ease;
+    }
+    .paid-text.hidden{opacity:0;}
+
+    /* Invoice header */
+    /* Flutter: Row(spaceBetween) > [GarageInfo, InvoiceMetaInfo] */
+    .inv-header{padding:16px 16px 12px;border-bottom:.5px solid var(--ink-7);position:relative;z-index:1;}
+    .inv-header-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+    .inv-garage{display:flex;flex-direction:column;gap:2px;}
+    .inv-garage-logo{width:32px;height:32px;border-radius:8px;background:var(--sky-600);display:flex;align-items:center;justify-content:center;margin-bottom:5px;}
+    .inv-garage-name{font-size:14px;font-weight:500;color:var(--ink-0);letter-spacing:-.01em;}
+    .inv-garage-sub{font-size:10px;color:var(--ink-4);}
+    .inv-meta{text-align:right;display:flex;flex-direction:column;gap:3px;}
+    .inv-num{font-family:var(--font-mono);font-size:14px;color:var(--ink-0);letter-spacing:.02em;}
+    .inv-date{font-family:var(--font-mono);font-size:10px;color:var(--ink-4);}
+    .inv-due{font-family:var(--font-mono);font-size:10px;}
+    .inv-due.overdue{color:var(--rose-600);}
+    .inv-due.ok{color:var(--ink-4);}
+
+    /* Status badge */
+    .status-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:9999px;font-size:10px;font-weight:500;margin-top:4px;}
+    .sb-unpaid{background:var(--amber-50);color:var(--amber-800);}
+    .sb-paid{background:var(--sage-50);color:var(--sage-800);}
+    .sb-draft{background:var(--ink-7);color:var(--ink-3);}
+    .dot{width:5px;height:5px;border-radius:50%;}
+    .sb-unpaid .dot{background:var(--amber-600);}
+    .sb-paid .dot{background:var(--sage-400);}
+    .sb-draft .dot{background:var(--ink-5);}
+
+    /* Bill to / Bill from */
+    /* Flutter: Row(2 columns) > BillPartyInfo */
+    .inv-parties{display:flex;gap:0;padding:12px 16px;border-bottom:.5px solid var(--ink-7);position:relative;z-index:1;}
+    .party-col{flex:1;}
+    .party-col:first-child{border-right:.5px solid var(--ink-7);padding-right:12px;}
+    .party-col:last-child{padding-left:12px;}
+    .party-label{font-size:9px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-5);margin-bottom:4px;}
+    .party-name{font-size:12px;font-weight:500;color:var(--ink-0);margin-bottom:2px;}
+    .party-detail{font-size:11px;color:var(--ink-4);line-height:1.5;}
+    .party-detail.mono{font-family:var(--font-mono);font-size:10.5px;}
+
+    /* Line items table */
+    /* Flutter: Column > TableRow widgets, monospace amounts */
+    .inv-table-header{display:flex;align-items:center;padding:8px 16px;border-bottom:.5px solid var(--ink-6);position:relative;z-index:1;}
+    .th{font-size:9px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-4);}
+    .th-name{flex:1;}
+    .th-qty{width:28px;text-align:center;}
+    .th-rate{width:58px;text-align:right;}
+    .th-gst{width:30px;text-align:right;}
+    .th-amt{width:60px;text-align:right;}
+
+    .inv-line{display:flex;align-items:flex-start;padding:9px 16px;border-bottom:.5px solid var(--ink-7);position:relative;z-index:1;transition:background 80ms ease;}
+    .inv-line:last-of-type{border-bottom:none;}
+    .inv-line:nth-child(odd){background:var(--ink-8);}
+    .inv-line:hover{background:var(--sky-50);}
+    .il-name{flex:1;font-size:12px;color:var(--ink-1);line-height:1.4;}
+    .il-sub{font-size:10px;color:var(--ink-4);margin-top:1px;}
+    .il-qty{width:28px;font-family:var(--font-mono);font-size:11px;color:var(--ink-3);text-align:center;}
+    .il-rate{width:58px;font-family:var(--font-mono);font-size:11px;color:var(--ink-3);text-align:right;}
+    .il-gst{width:30px;font-family:var(--font-mono);font-size:10px;color:var(--ink-5);text-align:right;}
+    .il-amt{width:60px;font-family:var(--font-mono);font-size:12px;color:var(--ink-0);text-align:right;font-weight:400;}
+
+    /* Totals */
+    /* Flutter: Column(crossAxis:end) > [TotalRow × n, Divider, GrandTotalRow] */
+    .inv-totals{padding:12px 16px;border-top:.5px solid var(--ink-6);position:relative;z-index:1;}
+    .total-row{display:flex;justify-content:space-between;align-items:baseline;padding:3px 0;}
+    .total-label{font-size:12px;color:var(--ink-4);}
+    .total-label.gst-sub{font-size:11px;color:var(--ink-5);padding-left:12px;}
+    .total-val{font-family:var(--font-mono);font-size:12px;color:var(--ink-2);font-variant-numeric:tabular-nums;}
+    .total-val.discount{color:var(--sage-600);}
+    .total-divider{height:.5px;background:var(--ink-6);margin:8px 0;}
+    .grand-row{display:flex;justify-content:space-between;align-items:baseline;padding:3px 0;}
+    .grand-label{font-size:14px;font-weight:500;color:var(--ink-0);}
+    .grand-val{font-family:var(--font-mono);font-size:18px;color:var(--sky-600);font-weight:400;font-variant-numeric:tabular-nums;letter-spacing:-.01em;}
+
+    /* Payment record */
+    /* Flutter: PaymentRecordWidget — shown after payment recorded */
+    .payment-record{padding:12px 16px;background:var(--sage-50);border-top:.5px solid rgba(30,127,60,.15);position:relative;z-index:1;display:flex;align-items:center;gap:10px;}
+    .payment-record.hidden{display:none;}
+    .payment-icon{width:28px;height:28px;border-radius:8px;background:rgba(30,127,60,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .payment-info{flex:1;}
+    .payment-amount{font-family:var(--font-mono);font-size:13px;font-weight:400;color:var(--sage-600);}
+    .payment-detail{font-size:10px;color:var(--sage-800);margin-top:1px;}
+
+    /* Loyalty earned */
+    /* Flutter: LoyaltyEarnedWidget — violet surface strip */
+    .loyalty-earned{padding:10px 16px;background:var(--violet-50);border-top:.5px solid rgba(79,70,200,.15);display:flex;align-items:center;gap:10px;position:relative;z-index:1;}
+    .loyalty-earned.hidden{display:none;}
+    .loyalty-pts-badge{font-family:var(--font-mono);font-size:13px;font-weight:400;color:var(--violet-600);}
+    .loyalty-desc{font-size:11px;color:var(--violet-800);}
+
+    /* QR code section */
+    /* Flutter: QrPaymentWidget — UPI QR + amount */
+    .qr-section{background:var(--ink-9);border:.5px solid var(--ink-6);border-radius:16px;padding:16px;box-shadow:var(--shadow-sm);display:flex;gap:16px;align-items:center;}
+    .qr-wrap{flex-shrink:0;position:relative;}
+    .qr-paid-overlay{position:absolute;inset:0;background:rgba(235,245,238,.85);border-radius:8px;display:flex;align-items:center;justify-content:center;}
+    .qr-paid-overlay.hidden{display:none;}
+    .qr-paid-label{font-size:11px;font-weight:500;color:var(--sage-600);letter-spacing:.04em;}
+    .qr-info{flex:1;}
+    .qr-title{font-size:13px;font-weight:500;color:var(--ink-0);margin-bottom:3px;}
+    .qr-upi{font-family:var(--font-mono);font-size:10px;color:var(--ink-4);margin-bottom:6px;}
+    .qr-amount{font-family:var(--font-mono);font-size:16px;color:var(--ink-0);font-variant-numeric:tabular-nums;}
+    .qr-amount.paid-amt{color:var(--sage-600);}
+    .qr-status-txt{font-size:10px;color:var(--ink-4);margin-top:2px;}
+
+    /* Action buttons */
+    .actions-row{display:flex;flex-direction:column;gap:8px;}
+    .action-btn-primary{height:46px;border-radius:14px;border:none;background:var(--sky-600);color:#fff;font-family:var(--font-ui);font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all 140ms ease;width:100%;}
+    .action-btn-primary:hover{background:var(--sky-800);}
+    .action-btn-primary.paid-state{background:var(--ink-7);color:var(--ink-3);cursor:default;}
+    .actions-secondary{display:flex;gap:8px;}
+    .action-btn-ghost{flex:1;height:40px;border-radius:12px;border:.5px solid var(--ink-6);background:var(--ink-9);font-family:var(--font-ui);font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;color:var(--ink-3);transition:all 140ms ease;}
+    .action-btn-ghost:hover{border-color:var(--ink-5);background:var(--ink-8);}
+    .action-btn-ghost.wa{color:var(--teal-600);}.action-btn-ghost.wa:hover{background:var(--teal-50);border-color:rgba(38,184,168,.30);}
+
+    /* Payment modal */
+    /* Flutter: showModalBottomSheet > RecordPaymentSheet */
+    .modal-overlay{position:absolute;inset:0;background:rgba(10,14,20,.35);z-index:35;display:none;align-items:flex-end;}
+    .modal-overlay.open{display:flex;}
+    .payment-sheet{background:var(--ink-9);border-radius:20px 20px 0 0;padding:0 20px 32px;width:100%;box-shadow:0 -8px 32px rgba(10,14,20,.12);}
+    .sheet-handle{width:36px;height:4px;background:var(--ink-6);border-radius:2px;margin:12px auto 16px;}
+    .sheet-title{font-size:16px;font-weight:500;color:var(--ink-0);margin-bottom:16px;}
+    .payment-methods-row{display:flex;gap:8px;margin-bottom:16px;}
+    .pm-chip{flex:1;height:36px;border:.5px solid var(--ink-6);border-radius:10px;background:var(--ink-9);font-family:var(--font-ui);font-size:12px;font-weight:500;color:var(--ink-3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 140ms ease;}
+    .pm-chip.sel{background:var(--sky-50);border-color:var(--sky-600);color:var(--sky-800);}
+    .sheet-amount{font-family:var(--font-mono);font-size:28px;font-weight:300;color:var(--ink-0);text-align:center;margin:12px 0 16px;font-variant-numeric:tabular-nums;}
+    .sheet-confirm-btn{width:100%;height:46px;border-radius:14px;border:none;background:var(--sky-600);color:#fff;font-family:var(--font-ui);font-size:14px;font-weight:500;cursor:pointer;transition:background 140ms ease;}
+    .sheet-confirm-btn:hover{background:var(--sky-800);}
+    .sheet-cancel{width:100%;height:36px;border:none;background:transparent;font-family:var(--font-ui);font-size:13px;font-weight:500;color:var(--ink-4);cursor:pointer;margin-top:8px;transition:color 140ms ease;}
+    .sheet-cancel:hover{color:var(--ink-2);}
+
+    .snackbar{position:absolute;bottom:20px;left:16px;right:16px;padding:12px 16px;background:rgba(28,34,48,.96);border:.5px solid rgba(255,255,255,.08);border-radius:12px;font-size:12px;color:rgba(255,255,255,.80);text-align:center;z-index:50;opacity:0;transform:translateY(8px);transition:all 280ms var(--ease-feather);pointer-events:none;}
+    .snackbar.visible{opacity:1;transform:translateY(0);}
+    @keyframes cardReveal{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0ms!important;transition-duration:0ms!important}}
+
+    /* Handoff */
+    .handoff{width:375px;border:.5px solid rgba(255,255,255,.07);border-radius:12px;padding:20px 22px 22px;background:rgba(255,255,255,.022);}
+    .handoff-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+    .handoff-tag{font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--sky-400);background:rgba(43,176,237,.10);padding:3px 8px;border-radius:4px;}
+    .handoff-title{font-family:var(--font-mono);font-size:10px;color:rgba(255,255,255,.35);flex:1;}
+    .handoff ul{list-style:none;display:flex;flex-direction:column;gap:10px;}
+    .handoff li{display:grid;grid-template-columns:6px 1fr;gap:10px;align-items:baseline;}
+    .bullet{width:4px;height:4px;background:var(--sky-600);border-radius:50%;margin-top:5px;}
+    .handoff li p{font-family:var(--font-mono);font-size:11px;color:rgba(255,255,255,.38);line-height:1.65;}
+    .handoff li p strong{color:rgba(255,255,255,.62);font-weight:400;}
+    .handoff li p code{color:var(--sky-400);background:rgba(43,176,237,.10);padding:1px 5px;border-radius:3px;font-size:10px;}
+  </style>
+</head>
+<body>
+
+<div class="screen-meta">Screen 10 · Staff App · Invoice Detail</div>
+
+<!-- Flutter: lib/features/billing/screens/invoice_detail_screen.dart
+     class InvoiceDetailScreen extends ConsumerStatefulWidget
+     Provider: invoiceDetailProvider(invoiceUuid) -->
+<div class="phone" id="phone">
+  <div class="notch"></div>
+
+  <div class="status-bar">
+    <span class="s-time">9:41</span>
+    <div class="s-icons">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="6.5" width="3" height="4.5" rx=".6" fill="rgba(0,0,0,.45)"/><rect x="4.5" y="4" width="3" height="7" rx=".6" fill="rgba(0,0,0,.45)"/><rect x="9" y="1.8" width="3" height="9.2" rx=".6" fill="rgba(0,0,0,.45)"/><rect x="13.5" y="0" width="3" height="11" rx=".6" fill="rgba(0,0,0,.45)"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><path d="M8 9.5a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6z" fill="rgba(0,0,0,.45)"/><path d="M3.7 6.2a6.1 6.1 0 0 1 8.6 0" stroke="rgba(0,0,0,.45)" stroke-width="1.1" stroke-linecap="round" fill="none"/><path d="M1 3.5a10.3 10.3 0 0 1 14 0" stroke="rgba(0,0,0,.45)" stroke-width="1.1" stroke-linecap="round" fill="none"/></svg>
+      <svg width="27" height="12" viewBox="0 0 27 12" fill="none"><rect x=".5" y=".5" width="23" height="11" rx="2.5" stroke="rgba(0,0,0,.35)"/><rect x="2" y="2" width="17" height="8" rx="1.5" fill="rgba(0,0,0,.50)"/><path d="M25 4v4c.9-.4 1.5-1.1 1.5-2s-.6-1.6-1.5-2z" fill="rgba(0,0,0,.25)"/></svg>
+    </div>
+  </div>
+
+  <!-- App bar -->
+  <!-- Flutter: GfAppBar(title:'INV-2847', subtitle:'JOB-2847', actions:[ShareButton, PrintButton]) -->
+  <div class="app-bar">
+    <button class="back-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <div style="flex:1;padding-left:2px">
+      <div style="font-size:15px;font-weight:500;color:var(--ink-0)">INV-2847</div>
+      <div class="app-bar-sub">JOB-2847 · Rahul Sharma</div>
+    </div>
+    <button class="icon-btn" onclick="showSnackbar('Sharing invoice link…')" title="Share">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+    </button>
+    <button class="icon-btn" onclick="showSnackbar('Opening print preview…')" title="Print">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+    </button>
+  </div>
+
+  <!-- Scrollable content -->
+  <div class="scroll-area">
+    <div class="scroll-content">
+
+      <!-- ── INVOICE CARD ── -->
+      <!-- Flutter: InvoiceCard Widget — GfCard with Stack[PaidWatermark, InvoiceContent] -->
+      <div class="invoice-card" style="animation:cardReveal 380ms var(--ease-feather) both">
+
+        <!-- PAID watermark -->
+        <!-- Flutter: Opacity(opacity:0.18) > Transform.rotate(-0.56) > Text('PAID', style: AppTypography.display.copyWith(sage200)) -->
+        <div class="paid-watermark">
+          <div class="paid-text hidden" id="paidWatermark">PAID</div>
+        </div>
+
+        <!-- Invoice header -->
+        <div class="inv-header">
+          <div class="inv-header-row">
+            <div class="inv-garage">
+              <div class="inv-garage-logo">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              </div>
+              <div class="inv-garage-name">AutoCare Garage</div>
+              <div class="inv-garage-sub">Andheri West, Mumbai 400 053</div>
+              <div class="inv-garage-sub" style="margin-top:1px;font-family:var(--font-mono)">GSTIN: 27AABCA1234B1Z5</div>
+            </div>
+            <div class="inv-meta">
+              <div class="inv-num">INV-2847</div>
+              <div class="inv-date">14 May 2026</div>
+              <div class="inv-due ok" id="dueLabel">Due: 17 May 2026</div>
+              <div class="status-badge sb-unpaid" id="statusBadge">
+                <span class="dot"></span>
+                <span id="statusLabel">Unpaid</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bill To / From -->
+        <!-- Flutter: Row(2 expanded cols) > [BillFromWidget, BillToWidget] -->
+        <div class="inv-parties">
+          <div class="party-col">
+            <div class="party-label">Bill From</div>
+            <div class="party-name">AutoCare Garage</div>
+            <div class="party-detail">Andheri West</div>
+            <div class="party-detail">Mumbai, MH</div>
+          </div>
+          <div class="party-col">
+            <div class="party-label">Bill To</div>
+            <div class="party-name">Rahul Sharma</div>
+            <div class="party-detail mono">+91 98765 43210</div>
+            <div class="party-detail mono">MH12AB1234</div>
+            <div class="party-detail">Maruti Swift VXI</div>
+          </div>
+        </div>
+
+        <!-- Line items table -->
+        <!-- Flutter: Column > [TableHeader, ...InvoiceLineRow × n] -->
+        <div class="inv-table-header">
+          <span class="th th-name">Item</span>
+          <span class="th th-qty">Qty</span>
+          <span class="th th-rate">Rate</span>
+          <span class="th th-gst">GST</span>
+          <span class="th th-amt">Amt</span>
+        </div>
+
+        <div class="inv-line">
+          <div class="flex-1" style="flex:1"><div class="il-name">Engine oil change</div><div class="il-sub">Castrol 10W-40 · 4L + Filter</div></div>
+          <span class="il-qty">1</span>
+          <span class="il-rate">₹723</span>
+          <span class="il-gst">18%</span>
+          <span class="il-amt">₹854</span>
+        </div>
+        <div class="inv-line">
+          <div class="flex-1" style="flex:1"><div class="il-name">Air filter replacement</div><div class="il-sub">OEM Maruti part</div></div>
+          <span class="il-qty">1</span>
+          <span class="il-rate">₹551</span>
+          <span class="il-gst">18%</span>
+          <span class="il-amt">₹650</span>
+        </div>
+        <div class="inv-line">
+          <div class="flex-1" style="flex:1"><div class="il-name">Coolant top-up</div><div class="il-sub">Radiator coolant 1L</div></div>
+          <span class="il-qty">1</span>
+          <span class="il-rate">₹271</span>
+          <span class="il-gst">18%</span>
+          <span class="il-amt">₹320</span>
+        </div>
+        <div class="inv-line">
+          <div class="flex-1" style="flex:1"><div class="il-name">Service labour</div><div class="il-sub">2.5 hrs × ₹160/hr</div></div>
+          <span class="il-qty">1</span>
+          <span class="il-rate">₹400</span>
+          <span class="il-gst">18%</span>
+          <span class="il-amt">₹472</span>
+        </div>
+
+        <!-- Totals -->
+        <!-- Flutter: Column(crossAxisAlignment.end) > TotalRows + Divider + GrandTotalRow -->
+        <div class="inv-totals">
+          <div class="total-row">
+            <span class="total-label">Subtotal</span>
+            <span class="total-val">₹1,945.00</span>
+          </div>
+          <div class="total-row">
+            <span class="total-label">CGST (9%)</span>
+            <span class="total-val">₹175.05</span>
+          </div>
+          <div class="total-row">
+            <span class="total-label">SGST (9%)</span>
+            <span class="total-val">₹175.05</span>
+          </div>
+          <div class="total-row">
+            <span class="total-label">Discount</span>
+            <span class="total-val discount">−₹147.60</span>
+          </div>
+          <div class="total-divider"></div>
+          <div class="grand-row">
+            <span class="grand-label">Grand Total</span>
+            <span class="grand-val">₹2,147.50</span>
+          </div>
+        </div>
+
+        <!-- Payment record (shown after payment) -->
+        <!-- Flutter: AnimatedVisibility(visible:invoice.isPaid) > PaymentRecordStrip -->
+        <div class="payment-record hidden" id="paymentRecord">
+          <div class="payment-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage-600)" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="payment-info">
+            <div class="payment-amount">₹2,147.50 received</div>
+            <div class="payment-detail">14 May 2026 · UPI · TXN-9284710</div>
+          </div>
+        </div>
+
+        <!-- Loyalty earned (shown after payment) -->
+        <!-- Flutter: AnimatedVisibility(visible:invoice.isPaid) > LoyaltyEarnedStrip -->
+        <div class="loyalty-earned hidden" id="loyaltyEarned">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--violet-600)" stroke-width="2" stroke-linecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <div>
+            <div class="loyalty-pts-badge">+215 pts earned</div>
+            <div class="loyalty-desc">Added to Rahul's ProRewards balance · Now 1,065 pts</div>
+          </div>
+        </div>
+
+      </div><!-- /invoice-card -->
+
+      <!-- ── QR PAYMENT ── -->
+      <!-- Flutter: QrPaymentCard — qr_flutter package + UPI deep link -->
+      <div class="qr-section" style="animation:cardReveal 380ms var(--ease-feather) 60ms both">
+        <div class="qr-wrap">
+          <!-- Fake QR code (visual representation) -->
+          <svg viewBox="0 0 29 29" width="90" height="90" style="border-radius:6px;display:block">
+            <rect width="29" height="29" fill="white"/>
+            <!-- Top-left finder -->
+            <rect x="1" y="1" width="8" height="8" rx="1" fill="#0A0E14"/>
+            <rect x="2" y="2" width="6" height="6" rx="0.5" fill="white"/>
+            <rect x="3" y="3" width="4" height="4" fill="#0A0E14"/>
+            <!-- Top-right finder -->
+            <rect x="20" y="1" width="8" height="8" rx="1" fill="#0A0E14"/>
+            <rect x="21" y="2" width="6" height="6" rx="0.5" fill="white"/>
+            <rect x="22" y="3" width="4" height="4" fill="#0A0E14"/>
+            <!-- Bottom-left finder -->
+            <rect x="1" y="20" width="8" height="8" rx="1" fill="#0A0E14"/>
+            <rect x="2" y="21" width="6" height="6" rx="0.5" fill="white"/>
+            <rect x="3" y="22" width="4" height="4" fill="#0A0E14"/>
+            <!-- Data modules (simplified representative pattern) -->
+            <rect x="10" y="1" width="1" height="1" fill="#0A0E14"/>
+            <rect x="12" y="1" width="1" height="1" fill="#0A0E14"/>
+            <rect x="14" y="1" width="2" height="1" fill="#0A0E14"/>
+            <rect x="18" y="1" width="1" height="1" fill="#0A0E14"/>
+            <rect x="10" y="3" width="2" height="1" fill="#0A0E14"/>
+            <rect x="14" y="3" width="1" height="1" fill="#0A0E14"/>
+            <rect x="16" y="3" width="1" height="1" fill="#0A0E14"/>
+            <rect x="18" y="3" width="1" height="1" fill="#0A0E14"/>
+            <rect x="10" y="5" width="1" height="1" fill="#0A0E14"/>
+            <rect x="13" y="5" width="2" height="1" fill="#0A0E14"/>
+            <rect x="17" y="5" width="2" height="1" fill="#0A0E14"/>
+            <rect x="10" y="7" width="1" height="1" fill="#0A0E14"/>
+            <rect x="12" y="7" width="1" height="1" fill="#0A0E14"/>
+            <rect x="15" y="7" width="1" height="1" fill="#0A0E14"/>
+            <rect x="18" y="7" width="1" height="1" fill="#0A0E14"/>
+            <rect x="1" y="10" width="2" height="1" fill="#0A0E14"/>
+            <rect x="5" y="10" width="1" height="1" fill="#0A0E14"/>
+            <rect x="7" y="10" width="1" height="1" fill="#0A0E14"/>
+            <rect x="10" y="10" width="3" height="1" fill="#0A0E14"/>
+            <rect x="15" y="10" width="1" height="1" fill="#0A0E14"/>
+            <rect x="17" y="10" width="2" height="1" fill="#0A0E14"/>
+            <rect x="21" y="10" width="1" height="1" fill="#0A0E14"/>
+            <rect x="24" y="10" width="2" height="1" fill="#0A0E14"/>
+            <rect x="1" y="12" width="1" height="1" fill="#0A0E14"/>
+            <rect x="4" y="12" width="2" height="1" fill="#0A0E14"/>
+            <rect x="8" y="12" width="1" height="1" fill="#0A0E14"/>
+            <rect x="11" y="12" width="2" height="1" fill="#0A0E14"/>
+            <rect x="15" y="12" width="1" height="1" fill="#0A0E14"/>
+            <rect x="19" y="12" width="2" height="1" fill="#0A0E14"/>
+            <rect x="23" y="12" width="1" height="1" fill="#0A0E14"/>
+            <rect x="27" y="12" width="1" height="1" fill="#0A0E14"/>
+            <rect x="2" y="14" width="2" height="1" fill="#0A0E14"/>
+            <rect x="6" y="14" width="1" height="1" fill="#0A0E14"/>
+            <rect x="10" y="14" width="1" height="1" fill="#0A0E14"/>
+            <rect x="13" y="14" width="3" height="1" fill="#0A0E14"/>
+            <rect x="18" y="14" width="1" height="1" fill="#0A0E14"/>
+            <rect x="21" y="14" width="2" height="1" fill="#0A0E14"/>
+            <rect x="25" y="14" width="1" height="1" fill="#0A0E14"/>
+            <rect x="1" y="16" width="1" height="1" fill="#0A0E14"/>
+            <rect x="3" y="16" width="2" height="1" fill="#0A0E14"/>
+            <rect x="7" y="16" width="1" height="1" fill="#0A0E14"/>
+            <rect x="10" y="16" width="2" height="1" fill="#0A0E14"/>
+            <rect x="14" y="16" width="1" height="1" fill="#0A0E14"/>
+            <rect x="17" y="16" width="3" height="1" fill="#0A0E14"/>
+            <rect x="22" y="16" width="1" height="1" fill="#0A0E14"/>
+            <rect x="26" y="16" width="2" height="1" fill="#0A0E14"/>
+            <rect x="10" y="18" width="1" height="1" fill="#0A0E14"/>
+            <rect x="12" y="18" width="2" height="1" fill="#0A0E14"/>
+            <rect x="16" y="18" width="1" height="1" fill="#0A0E14"/>
+            <rect x="10" y="20" width="1" height="2" fill="#0A0E14"/>
+            <rect x="13" y="20" width="1" height="1" fill="#0A0E14"/>
+            <rect x="16" y="20" width="1" height="1" fill="#0A0E14"/>
+            <rect x="18" y="20" width="2" height="1" fill="#0A0E14"/>
+            <rect x="22" y="20" width="1" height="1" fill="#0A0E14"/>
+            <rect x="24" y="20" width="2" height="1" fill="#0A0E14"/>
+            <rect x="11" y="22" width="1" height="1" fill="#0A0E14"/>
+            <rect x="14" y="22" width="2" height="1" fill="#0A0E14"/>
+            <rect x="18" y="22" width="1" height="1" fill="#0A0E14"/>
+            <rect x="21" y="22" width="2" height="1" fill="#0A0E14"/>
+            <rect x="25" y="22" width="2" height="1" fill="#0A0E14"/>
+            <rect x="10" y="24" width="2" height="1" fill="#0A0E14"/>
+            <rect x="14" y="24" width="1" height="1" fill="#0A0E14"/>
+            <rect x="17" y="24" width="1" height="1" fill="#0A0E14"/>
+            <rect x="20" y="24" width="1" height="1" fill="#0A0E14"/>
+            <rect x="23" y="24" width="1" height="1" fill="#0A0E14"/>
+            <rect x="26" y="24" width="1" height="1" fill="#0A0E14"/>
+            <rect x="11" y="26" width="1" height="1" fill="#0A0E14"/>
+            <rect x="13" y="26" width="2" height="1" fill="#0A0E14"/>
+            <rect x="17" y="26" width="2" height="1" fill="#0A0E14"/>
+            <rect x="21" y="26" width="1" height="1" fill="#0A0E14"/>
+            <rect x="24" y="26" width="2" height="1" fill="#0A0E14"/>
+          </svg>
+          <!-- "PAID" overlay on QR when paid -->
+          <div class="qr-paid-overlay hidden" id="qrPaidOverlay">
+            <div class="qr-paid-label">✓ PAID</div>
+          </div>
+        </div>
+        <div class="qr-info">
+          <div class="qr-title">UPI Payment</div>
+          <div class="qr-upi" id="qrUpiLabel">autocare@okaxis</div>
+          <div class="qr-amount" id="qrAmount">₹2,147.50</div>
+          <div class="qr-status-txt" id="qrStatusTxt">Awaiting payment</div>
+        </div>
+      </div>
+
+      <!-- ── ACTION BUTTONS ── -->
+      <!-- Flutter: Column > [CollectPaymentButton, Row > [WhatsAppButton, DownloadButton]] -->
+      <div class="actions-row" style="animation:cardReveal 380ms var(--ease-feather) 90ms both">
+        <button class="action-btn-primary" id="collectBtn" onclick="collectPayment()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          <span id="collectBtnLabel">Collect Payment</span>
+        </button>
+        <div class="actions-secondary">
+          <button class="action-btn-ghost wa" onclick="showSnackbar('Sending invoice via WhatsApp…')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            WhatsApp
+          </button>
+          <button class="action-btn-ghost" onclick="showSnackbar('Generating PDF invoice…')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download PDF
+          </button>
+          <button class="action-btn-ghost" onclick="showSnackbar('Sending invoice email…')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            Email
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Payment bottom sheet (modal) -->
+  <!-- Flutter: showModalBottomSheet(RecordPaymentSheet) -->
+  <div class="modal-overlay" id="paymentModal">
+    <div class="payment-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Record Payment</div>
+      <div class="payment-methods-row">
+        <div class="pm-chip sel" onclick="selectPM(this)">UPI</div>
+        <div class="pm-chip" onclick="selectPM(this)">Cash</div>
+        <div class="pm-chip" onclick="selectPM(this)">Card</div>
+        <div class="pm-chip" onclick="selectPM(this)">Cheque</div>
+      </div>
+      <div class="sheet-amount">₹2,147.50</div>
+      <button class="sheet-confirm-btn" onclick="confirmPayment()">Confirm Payment</button>
+      <button class="sheet-cancel" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+
+  <div class="snackbar" id="snackbar"></div>
+  <div class="home-indicator"></div>
+</div>
+
+<!-- Handoff notes -->
+<div class="handoff">
+  <div class="handoff-header">
+    <span class="handoff-tag">Cursor</span>
+    <span class="handoff-title">Screen 10 · Invoice Detail · Billing</span>
+  </div>
+  <ul>
+    <li><div class="bullet"></div><p><strong>Provider:</strong> <code>invoiceDetailProvider(invoiceUuid)</code> — <code>GET /jobs/{jobUuid}/invoice</code>. Contains: <code>Invoice{items:List&lt;InvoiceItem&gt;, subtotal, taxAmount, discountAmount, totalAmount, status, payments:List&lt;Payment&gt;}</code>. Each <code>InvoiceItem</code> has <code>lineType</code> (service|part|labour), qty, unitPrice, taxAmount.</p></li>
+    <li><div class="bullet"></div><p><strong>PAID watermark:</strong> <code>invoice.status == 'paid'</code> → <code>Stack[ InvoiceContent, Positioned.fill &gt; IgnorePointer &gt; Transform.rotate(-0.56) &gt; Opacity(0.18) &gt; Text('PAID', style: AppTypography.display.copyWith(fontSize:80, color:AppColors.sage200)) ]</code>. Wrap the InvoiceCard in a <code>Hero</code> widget for shared transition from Invoice List.</p></li>
+    <li><div class="bullet"></div><p><strong>QR payment:</strong> <code>qr_flutter</code> package — <code>QrImageView(data:'upi://pay?pa=autocare@okaxis&pn=AutoCare&am=2147.50&tn=INV-2847', version:QrVersions.auto, size:100)</code>. On payment confirmation via UPI callback: <code>POST /invoices/{uuid}/payments/gateway/initiate</code>. Polling for status or webhook.</p></li>
+    <li><div class="bullet"></div><p><strong>Record payment:</strong> <code>POST /invoices/{uuid}/payments</code> with <code>{amount, method, reference, paidAt}</code>. On success: <code>ref.invalidate(invoiceDetailProvider)</code> + <code>ref.invalidate(dashboardProvider)</code> (revenue update). Show <code>SnackBar</code> + loyalty points earned toast.</p></li>
+    <li><div class="bullet"></div><p><strong>PDF download:</strong> <code>pdf</code> + <code>printing</code> packages. <code>Printing.layoutPdf(onLayout:(fmt)=>_buildPdfDoc(invoice, fmt))</code>. Alternatively use <code>GET /invoices/{uuid}/pdf</code> backend endpoint → download Blob. Share via <code>Share.shareXFiles([XFile(path)])</code> for WhatsApp/email.</p></li>
+  </ul>
+</div>
+
+<script>
+  let isPaid = false;
+
+  function collectPayment() {
+    if (isPaid) return;
+    document.getElementById('paymentModal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('paymentModal').classList.remove('open');
+  }
+
+  function selectPM(el) {
+    document.querySelectorAll('.pm-chip').forEach(c => c.classList.remove('sel'));
+    el.classList.add('sel');
+  }
+
+  function confirmPayment() {
+    closeModal();
+    setTimeout(() => markAsPaid(), 200);
+  }
+
+  function markAsPaid() {
+    isPaid = true;
+
+    /* Update status badge */
+    const badge = document.getElementById('statusBadge');
+    badge.className = 'status-badge sb-paid';
+    badge.querySelector('.dot').style.background = 'var(--sage-400)';
+    document.getElementById('statusLabel').textContent = 'Paid';
+
+    /* Due label */
+    document.getElementById('dueLabel').textContent = 'Paid: 14 May 2026';
+    document.getElementById('dueLabel').className = 'inv-due ok';
+
+    /* Watermark */
+    const wm = document.getElementById('paidWatermark');
+    wm.classList.remove('hidden');
+    wm.style.opacity = '0.22';
+
+    /* Payment record */
+    document.getElementById('paymentRecord').classList.remove('hidden');
+
+    /* Loyalty earned */
+    document.getElementById('loyaltyEarned').classList.remove('hidden');
+
+    /* QR overlay */
+    document.getElementById('qrPaidOverlay').classList.remove('hidden');
+    document.getElementById('qrUpiLabel').textContent = 'Payment confirmed';
+    document.getElementById('qrAmount').textContent = '₹2,147.50';
+    document.getElementById('qrAmount').className = 'qr-amount paid-amt';
+    document.getElementById('qrStatusTxt').textContent = '14 May 2026 · UPI · TXN-9284710';
+
+    /* Collect button */
+    const btn = document.getElementById('collectBtn');
+    btn.className = 'action-btn-primary paid-state';
+    document.getElementById('collectBtnLabel').textContent = '✓ Payment Recorded';
+
+    showSnackbar('₹2,147.50 received · +215 loyalty pts added');
+  }
+
+  let snackT;
+  function showSnackbar(msg){const s=document.getElementById('snackbar');s.textContent=msg;s.classList.add('visible');clearTimeout(snackT);snackT=setTimeout(()=>s.classList.remove('visible'),2800);}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "716826562412",
+    "project_id": "pro-garage-8e572",
+    "storage_bucket": "pro-garage-8e572.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:716826562412:android:cefb21805375bbd1762d49",
+        "android_client_info": {
+          "package_name": "com.akshara.progarage"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCj5yOt6Lk2jSGjsBsvLodX1-nZcTtFc8k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

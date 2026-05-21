@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProGarage · 04 — Jobs List</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink-0:#0A0E14; --ink-1:#1C2230; --ink-2:#364052; --ink-3:#566076;
+      --ink-4:#8898AA; --ink-5:#B8C5D0; --ink-6:#DDE5EC; --ink-7:#EEF2F6;
+      --ink-8:#F7F9FB; --ink-9:#FFFFFF;
+      --sky-50:#E8F4FD; --sky-400:#2BB0ED; --sky-600:#0A7DBF; --sky-800:#065E91;
+      --teal-50:#EBF7F5; --teal-400:#26B8A8; --teal-600:#138878; --teal-800:#076358;
+      --sage-50:#EBF5EE; --sage-400:#3BAD5B; --sage-600:#1E7F3C; --sage-800:#0E5C26;
+      --amber-50:#FEF7EC; --amber-400:#F0A018; --amber-600:#C07A08; --amber-800:#8A5602;
+      --rose-50:#FEF0F0; --rose-400:#EF4444; --rose-600:#C01E1E; --rose-800:#8A1010;
+      --slate-100:#D9E2EC; --slate-600:#486581; --slate-800:#243B53; --slate-900:#102A43;
+      --shadow-sm: 0 1px 3px rgba(10,14,20,0.06), 0 1px 2px rgba(10,14,20,0.04);
+      --shadow-md: 0 4px 12px rgba(10,14,20,0.08), 0 2px 4px rgba(10,14,20,0.04);
+      --ease-feather:   cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+      --ease-spring:    cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ease-exit:      cubic-bezier(0.40, 0, 1.0, 1);
+      --font-ui:   'DM Sans', system-ui, sans-serif;
+      --font-mono: 'DM Mono', monospace;
+    }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background:#111420; display:flex; flex-direction:column; align-items:center;
+      justify-content:center; min-height:100vh; font-family:var(--font-ui);
+      -webkit-font-smoothing:antialiased; gap:28px; padding:32px 16px 40px;
+    }
+    .screen-meta { font-family:var(--font-mono); font-size:10px; color:rgba(255,255,255,0.16); letter-spacing:0.12em; text-transform:uppercase; }
+
+    /* ── Phone ── */
+    .phone {
+      width:375px; height:812px; background:var(--ink-8);
+      border-radius:44px; overflow:hidden; position:relative; flex-shrink:0;
+      box-shadow: 0 0 0 0.5px rgba(255,255,255,0.07), inset 0 0 0 0.5px rgba(0,0,0,0.05),
+                  0 48px 120px rgba(0,0,0,0.70), 0 16px 40px rgba(0,0,0,0.35);
+    }
+    .notch { position:absolute; top:0; left:50%; transform:translateX(-50%); width:120px; height:30px; background:#0a0e14; border-radius:0 0 20px 20px; z-index:40; }
+
+    /* ── Status bar (light) ── */
+    .status-bar {
+      position:absolute; top:0; left:0; right:0; height:44px;
+      display:flex; align-items:flex-end; justify-content:space-between;
+      padding:0 24px 8px; z-index:30; background:var(--ink-9);
+    }
+    .s-time { font-family:var(--font-mono); font-size:12px; color:var(--ink-1); letter-spacing:0.02em; font-weight:500; }
+    .s-icons { display:flex; align-items:center; gap:5px; }
+
+    /* ── App bar ── */
+    /* Flutter: GfAppBar(title:'Jobs', actions:[SortButton, FilterButton]) */
+    .app-bar {
+      position:absolute; top:44px; left:0; right:0; height:56px;
+      background:var(--ink-9); border-bottom:0.5px solid var(--ink-7);
+      display:flex; align-items:center; justify-content:space-between;
+      padding:0 20px; z-index:25;
+    }
+    .app-bar-title-group { display:flex; align-items:baseline; gap:8px; }
+    .app-bar-title { font-size:17px; font-weight:400; color:var(--ink-0); letter-spacing:-0.015em; }
+    .job-count-badge {
+      font-family:var(--font-mono); font-size:10px; font-weight:400;
+      color:var(--ink-4); background:var(--ink-7);
+      padding:2px 7px; border-radius:9999px;
+    }
+    .app-bar-actions { display:flex; align-items:center; gap:4px; }
+    .icon-btn {
+      width:34px; height:34px; border-radius:50%; border:none;
+      background:transparent; cursor:pointer; display:flex; align-items:center; justify-content:center;
+      transition:background 140ms ease;
+    }
+    .icon-btn:hover { background:var(--ink-7); }
+
+    /* ── Search row ── */
+    /* Flutter: Padding > GfInput(prefix:Icon(search), hint:'Search jobs…', trailing:FilterButton) */
+    .search-row {
+      position:absolute; top:100px; left:0; right:0;
+      padding:10px 16px 0; z-index:20; background:var(--ink-8);
+    }
+    .search-inner { display:flex; gap:8px; align-items:center; }
+    .search-wrap { flex:1; position:relative; }
+    .search-icon { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--ink-4); pointer-events:none; }
+    .search-input {
+      width:100%; height:38px; padding:0 36px 0 34px;
+      background:var(--ink-9); border:0.5px solid var(--ink-6); border-radius:10px;
+      font-family:var(--font-ui); font-size:13px; color:var(--ink-1); outline:none;
+      transition:border-color 140ms var(--ease-out-quart), box-shadow 140ms var(--ease-out-quart);
+    }
+    .search-input:focus { border-color:var(--sky-400); box-shadow:0 0 0 3px rgba(43,176,237,0.20); }
+    .search-input::placeholder { color:var(--ink-4); }
+    .search-clear {
+      position:absolute; right:8px; top:50%; transform:translateY(-50%);
+      width:18px; height:18px; border-radius:50%;
+      background:var(--ink-5); border:none; cursor:pointer;
+      display:none; align-items:center; justify-content:center; color:white; font-size:10px;
+    }
+    .search-clear.visible { display:flex; }
+    .filter-icon-btn {
+      width:38px; height:38px; border-radius:10px; border:0.5px solid var(--ink-6);
+      background:var(--ink-9); cursor:pointer; display:flex; align-items:center; justify-content:center;
+      position:relative; transition:border-color 140ms ease, background 140ms ease;
+      flex-shrink:0;
+    }
+    .filter-icon-btn:hover { border-color:var(--ink-5); background:var(--ink-8); }
+    .filter-icon-btn.active { background:var(--sky-50); border-color:var(--sky-400); }
+    .filter-dot { position:absolute; top:6px; right:6px; width:6px; height:6px; border-radius:50%; background:var(--sky-600); display:none; }
+    .filter-dot.visible { display:block; }
+
+    /* ── Filter chips ── */
+    /* Flutter: SingleChildScrollView(scrollDir:horizontal) > Row > FilterChip × 5 */
+    .filter-chips-row {
+      position:absolute; top:148px; left:0; right:0;
+      padding:8px 16px 0; z-index:20; background:var(--ink-8);
+    }
+    .chips-scroll { display:flex; gap:7px; overflow-x:auto; scrollbar-width:none; padding-bottom:8px; }
+    .chips-scroll::-webkit-scrollbar { display:none; }
+    .filter-chip {
+      display:inline-flex; align-items:center; gap:5px;
+      padding:6px 12px; border-radius:9999px;
+      border:0.5px solid var(--ink-6); background:var(--ink-9);
+      font-size:12px; font-weight:500; color:var(--ink-3);
+      cursor:pointer; white-space:nowrap; flex-shrink:0;
+      transition:all 140ms var(--ease-out-quart);
+    }
+    .filter-chip .chip-count { font-family:var(--font-mono); font-size:10px; color:var(--ink-5); }
+    .filter-chip.active { background:var(--sky-600); border-color:var(--sky-600); color:#fff; }
+    .filter-chip.active .chip-count { color:rgba(255,255,255,0.65); }
+    .filter-chip:not(.active):hover { border-color:var(--ink-5); color:var(--ink-1); }
+
+    /* ── Scroll area ── */
+    .scroll-area {
+      position:absolute; top:180px; left:0; right:0; bottom:62px;
+      overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; scrollbar-width:none;
+    }
+    .scroll-area::-webkit-scrollbar { display:none; }
+    .job-list { display:flex; flex-direction:column; gap:8px; padding:12px 16px 16px; }
+
+    /* ── Swipe wrapper ── */
+    /* Flutter: flutter_slidable > Slidable(startActionPane:..., endActionPane:...) */
+    .swipe-wrapper {
+      position:relative; border-radius:16px;
+      overflow:hidden;
+      animation:cardReveal 380ms var(--ease-feather) both;
+    }
+    .swipe-wrapper:nth-child(1) { animation-delay:0ms; }
+    .swipe-wrapper:nth-child(2) { animation-delay:30ms; }
+    .swipe-wrapper:nth-child(3) { animation-delay:60ms; }
+    .swipe-wrapper:nth-child(4) { animation-delay:90ms; }
+    .swipe-wrapper:nth-child(5) { animation-delay:120ms; }
+    .swipe-wrapper:nth-child(6) { animation-delay:150ms; }
+    .swipe-wrapper:nth-child(7) { animation-delay:180ms; }
+    .swipe-wrapper:nth-child(8) { animation-delay:210ms; }
+
+    /* Behind-the-card action strips */
+    .swipe-bg-right {
+      position:absolute; left:0; top:0; bottom:0; width:100px;
+      background:var(--sky-600);
+      display:flex; align-items:center; justify-content:center;
+      gap:4px; flex-direction:column;
+    }
+    .swipe-bg-left {
+      position:absolute; right:0; top:0; bottom:0;
+      display:flex;
+    }
+    .swipe-bg-hold   { width:84px; background:var(--amber-600); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:3px; }
+    .swipe-bg-cancel { width:68px; background:var(--rose-600);  display:flex; align-items:center; justify-content:center; flex-direction:column; gap:3px; }
+    .swipe-action-label { font-size:10px; font-weight:500; color:#fff; letter-spacing:0.04em; }
+
+    /* Draggable card surface */
+    /* Flutter: SlidableAction(backgroundColor, icon, label, onPressed) */
+    .swipe-inner {
+      background:var(--ink-9);
+      border:0.5px solid var(--ink-6); border-radius:16px;
+      cursor:pointer; position:relative; overflow:hidden;
+      box-shadow:var(--shadow-sm);
+      transition:border-color 140ms ease, box-shadow 240ms var(--ease-feather);
+      will-change:transform;
+      touch-action:pan-y;
+      user-select:none;
+    }
+    .swipe-inner:hover { box-shadow:var(--shadow-md); border-color:var(--ink-5); }
+
+    /* Card body */
+    .jc-body { padding:13px 15px 11px; }
+    .jc-row1 { display:flex; align-items:center; gap:6px; margin-bottom:5px; }
+    .jc-num  { font-family:var(--font-mono); font-size:11.5px; color:var(--ink-4); flex-shrink:0; }
+    .jc-spacer { flex:1; }
+    .jc-customer { font-size:14px; font-weight:500; color:var(--ink-0); letter-spacing:-0.01em; margin-bottom:3px; }
+    .jc-vehicle { font-size:11.5px; color:var(--ink-4); margin-bottom:8px; }
+    .jc-plate { font-family:var(--font-mono); font-size:11px; color:var(--ink-3); }
+    .jc-row-bottom { display:flex; align-items:center; justify-content:space-between; }
+    .jc-tech { display:flex; align-items:center; gap:5px; }
+    .jc-tech-av {
+      width:22px; height:22px; border-radius:50%;
+      background:var(--teal-50); color:var(--teal-600);
+      font-size:8.5px; font-weight:500;
+      display:flex; align-items:center; justify-content:center;
+      border:0.5px solid rgba(38,184,168,0.22); flex-shrink:0;
+    }
+    .jc-tech-name { font-size:11px; color:var(--ink-4); }
+    .jc-bay-lbl {
+      font-size:10px; font-weight:500; padding:2px 6px;
+      background:var(--ink-7); color:var(--ink-3); border-radius:4px;
+      margin-left:4px;
+    }
+    .jc-eta { font-family:var(--font-mono); font-size:10px; color:var(--ink-5); }
+    .jc-eta.ready { color:var(--teal-600); font-weight:400; }
+    .jc-progress { height:2.5px; }
+
+    /* Status badges */
+    .status-badge {
+      display:inline-flex; align-items:center; gap:4px;
+      padding:3px 8px; border-radius:9999px;
+      font-size:10px; font-weight:500; white-space:nowrap;
+    }
+    .status-badge .dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+    /* in_progress */
+    .sb-in-progress     { background:var(--sky-50);   color:var(--sky-800); }
+    .sb-in-progress .dot{ background:var(--sky-600); }
+    .pb-in-progress     { background:linear-gradient(90deg,var(--sky-400),var(--teal-400)); }
+    /* estimate_pending */
+    .sb-estimate-pending     { background:var(--amber-50); color:var(--amber-800); }
+    .sb-estimate-pending .dot{ background:var(--amber-400); }
+    .pb-estimate-pending     { background:var(--amber-400); }
+    /* estimate_approved */
+    .sb-estimate-approved     { background:var(--sky-50); color:var(--sky-800); }
+    .sb-estimate-approved .dot{ background:var(--sky-400); }
+    .pb-estimate-approved     { background:var(--sky-400); }
+    /* intake_inspection */
+    .sb-intake-inspection     { background:var(--ink-7); color:var(--ink-3); }
+    .sb-intake-inspection .dot{ background:var(--ink-4); }
+    .pb-intake-inspection     { background:var(--ink-5); }
+    /* qc_pending */
+    .sb-qc-pending     { background:var(--teal-50); color:var(--teal-800); }
+    .sb-qc-pending .dot{ background:var(--teal-400); }
+    .pb-qc-pending     { background:var(--teal-400); }
+    /* ready_for_delivery */
+    .sb-ready-for-delivery     { background:var(--teal-50); color:var(--teal-800); }
+    .sb-ready-for-delivery .dot{ background:var(--teal-600); }
+    .pb-ready-for-delivery     { background:var(--teal-600); }
+    /* delivered */
+    .sb-delivered     { background:var(--sage-50); color:var(--sage-800); }
+    .sb-delivered .dot{ background:var(--sage-400); }
+    .pb-delivered     { background:var(--sage-400); }
+    /* cancelled */
+    .sb-cancelled     { background:var(--rose-50); color:var(--rose-800); }
+    .sb-cancelled .dot{ background:var(--rose-400); }
+    .pb-cancelled     { background:var(--rose-400); }
+
+    /* Priority chips */
+    .priority-chip { font-size:9.5px; font-weight:500; padding:2px 7px; border-radius:9999px; letter-spacing:0.03em; }
+    .priority-urgent   { background:var(--amber-50); color:var(--amber-800); }
+    .priority-critical { background:var(--rose-50);  color:var(--rose-800); }
+
+    /* ── Empty state ── */
+    /* Flutter: EmptyState(icon:Icons.search_off, title:'No jobs found', action:ClearFiltersButton) */
+    .empty-state {
+      display:none; flex-direction:column; align-items:center; justify-content:center;
+      padding:60px 24px 32px; gap:12px; text-align:center;
+    }
+    .empty-state.visible { display:flex; }
+    .empty-icon { width:52px; height:52px; border-radius:50%; background:var(--ink-7); display:flex; align-items:center; justify-content:center; margin-bottom:4px; }
+    .empty-title { font-size:15px; font-weight:400; color:var(--ink-2); letter-spacing:-0.01em; }
+    .empty-sub   { font-size:12px; color:var(--ink-4); }
+    .empty-clear-btn {
+      margin-top:4px; padding:8px 20px;
+      border:0.5px solid var(--ink-5); border-radius:10px;
+      background:transparent; cursor:pointer;
+      font-family:var(--font-ui); font-size:12px; font-weight:500; color:var(--sky-600);
+      transition:all 140ms ease;
+    }
+    .empty-clear-btn:hover { background:var(--sky-50); border-color:var(--sky-400); }
+
+    /* ── FAB ── */
+    /* Flutter: FloatingActionButton(onPressed:()=>context.go('/staff/jobs/create'), child:Icon(Icons.add)) */
+    .fab {
+      position:absolute; bottom:78px; right:20px;
+      width:52px; height:52px; border-radius:50%;
+      background:var(--sky-600); border:none; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      box-shadow:0 4px 16px rgba(10,125,191,0.35), 0 2px 6px rgba(10,125,191,0.20);
+      z-index:20;
+      transition:background 140ms ease, box-shadow 140ms ease, transform 80ms ease-in;
+    }
+    .fab:hover { background:var(--sky-800); box-shadow:0 6px 20px rgba(10,125,191,0.40); }
+    .fab:active { transform:scale(0.94); }
+
+    /* ── Filter Sheet (bottom sheet) ── */
+    /* Flutter: showModalBottomSheet(context, builder:(ctx)=>FilterSheet()) */
+    .sheet-overlay {
+      position:absolute; inset:0; background:rgba(10,14,20,0.30);
+      z-index:35; opacity:0; pointer-events:none;
+      transition:opacity 240ms ease;
+    }
+    .sheet-overlay.open { opacity:1; pointer-events:all; }
+    .filter-sheet {
+      position:absolute; bottom:0; left:0; right:0;
+      background:var(--ink-9); border-radius:20px 20px 0 0;
+      padding:0 0 32px;
+      box-shadow:0 -8px 32px rgba(10,14,20,0.12);
+      z-index:36;
+      transform:translateY(110%);
+      transition:transform 300ms var(--ease-feather);
+    }
+    .filter-sheet.open { transform:translateY(0); }
+    .sheet-handle { width:36px; height:4px; background:var(--ink-6); border-radius:2px; margin:12px auto 16px; }
+    .sheet-header { display:flex; align-items:center; justify-content:space-between; padding:0 20px 12px; border-bottom:0.5px solid var(--ink-7); }
+    .sheet-title  { font-size:15px; font-weight:500; color:var(--ink-0); }
+    .sheet-clear  { font-size:12px; font-weight:500; color:var(--sky-600); background:none; border:none; cursor:pointer; }
+    .sheet-section { padding:16px 20px 8px; }
+    .sheet-section-title { font-size:10px; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-4); margin-bottom:10px; }
+    .sheet-options { display:flex; flex-wrap:wrap; gap:8px; }
+    .sheet-option {
+      padding:6px 14px; border-radius:9999px;
+      border:0.5px solid var(--ink-6); background:var(--ink-9);
+      font-size:12px; font-weight:500; color:var(--ink-3);
+      cursor:pointer; transition:all 140ms ease;
+    }
+    .sheet-option:hover { border-color:var(--ink-5); color:var(--ink-1); }
+    .sheet-option.sel  { background:var(--sky-50); border-color:var(--sky-400); color:var(--sky-800); }
+    .sheet-apply {
+      margin:16px 20px 0;
+      width:calc(100% - 40px); height:44px; border-radius:14px;
+      background:var(--sky-600); border:none; cursor:pointer;
+      font-family:var(--font-ui); font-size:14px; font-weight:500; color:#fff;
+      transition:background 140ms ease;
+    }
+    .sheet-apply:hover { background:var(--sky-800); }
+
+    /* ── Snackbar ── */
+    .snackbar {
+      position:absolute; bottom:72px; left:16px; right:16px;
+      padding:12px 16px; background:rgba(28,34,48,0.96);
+      border:0.5px solid rgba(255,255,255,0.08); border-radius:12px;
+      font-size:12px; color:rgba(255,255,255,0.80); text-align:center;
+      z-index:50; opacity:0; transform:translateY(8px);
+      transition:all 280ms var(--ease-feather); pointer-events:none;
+    }
+    .snackbar.visible { opacity:1; transform:translateY(0); pointer-events:all; }
+
+    /* ── Bottom nav ── (same as Dashboard) */
+    .bottom-nav {
+      position:absolute; bottom:0; left:0; right:0; height:62px;
+      background:var(--ink-9); border-top:0.5px solid var(--ink-7);
+      display:flex; align-items:flex-start; padding-top:8px; z-index:25;
+    }
+    .nav-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; padding:4px 0; transition:opacity 140ms ease; }
+    .nav-item:hover { opacity:0.8; }
+    .nav-icon { width:22px; height:22px; display:flex; align-items:center; justify-content:center; }
+    .nav-label { font-size:10px; font-weight:500; color:var(--ink-4); }
+    .nav-item.active .nav-label { color:var(--sky-600); }
+    .nav-dot { width:4px; height:4px; border-radius:50%; background:var(--sky-600); margin-top:-2px; }
+    .home-indicator { position:absolute; bottom:8px; left:50%; transform:translateX(-50%); width:118px; height:4px; background:rgba(0,0,0,0.12); border-radius:2px; z-index:40; }
+
+    @keyframes cardReveal { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes listItemExit { from{opacity:1;transform:scale(1)} to{opacity:0;transform:scale(0.97)} }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after{animation-duration:0ms!important;transition-duration:0ms!important} }
+
+    /* ── Handoff card ── */
+    .handoff { width:375px; border:0.5px solid rgba(255,255,255,0.07); border-radius:12px; padding:20px 22px 22px; background:rgba(255,255,255,0.022); }
+    .handoff-header { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+    .handoff-tag { font-family:var(--font-mono); font-size:9px; letter-spacing:0.12em; text-transform:uppercase; color:var(--sky-400); background:rgba(43,176,237,0.10); padding:3px 8px; border-radius:4px; }
+    .handoff-title { font-family:var(--font-mono); font-size:10px; color:rgba(255,255,255,0.35); flex:1; }
+    .handoff ul { list-style:none; display:flex; flex-direction:column; gap:10px; }
+    .handoff li { display:grid; grid-template-columns:6px 1fr; gap:10px; align-items:baseline; }
+    .bullet { width:4px; height:4px; background:var(--sky-600); border-radius:50%; margin-top:5px; }
+    .handoff li p { font-family:var(--font-mono); font-size:11px; color:rgba(255,255,255,0.38); line-height:1.65; }
+    .handoff li p strong { color:rgba(255,255,255,0.62); font-weight:400; }
+    .handoff li p code { color:var(--sky-400); background:rgba(43,176,237,0.10); padding:1px 5px; border-radius:3px; font-size:10px; }
+  </style>
+</head>
+<body>
+
+<div class="screen-meta">Screen 04 · Staff App · Jobs List</div>
+
+<!-- Flutter: lib/features/jobs/screens/jobs_list_screen.dart
+     class JobsListScreen extends ConsumerStatefulWidget
+     Provider: jobsListProvider (JobsListNotifier) — paginated, filterable -->
+<div class="phone" id="phone">
+  <div class="notch"></div>
+
+  <!-- Status bar light -->
+  <div class="status-bar">
+    <span class="s-time">9:41</span>
+    <div class="s-icons">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="6.5" width="3" height="4.5" rx="0.6" fill="rgba(0,0,0,0.45)"/><rect x="4.5" y="4" width="3" height="7" rx="0.6" fill="rgba(0,0,0,0.45)"/><rect x="9" y="1.8" width="3" height="9.2" rx="0.6" fill="rgba(0,0,0,0.45)"/><rect x="13.5" y="0" width="3" height="11" rx="0.6" fill="rgba(0,0,0,0.45)"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><path d="M8 9.5a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6z" fill="rgba(0,0,0,0.45)"/><path d="M3.7 6.2a6.1 6.1 0 0 1 8.6 0" stroke="rgba(0,0,0,0.45)" stroke-width="1.1" stroke-linecap="round" fill="none"/><path d="M1 3.5a10.3 10.3 0 0 1 14 0" stroke="rgba(0,0,0,0.45)" stroke-width="1.1" stroke-linecap="round" fill="none"/></svg>
+      <svg width="27" height="12" viewBox="0 0 27 12" fill="none"><rect x="0.5" y="0.5" width="23" height="11" rx="2.5" stroke="rgba(0,0,0,0.35)"/><rect x="2" y="2" width="17" height="8" rx="1.5" fill="rgba(0,0,0,0.50)"/><path d="M25 4v4c.9-.4 1.5-1.1 1.5-2s-.6-1.6-1.5-2z" fill="rgba(0,0,0,0.25)"/></svg>
+    </div>
+  </div>
+
+  <!-- App bar -->
+  <!-- Flutter: GfAppBar with title + count badge + sort + filter actions -->
+  <div class="app-bar">
+    <div class="app-bar-title-group">
+      <span class="app-bar-title">Jobs</span>
+      <span class="job-count-badge" id="jobCountBadge">8 jobs</span>
+    </div>
+    <div class="app-bar-actions">
+      <!-- Flutter: IconButton(icon:Icon(LucideIcons.arrowUpDown), onPressed:_showSortSheet) -->
+      <button class="icon-btn" id="sortBtn" title="Sort">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M7 12h10M11 18h2"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Search row -->
+  <!-- Flutter: Padding > SearchBar(controller:_searchCtrl, onChanged:_onSearch(debounce:300ms)) -->
+  <div class="search-row">
+    <div class="search-inner">
+      <div class="search-wrap">
+        <span class="search-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </span>
+        <input type="text" class="search-input" id="searchInput" placeholder="Search jobs, customers, plates…" autocomplete="off">
+        <button class="search-clear" id="searchClear">×</button>
+      </div>
+      <!-- Flutter: FilterIconButton with active dot indicator -->
+      <button class="filter-icon-btn" id="filterIconBtn" title="Filters">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        <span class="filter-dot" id="filterDot"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter chips -->
+  <!-- Flutter: SingleChildScrollView(scrollDir:horizontal) > Row > [FilterChip] × 5 -->
+  <div class="filter-chips-row">
+    <div class="chips-scroll">
+      <div class="filter-chip active" data-filter="all">All <span class="chip-count" id="cnt-all">8</span></div>
+      <div class="filter-chip" data-filter="in_progress">In Progress <span class="chip-count" id="cnt-ip">3</span></div>
+      <div class="filter-chip" data-filter="pending">Pending <span class="chip-count" id="cnt-pend">3</span></div>
+      <div class="filter-chip" data-filter="ready_for_delivery">Ready <span class="chip-count" id="cnt-ready">1</span></div>
+      <div class="filter-chip" data-filter="delivered">Delivered <span class="chip-count" id="cnt-del">1</span></div>
+    </div>
+  </div>
+
+  <!-- Scroll area -->
+  <!-- Flutter: CustomScrollView > SliverPadding > SliverList(delegate:SliverChildBuilderDelegate) -->
+  <div class="scroll-area" id="scrollArea">
+    <!-- Empty state -->
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--ink-4)" stroke-width="1.6" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+      </div>
+      <div class="empty-title">No jobs found</div>
+      <div class="empty-sub">Try adjusting your search or filters</div>
+      <button class="empty-clear-btn" id="emptyClearBtn">Clear filters</button>
+    </div>
+    <!-- Job list rendered by JS -->
+    <div class="job-list" id="jobList"></div>
+  </div>
+
+  <!-- FAB -->
+  <!-- Flutter: FloatingActionButton(backgroundColor:AppColors.sky600, onPressed:()=>context.go('/staff/jobs/create')) -->
+  <button class="fab" id="fabBtn" aria-label="Create new job">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </button>
+
+  <!-- Filter sheet overlay + panel -->
+  <!-- Flutter: showModalBottomSheet(isScrollControlled:true, shape:RoundedRectangleBorder(radius:BorderRadius.vertical(top:Radius.circular(20)))) -->
+  <div class="sheet-overlay" id="sheetOverlay"></div>
+  <div class="filter-sheet" id="filterSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <span class="sheet-title">Filter Jobs</span>
+      <button class="sheet-clear" id="sheetClearBtn">Clear all</button>
+    </div>
+    <div class="sheet-section">
+      <div class="sheet-section-title">Status</div>
+      <div class="sheet-options">
+        <div class="sheet-option" data-val="in_progress">In Progress</div>
+        <div class="sheet-option" data-val="estimate_pending">Est. Pending</div>
+        <div class="sheet-option" data-val="estimate_approved">Est. Approved</div>
+        <div class="sheet-option" data-val="qc_pending">QC Pending</div>
+        <div class="sheet-option" data-val="ready_for_delivery">Ready</div>
+        <div class="sheet-option" data-val="delivered">Delivered</div>
+      </div>
+    </div>
+    <div class="sheet-section">
+      <div class="sheet-section-title">Priority</div>
+      <div class="sheet-options">
+        <div class="sheet-option" data-val="p-normal">Normal</div>
+        <div class="sheet-option" data-val="p-urgent">Urgent</div>
+        <div class="sheet-option" data-val="p-critical">Critical</div>
+      </div>
+    </div>
+    <div class="sheet-section">
+      <div class="sheet-section-title">Date</div>
+      <div class="sheet-options">
+        <div class="sheet-option" data-val="d-today">Today</div>
+        <div class="sheet-option" data-val="d-week">This Week</div>
+        <div class="sheet-option" data-val="d-month">This Month</div>
+      </div>
+    </div>
+    <button class="sheet-apply" id="sheetApplyBtn">Apply Filters</button>
+  </div>
+
+  <!-- Snackbar -->
+  <div class="snackbar" id="snackbar"></div>
+
+  <!-- Bottom nav (Jobs active) -->
+  <div class="bottom-nav">
+    <div class="nav-item" data-tab="dashboard">
+      <div class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink-5)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg></div>
+      <span class="nav-label">Dashboard</span>
+    </div>
+    <div class="nav-item active" data-tab="jobs">
+      <div class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--sky-600)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></div>
+      <span class="nav-label">Jobs</span>
+      <div class="nav-dot"></div>
+    </div>
+    <div class="nav-item" data-tab="customers">
+      <div class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink-5)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+      <span class="nav-label">Customers</span>
+    </div>
+    <div class="nav-item" data-tab="more">
+      <div class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink-5)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.2" fill="var(--ink-5)"/><circle cx="12" cy="12" r="1.2" fill="var(--ink-5)"/><circle cx="12" cy="19" r="1.2" fill="var(--ink-5)"/></svg></div>
+      <span class="nav-label">More</span>
+    </div>
+  </div>
+
+  <div class="home-indicator"></div>
+</div>
+
+<!-- Handoff notes -->
+<div class="handoff">
+  <div class="handoff-header">
+    <span class="handoff-tag">Cursor</span>
+    <span class="handoff-title">Screen 04 · Jobs List · Staff App</span>
+  </div>
+  <ul>
+    <li><div class="bullet"></div><p><strong>Provider:</strong> <code>jobsListProvider(JobFilter)</code> — AsyncNotifier&lt;PaginatedResult&lt;ServiceJobListItem&gt;&gt;. State: <code>{ items, isLoading, filter:JobFilter, searchQuery, page }</code>. <code>loadMore()</code> appends next page. <code>applyFilter()</code> resets to page 1. Debounce search 300ms via <code>Timer(_debounce, ()=>ref.read(jobsListProvider.notifier).search(q))</code>.</p></li>
+    <li><div class="bullet"></div><p><strong>API:</strong> <code>GET /jobs?status=&amp;search=&amp;priority=&amp;page=&amp;per_page=20</code>. Realtime: <code>private-tenant.{uuid}</code> channel → <code>job.status.updated</code> event surgically updates matching list item via <code>state = state.copyWith(items: [...updated])</code> without full reload.</p></li>
+    <li><div class="bullet"></div><p><strong>Swipe actions:</strong> <code>flutter_slidable</code> — <code>Slidable(startActionPane:ActionPane(motion:DrawerMotion, children:[SlidableAction(bg:sky600, icon:checkin, onPressed:_checkIn)]), endActionPane:ActionPane(children:[SlidableAction(amber,hold), SlidableAction(rose,cancel)]))</code>. On action: call API + show SnackBar + refresh item.</p></li>
+    <li><div class="bullet"></div><p><strong>FAB:</strong> <code>FloatingActionButton(heroTag:'create-job', onPressed:()=>context.go('/staff/jobs/create'))</code>. Use <code>AnimatedSlide + AnimatedOpacity</code> to hide FAB when scrolling down (listen to <code>ScrollController</code>), reveal on scroll up — standard Flutter pattern.</p></li>
+    <li><div class="bullet"></div><p><strong>Pull-to-refresh:</strong> Wrap <code>CustomScrollView</code> in <code>RefreshIndicator(color:AppColors.sky600, onRefresh:()=>ref.read(jobsListProvider.notifier).refresh())</code>. List uses <code>SliverAnimatedList</code> for item enter/exit animations matching card reveal spec.</p></li>
+  </ul>
+</div>
+
+<script>
+  /* ════════════════════════════════════════════════
+     JOBS DATA — mirrors ServiceJobListItem model
+  ════════════════════════════════════════════════ */
+  const JOBS = [
+    { id:'JOB-2847', customer:'Rahul Sharma',  vehicle:'Maruti Swift VXI',     plate:'MH12AB1234', status:'in_progress',        tech:{i:'AK',n:'Amit Kamble'}, bay:'Bay A', eta:'3:30 PM', progress:65,  priority:'normal'   },
+    { id:'JOB-2846', customer:'Priya Patel',   vehicle:'Hyundai i20 Asta',     plate:'DL8CAF9876', status:'estimate_pending',   tech:{i:'SM',n:'Suresh More'}, bay:'Bay B', eta:'Tomorrow', progress:18, priority:'normal'   },
+    { id:'JOB-2845', customer:'Kavya Reddy',   vehicle:'Honda City ZX',        plate:'KA01MX5678', status:'qc_pending',         tech:{i:'RP',n:'Rajan Patil'}, bay:'Bay A', eta:'5:00 PM', progress:88,  priority:'normal'   },
+    { id:'JOB-2844', customer:'Sunita Gupta',  vehicle:'Toyota Innova Crysta', plate:'TN09BD3210', status:'ready_for_delivery', tech:{i:'AK',n:'Amit Kamble'}, bay:'-',     eta:'Ready now', progress:100, priority:'normal' },
+    { id:'JOB-2843', customer:'Vikram Mehta',  vehicle:'Mahindra Thar LX',     plate:'MH01ZP4567', status:'in_progress',        tech:{i:'DS',n:'Deepak Shinde'},bay:'Bay D', eta:'6:30 PM', progress:42, priority:'urgent'   },
+    { id:'JOB-2842', customer:'Anita Singh',   vehicle:'Tata Nexon XZ+',       plate:'MH04GH7890', status:'estimate_approved',  tech:{i:'RP',n:'Rajan Patil'}, bay:'-',     eta:'Tomorrow', progress:10, priority:'normal'  },
+    { id:'JOB-2841', customer:'Ravi Kumar',    vehicle:'Maruti Baleno Alpha',  plate:'KA05AB1234', status:'intake_inspection',  tech:{i:'SM',n:'Suresh More'}, bay:'Bay C', eta:'Today',    progress:5,  priority:'normal'  },
+    { id:'JOB-2840', customer:'Meena Sharma',  vehicle:'Honda Amaze VX',       plate:'PB08CD5678', status:'delivered',          tech:{i:'DS',n:'Deepak Shinde'},bay:'-',     eta:'Done',     progress:100, priority:'normal' },
+  ];
+
+  const STATUS_CFG = {
+    'in_progress':        {label:'In Progress',   sb:'sb-in-progress',        pb:'pb-in-progress'},
+    'estimate_pending':   {label:'Est. Pending',   sb:'sb-estimate-pending',   pb:'pb-estimate-pending'},
+    'estimate_approved':  {label:'Est. Approved',  sb:'sb-estimate-approved',  pb:'pb-estimate-approved'},
+    'intake_inspection':  {label:'Inspection',     sb:'sb-intake-inspection',  pb:'pb-intake-inspection'},
+    'qc_pending':         {label:'QC Pending',     sb:'sb-qc-pending',         pb:'pb-qc-pending'},
+    'ready_for_delivery': {label:'Ready',          sb:'sb-ready-for-delivery', pb:'pb-ready-for-delivery'},
+    'delivered':          {label:'Delivered',      sb:'sb-delivered',          pb:'pb-delivered'},
+    'cancelled':          {label:'Cancelled',      sb:'sb-cancelled',          pb:'pb-cancelled'},
+  };
+
+  const FILTER_MAP = {
+    'all':              null,
+    'in_progress':      ['in_progress','intake_inspection','estimate_approved'],
+    'pending':          ['estimate_pending','qc_pending'],
+    'ready_for_delivery':['ready_for_delivery'],
+    'delivered':        ['delivered'],
+  };
+
+  let activeFilter = 'all';
+  let searchQuery  = '';
+  let searchTimer  = null;
+
+  /* ── Render ── */
+  function getFiltered() {
+    const statuses = FILTER_MAP[activeFilter];
+    return JOBS.filter(j => {
+      const matchStatus = !statuses || statuses.includes(j.status);
+      const q = searchQuery.toLowerCase();
+      const matchSearch = !q ||
+        j.id.toLowerCase().includes(q) ||
+        j.customer.toLowerCase().includes(q) ||
+        j.plate.toLowerCase().includes(q) ||
+        j.vehicle.toLowerCase().includes(q);
+      return matchStatus && matchSearch;
+    });
+  }
+
+  function renderList() {
+    const jobs = getFiltered();
+    const list  = document.getElementById('jobList');
+    const empty = document.getElementById('emptyState');
+    const badge = document.getElementById('jobCountBadge');
+
+    badge.textContent = jobs.length + ' job' + (jobs.length !== 1 ? 's':'');
+
+    if (jobs.length === 0) {
+      list.innerHTML = '';
+      empty.classList.add('visible');
+      return;
+    }
+    empty.classList.remove('visible');
+
+    list.innerHTML = jobs.map(j => {
+      const sc = STATUS_CFG[j.status] || {label:j.status, sb:'', pb:''};
+      const priorityHtml = j.priority !== 'normal'
+        ? `<span class="priority-chip priority-${j.priority}">${j.priority.toUpperCase()}</span>`
+        : '';
+      const bayHtml = j.bay !== '-'
+        ? `<span class="jc-bay-lbl">${j.bay}</span>` : '';
+      const etaCls = j.eta === 'Ready now' ? 'jc-eta ready' : 'jc-eta';
+
+      return `
+        <div class="swipe-wrapper" data-id="${j.id}">
+          <div class="swipe-bg-right">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span class="swipe-action-label">Check In</span>
+          </div>
+          <div class="swipe-bg-left">
+            <div class="swipe-bg-hold">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+              <span class="swipe-action-label">Hold</span>
+            </div>
+            <div class="swipe-bg-cancel">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <span class="swipe-action-label">Cancel</span>
+            </div>
+          </div>
+          <div class="swipe-inner">
+            <div class="jc-body">
+              <div class="jc-row1">
+                <span class="jc-num">${j.id}</span>
+                ${priorityHtml}
+                <span class="jc-spacer"></span>
+                <span class="status-badge ${sc.sb}"><span class="dot"></span>${sc.label}</span>
+              </div>
+              <div class="jc-customer">${j.customer}</div>
+              <div class="jc-vehicle"><span class="jc-plate">${j.plate}</span> · ${j.vehicle}</div>
+              <div class="jc-row-bottom">
+                <div class="jc-tech">
+                  <div class="jc-tech-av">${j.tech.i}</div>
+                  <span class="jc-tech-name">${j.tech.n}</span>
+                  ${bayHtml}
+                </div>
+                <span class="${etaCls}">${j.eta}</span>
+              </div>
+            </div>
+            <div class="jc-progress ${sc.pb}" style="width:${j.progress}%"></div>
+          </div>
+        </div>`;
+    }).join('');
+
+    /* Attach swipe + tap to each card */
+    list.querySelectorAll('.swipe-wrapper').forEach(wrapper => {
+      initSwipe(wrapper);
+    });
+
+    /* Update chip counts */
+    updateChipCounts();
+  }
+
+  function updateChipCounts() {
+    const counts = { all: JOBS.length, in_progress: 0, pending: 0, ready_for_delivery: 0, delivered: 0 };
+    JOBS.forEach(j => {
+      if (['in_progress','intake_inspection','estimate_approved'].includes(j.status)) counts.in_progress++;
+      if (['estimate_pending','qc_pending'].includes(j.status)) counts.pending++;
+      if (j.status === 'ready_for_delivery') counts.ready_for_delivery++;
+      if (j.status === 'delivered') counts.delivered++;
+    });
+    document.getElementById('cnt-all').textContent   = counts.all;
+    document.getElementById('cnt-ip').textContent    = counts.in_progress;
+    document.getElementById('cnt-pend').textContent  = counts.pending;
+    document.getElementById('cnt-ready').textContent = counts.ready_for_delivery;
+    document.getElementById('cnt-del').textContent   = counts.delivered;
+  }
+
+  /* ── Filter chips ── */
+  document.querySelectorAll('.filter-chip[data-filter]').forEach(chip => {
+    chip.addEventListener('click', function() {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      this.classList.add('active');
+      activeFilter = this.dataset.filter;
+      renderList();
+    });
+  });
+
+  /* ── Search ── */
+  const searchInput = document.getElementById('searchInput');
+  const searchClear = document.getElementById('searchClear');
+
+  searchInput.addEventListener('input', function() {
+    searchClear.classList.toggle('visible', this.value.length > 0);
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      searchQuery = this.value.trim();
+      renderList();
+    }, 280);
+  });
+
+  searchClear.addEventListener('click', () => {
+    searchInput.value = '';
+    searchClear.classList.remove('visible');
+    searchQuery = '';
+    renderList();
+    searchInput.focus();
+  });
+
+  /* ── Filter sheet ── */
+  const filterIconBtn = document.getElementById('filterIconBtn');
+  const sheetOverlay  = document.getElementById('sheetOverlay');
+  const filterSheet   = document.getElementById('filterSheet');
+  let activeFilterDot = false;
+
+  filterIconBtn.addEventListener('click', () => { openSheet(); });
+  sheetOverlay.addEventListener('click',  () => { closeSheet(); });
+
+  document.getElementById('sheetApplyBtn').addEventListener('click', () => {
+    const selVals = [...document.querySelectorAll('.sheet-option.sel')].map(o => o.dataset.val);
+    activeFilterDot = selVals.length > 0;
+    document.getElementById('filterDot').classList.toggle('visible', activeFilterDot);
+    filterIconBtn.classList.toggle('active', activeFilterDot);
+    closeSheet();
+    showSnackbar(selVals.length > 0 ? `${selVals.length} filter${selVals.length>1?'s':''} applied` : 'Filters cleared');
+  });
+
+  document.getElementById('sheetClearBtn').addEventListener('click', () => {
+    document.querySelectorAll('.sheet-option').forEach(o => o.classList.remove('sel'));
+  });
+
+  document.querySelectorAll('.sheet-option').forEach(opt => {
+    opt.addEventListener('click', function() { this.classList.toggle('sel'); });
+  });
+
+  function openSheet()  { filterSheet.classList.add('open'); sheetOverlay.classList.add('open'); }
+  function closeSheet() { filterSheet.classList.remove('open'); sheetOverlay.classList.remove('open'); }
+
+  /* ── Sort button ── */
+  const sortOptions = ['Newest first', 'ETA soonest', 'Priority: Critical first', 'Status'];
+  let sortIdx = 0;
+  document.getElementById('sortBtn').addEventListener('click', () => {
+    sortIdx = (sortIdx + 1) % sortOptions.length;
+    showSnackbar('Sorted by: ' + sortOptions[sortIdx]);
+  });
+
+  /* ── FAB ── */
+  document.getElementById('fabBtn').addEventListener('click', () => {
+    showSnackbar('→ Creating new job (Screen 05)');
+  });
+
+  /* ── Empty state clear ── */
+  document.getElementById('emptyClearBtn').addEventListener('click', () => {
+    activeFilter = 'all';
+    searchQuery  = '';
+    searchInput.value = '';
+    searchClear.classList.remove('visible');
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    document.querySelector('.filter-chip[data-filter="all"]').classList.add('active');
+    renderList();
+  });
+
+  /* ── Swipe gesture implementation ── */
+  /* Flutter: flutter_slidable > Slidable(startActionPane, endActionPane) */
+  function initSwipe(wrapper) {
+    const inner = wrapper.querySelector('.swipe-inner');
+    let startX = null, isDrag = false, curDelta = 0;
+    const THRESH = 62, MAX = 88;
+
+    inner.addEventListener('pointerdown', e => {
+      if (e.button !== 0) return;
+      startX = e.clientX; isDrag = false; curDelta = 0;
+      inner.setPointerCapture(e.pointerId);
+      inner.style.transition = 'none';
+    });
+
+    inner.addEventListener('pointermove', e => {
+      if (startX === null) return;
+      const d = e.clientX - startX;
+      if (!isDrag && Math.abs(d) > 8) isDrag = true;
+      if (!isDrag) return;
+      curDelta = Math.max(-MAX, Math.min(MAX, d));
+      inner.style.transform = `translateX(${curDelta}px)`;
+      e.preventDefault();
+    });
+
+    inner.addEventListener('pointerup', e => {
+      if (!isDrag) { handleCardTap(wrapper.dataset.id); startX = null; return; }
+      inner.style.transition = 'transform 220ms var(--ease-feather)';
+      if (curDelta >= THRESH) {
+        inner.style.transform = `translateX(${MAX}px)`;
+        setTimeout(() => { snapBack(inner); handleCheckIn(wrapper.dataset.id); }, 500);
+      } else if (curDelta <= -THRESH) {
+        inner.style.transform = `translateX(-${MAX}px)`;
+        setTimeout(() => { snapBack(inner); handleHold(wrapper.dataset.id); }, 500);
+      } else {
+        snapBack(inner);
+      }
+      startX = null; isDrag = false;
+    });
+
+    inner.addEventListener('pointercancel', () => { snapBack(inner); startX = null; isDrag = false; });
+  }
+
+  function snapBack(inner) {
+    inner.style.transition = 'transform 240ms var(--ease-feather)';
+    inner.style.transform  = '';
+  }
+
+  function handleCardTap(id) { showSnackbar(`Opening ${id} detail →`); }
+  function handleCheckIn(id) { showSnackbar(`${id} checked in · Bay assigned`); }
+  function handleHold(id)    { showSnackbar(`${id} placed on hold`); }
+
+  /* ── Snackbar ── */
+  let snackT;
+  function showSnackbar(msg) {
+    const s = document.getElementById('snackbar');
+    s.textContent = msg;
+    s.classList.add('visible');
+    clearTimeout(snackT);
+    snackT = setTimeout(() => s.classList.remove('visible'), 2800);
+  }
+
+  /* ── Initial render ── */
+  renderList();
+</script>
+
+</body>
+</html>
