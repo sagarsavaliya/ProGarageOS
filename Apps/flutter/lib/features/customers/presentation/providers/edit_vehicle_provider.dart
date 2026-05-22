@@ -35,6 +35,7 @@ class EditVehicleNotifier extends StateNotifier<EditVehicleState> {
     String? color,
     required String fuelType,
     int? odometerReading,
+    bool? gpsTrackingConsent,
   }) async {
     if (maker.trim().isEmpty || model.trim().isEmpty) {
       state = state.copyWith(errorMessage: 'Make and model are required.');
@@ -52,6 +53,7 @@ class EditVehicleNotifier extends StateNotifier<EditVehicleState> {
         color: color?.trim().isEmpty == true ? null : color?.trim(),
         fuelType: fuelType,
         odometerReading: odometerReading,
+        gpsTrackingConsent: gpsTrackingConsent,
       );
       _ref.invalidate(customerDetailProvider(_customerUuid));
       _ref.invalidate(customerVehiclesProvider(_customerUuid));

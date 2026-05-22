@@ -49,9 +49,11 @@ dependencies:
 
   # --- Deep Links ---
   url_launcher: ^6.3.2
+  share_plus: ^10.1.4
 
   # --- Media ---
   image_picker: ^1.1.2
+  file_picker: ^8.1.7
 
   # --- Utils ---
   intl: ^0.20.1

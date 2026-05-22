@@ -41,4 +41,5 @@ class Appointment extends Model
     public function serviceCategory(): BelongsTo { return $this->belongsTo(ServiceCategory::class); }
     public function assignedTechnician(): BelongsTo { return $this->belongsTo(User::class, 'assigned_technician_id'); }
     public function convertedJob(): BelongsTo { return $this->belongsTo(ServiceJob::class, 'converted_job_id'); }
+    public function assignedBay(): BelongsTo { return $this->belongsTo(ServiceBay::class, 'assigned_bay_id'); }
 }

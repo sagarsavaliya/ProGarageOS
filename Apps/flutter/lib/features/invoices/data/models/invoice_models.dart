@@ -31,7 +31,7 @@ class InvoiceCustomer {
 
   factory InvoiceCustomer.fromJson(Map<String, dynamic> json) => InvoiceCustomer(
         uuid: json['uuid'] as String? ?? '',
-        fullName: json['full_name'] as String? ?? '',
+        fullName: json['full_name'] as String? ?? json['name'] as String? ?? '',
         phone: json['phone'] as String? ?? '',
         email: json['email'] as String?,
       );
@@ -53,7 +53,7 @@ class InvoiceVehicle {
   String get makeModel => '$make $model';
 
   factory InvoiceVehicle.fromJson(Map<String, dynamic> json) => InvoiceVehicle(
-        make: json['make'] as String? ?? '',
+        make: json['make'] as String? ?? json['maker'] as String? ?? '',
         model: json['model'] as String? ?? '',
         registrationNumber: json['registration_number'] as String? ?? '',
         year: (json['year'] as num?)?.toInt(),
@@ -102,7 +102,7 @@ class InvoiceItem {
   factory InvoiceItem.fromJson(Map<String, dynamic> json) => InvoiceItem(
         uuid: json['uuid'] as String? ?? '',
         lineType: json['line_type'] as String? ?? 'service',
-        description: json['description'] as String? ?? '',
+        description: json['description'] as String? ?? json['name'] as String? ?? '',
         quantity: (json['quantity'] as num?)?.toDouble() ?? 1,
         unitPrice: (json['unit_price'] as num?)?.toDouble() ?? 0,
         taxRate: (json['tax_rate'] as num?)?.toDouble() ?? 0,
@@ -192,17 +192,20 @@ class RecordPaymentRequest {
   final int paymentMethodId;
   final String? referenceNumber;
   final String? notes;
+  final String paymentType;
 
   const RecordPaymentRequest({
     required this.amount,
     required this.paymentMethodId,
     this.referenceNumber,
     this.notes,
+    this.paymentType = 'customer_pay',
   });
 
   Map<String, dynamic> toJson() => {
         'amount': amount,
         'payment_method_id': paymentMethodId,
+        'payment_type': paymentType,
         if (referenceNumber != null && referenceNumber!.isNotEmpty)
           'reference_number': referenceNumber,
         if (notes != null && notes!.isNotEmpty) 'notes': notes,
@@ -279,11 +282,14 @@ class InvoiceDetail {
   final double totalAmount;
   final double paidAmount;
   final double balanceDue;
+  final double? customerPayAmount;
+  final double? insuranceClaimAmount;
   final InvoiceJob serviceJob;
   final InvoiceCustomer customer;
   final InvoiceVehicle vehicle;
   final List<InvoiceItem> items;
   final List<PaymentRecord> payments;
+  final String? pdfUrl;
 
   const InvoiceDetail({
     required this.uuid,
@@ -298,11 +304,14 @@ class InvoiceDetail {
     required this.totalAmount,
     required this.paidAmount,
     required this.balanceDue,
+    this.customerPayAmount,
+    this.insuranceClaimAmount,
     required this.serviceJob,
     required this.customer,
     required this.vehicle,
     required this.items,
     required this.payments,
+    this.pdfUrl,
   });
 
   bool get isOverdue {
@@ -322,14 +331,25 @@ class InvoiceDetail {
           : null,
       notes: data['notes'] as String?,
       subtotal: (data['subtotal'] as num?)?.toDouble() ?? 0,
-      taxAmount: (data['tax_amount'] as num?)?.toDouble() ?? 0,
-      discountAmount: (data['discount_amount'] as num?)?.toDouble() ?? 0,
-      totalAmount: (data['total_amount'] as num?)?.toDouble() ?? 0,
-      paidAmount: (data['paid_amount'] as num?)?.toDouble() ?? 0,
+      taxAmount: (data['tax_total'] as num?)?.toDouble() ??
+          (data['tax_amount'] as num?)?.toDouble() ??
+          0,
+      discountAmount: (data['discount_total'] as num?)?.toDouble() ??
+          (data['discount_amount'] as num?)?.toDouble() ??
+          0,
+      totalAmount: (data['grand_total'] as num?)?.toDouble() ??
+          (data['total_amount'] as num?)?.toDouble() ??
+          0,
+      paidAmount: (data['amount_paid'] as num?)?.toDouble() ??
+          (data['paid_amount'] as num?)?.toDouble() ??
+          0,
       balanceDue: (data['balance_due'] as num?)?.toDouble() ?? 0,
+      customerPayAmount: (data['customer_pay_amount'] as num?)?.toDouble(),
+      insuranceClaimAmount: (data['insurance_claim_amount'] as num?)?.toDouble(),
       serviceJob: InvoiceJob.fromJson(data['service_job'] as Map<String, dynamic>? ?? {}),
       customer: InvoiceCustomer.fromJson(data['customer'] as Map<String, dynamic>? ?? {}),
       vehicle: InvoiceVehicle.fromJson(data['vehicle'] as Map<String, dynamic>? ?? {}),
+      pdfUrl: data['pdf_url'] as String?,
       items: (data['items'] as List<dynamic>?)
               ?.map((e) => InvoiceItem.fromJson(e as Map<String, dynamic>))
               .toList() ??

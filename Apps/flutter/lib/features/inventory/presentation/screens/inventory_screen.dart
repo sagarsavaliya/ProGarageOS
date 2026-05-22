@@ -10,6 +10,8 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/app_filter_chip.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/guided_empty_state.dart';
+import '../../../../core/widgets/quick_action_chip.dart';
 import '../../data/models/inventory_models.dart';
 import '../providers/inventory_provider.dart';
 
@@ -265,6 +267,10 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
               HapticFeedback.lightImpact();
               context.push('/inventory/${displayItems[index].uuid}');
             },
+            onAdjust: () {
+              HapticFeedback.lightImpact();
+              context.push('/inventory/${displayItems[index].uuid}');
+            },
           );
         },
       ),
@@ -305,38 +311,18 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
 
   Widget _buildEmpty(bool isLowStockFilter) {
     if (isLowStockFilter) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(PhosphorIconsFill.checkCircle, color: AppColors.statusGreen, size: 52),
-            const SizedBox(height: 16),
-            Text('Stock levels are healthy', style: AppTextStyles.titleMedium),
-            const SizedBox(height: 8),
-            Text(
-              'All items are above minimum threshold',
-              style: AppTextStyles.bodySmall,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+      return const GuidedEmptyState(
+        icon: PhosphorIconsFill.checkCircle,
+        title: 'Stock levels are healthy',
+        subtitle: 'All items are above minimum threshold',
       );
     }
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(PhosphorIconsRegular.package, color: AppColors.textMuted, size: 52),
-          const SizedBox(height: 16),
-          Text('No parts found', style: AppTextStyles.titleMedium),
-          const SizedBox(height: 8),
-          Text(
-            'Try a different filter or search term',
-            style: AppTextStyles.bodySmall,
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
+    return GuidedEmptyState(
+      icon: PhosphorIconsRegular.package,
+      title: 'No parts found',
+      subtitle: 'Add your first part to track inventory',
+      actionLabel: 'Add part',
+      onAction: () => context.push('/inventory/add'),
     );
   }
 }
@@ -348,143 +334,89 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
 class _InventoryItemTile extends StatelessWidget {
   final InventoryItem item;
   final VoidCallback onTap;
+  final VoidCallback onAdjust;
 
-  const _InventoryItemTile({required this.item, required this.onTap});
+  const _InventoryItemTile({
+    required this.item,
+    required this.onTap,
+    required this.onAdjust,
+  });
 
   @override
   Widget build(BuildContext context) {
     final currencyFmt = NumberFormat('#,##,##0.00', 'en_IN');
     final (stockColor, statusLabel) = _stockColorAndLabel(item.stockStatus);
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.bgSurface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.divider),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Left — item info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Ink(
+            decoration: BoxDecoration(
+              color: AppColors.bgSurface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.divider),
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border(left: BorderSide(color: stockColor, width: 3)),
+              ),
+              padding: const EdgeInsets.all(10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Name + SKU badge
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          item.name,
-                          style: AppTextStyles.titleSmall,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(item.name, style: AppTextStyles.titleSmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 3),
+                        Text(
+                          '${item.category.name} · ${item.sku}',
+                          style: AppTextStyles.labelSmall,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.bgElevated,
-                          borderRadius: BorderRadius.circular(4),
+                        const SizedBox(height: 4),
+                        Text(
+                          '₹${currencyFmt.format(item.sellingPrice)} · cost ₹${currencyFmt.format(item.costPrice)}',
+                          style: AppTextStyles.monoSmall,
                         ),
-                        child: Text(
-                          item.sku,
-                          style: AppTextStyles.monoSmall.copyWith(
-                            color: AppColors.textSecondary,
-                            fontSize: 9,
-                          ),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 5),
-                  // Category pill + unit
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.bgOverlay,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          item.category.name,
-                          style: AppTextStyles.labelSmall.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '/ ${item.unit}',
-                        style: AppTextStyles.labelSmall.copyWith(
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 5),
-                  // Price row
-                  Row(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '₹${currencyFmt.format(item.sellingPrice)}',
-                        style: AppTextStyles.monoSmall.copyWith(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w500,
+                        '${item.stockQuantity}',
+                        style: AppTextStyles.monoLarge.copyWith(
+                          color: stockColor,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 18,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'cost ₹${currencyFmt.format(item.costPrice)}',
-                        style: AppTextStyles.monoSmall.copyWith(
-                          color: AppColors.textMuted,
-                        ),
+                      Text(item.unit, style: AppTextStyles.labelSmall),
+                      if (statusLabel != null) ...[
+                        const SizedBox(height: 4),
+                        _StockStatusBadge(label: statusLabel, color: stockColor),
+                      ],
+                      const SizedBox(height: 6),
+                      QuickActionChip(
+                        icon: PhosphorIconsRegular.pencilSimple,
+                        label: 'Adjust',
+                        onTap: onAdjust,
                       ),
                     ],
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 12),
-            // Right — stock quantity + status
-            SizedBox(
-              width: 72,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    '${item.stockQuantity}',
-                    style: AppTextStyles.monoLarge.copyWith(
-                      color: stockColor,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 20,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  Text(
-                    item.unit,
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: AppColors.textMuted,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  if (statusLabel != null) ...[
-                    const SizedBox(height: 4),
-                    _StockStatusBadge(
-                      label: statusLabel,
-                      color: stockColor,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

@@ -34,26 +34,39 @@ import '../../features/invoices/presentation/screens/create_invoice_screen.dart'
 import '../../features/inventory/presentation/screens/add_part_screen.dart';
 import '../../features/inventory/presentation/screens/inventory_screen.dart';
 import '../../features/inventory/presentation/screens/inventory_detail_screen.dart';
+import '../../features/appointments/presentation/screens/appointments_screen.dart';
+import '../../features/payments/presentation/screens/payments_hub_screen.dart';
+import '../../features/onboarding/presentation/screens/garage_setup_wizard_screen.dart';
+import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
+import '../../features/settings/presentation/screens/garage_profile_screen.dart';
 import '../../features/settings/presentation/screens/integrations_screen.dart';
 import '../../features/settings/presentation/screens/notifications_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../features/settings/presentation/screens/user_profile_screen.dart';
 import '../../features/splash/presentation/splash_screen.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 part 'app_router.g.dart';
+
+/// Root navigator — detail routes push above the tab shell.
+final rootNavigatorKey = GlobalKey<NavigatorState>();
 
 @riverpod
 GoRouter appRouter(Ref ref) {
   final secureStorage = ref.watch(secureStorageProvider);
 
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/',
     redirect: (context, state) async {
       final isSplash = state.matchedLocation == '/';
       if (isSplash) return null; // Splash handles its own navigation
       final hasToken = await secureStorage.hasToken();
       final isAuthRoute = state.matchedLocation.startsWith('/auth');
-      if (!hasToken && !isAuthRoute) return '/auth/login';
+      final isOnboardingRoute = state.matchedLocation.startsWith('/onboarding');
+      if (!hasToken && !isAuthRoute && !isOnboardingRoute && state.matchedLocation != '/') {
+        return '/auth/login';
+      }
       if (hasToken && isAuthRoute) return '/dashboard';
       return null;
     },
@@ -62,6 +75,17 @@ GoRouter appRouter(Ref ref) {
         path: '/',
         name: 'splash',
         builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: '/onboarding',
+        name: 'onboarding',
+        builder: (context, state) => const OnboardingScreen(),
+      ),
+      GoRoute(
+        path: '/onboarding/setup',
+        name: 'garage-setup',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const GarageSetupWizardScreen(),
       ),
       GoRoute(
         path: '/auth/login',
@@ -100,6 +124,21 @@ GoRouter appRouter(Ref ref) {
             builder: (context, state) => const JobsScreen(),
           ),
           GoRoute(
+            path: '/appointments',
+            name: 'appointments',
+            builder: (context, state) => const AppointmentsScreen(),
+          ),
+          GoRoute(
+            path: '/payments',
+            name: 'payments',
+            builder: (context, state) => const PaymentsHubScreen(),
+          ),
+          GoRoute(
+            path: '/team',
+            name: 'team-tab',
+            builder: (context, state) => const TechniciansScreen(showBackButton: false),
+          ),
+          GoRoute(
             path: '/vehicles',
             name: 'vehicles',
             builder: (context, state) => const VehiclesScreen(),
@@ -125,11 +164,13 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: '/jobs/add',
         name: 'job-add',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const CreateJobScreen(),
       ),
       GoRoute(
         path: '/jobs/:id/inspection/delivery',
         name: 'job-inspection-delivery',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final id = state.pathParameters['id'] ?? '';
           return VehicleInspectionScreen(jobUuid: id, phase: 'delivery');
@@ -138,6 +179,7 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: '/jobs/:id/inspection',
         name: 'job-inspection',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final id = state.pathParameters['id'] ?? '';
           return VehicleInspectionScreen(jobUuid: id, phase: 'intake');
@@ -146,6 +188,7 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: '/jobs/:id/estimate',
         name: 'job-estimate',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final id = state.pathParameters['id'] ?? '';
           return EstimateScreen(jobUuid: id);
@@ -154,6 +197,7 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: '/jobs/:id/edit',
         name: 'job-edit',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final id = state.pathParameters['id'] ?? '';
           return EditJobScreen(jobUuid: id);
@@ -162,6 +206,7 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: '/jobs/:id',
         name: 'job-detail',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final id = state.pathParameters['id'] ?? '';
           return JobDetailScreen(jobUuid: id);
@@ -170,11 +215,13 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: '/customers/add',
         name: 'customer-add',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const AddCustomerScreen(),
       ),
       GoRoute(
         path: '/customers/vehicle/add',
         name: 'vehicle-add',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>? ?? {};
           return AddVehicleScreen(
@@ -186,6 +233,7 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: '/customers/:id/edit',
         name: 'customer-edit',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final id = state.pathParameters['id'] ?? '';
           return EditCustomerScreen(customerUuid: id);
@@ -194,6 +242,7 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: '/customers/:id',
         name: 'customer-detail',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final id = state.pathParameters['id'] ?? '';
           return CustomerDetailScreen(customerUuid: id);
@@ -202,6 +251,7 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: '/vehicles/:id/edit',
         name: 'vehicle-edit',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final id = state.pathParameters['id'] ?? '';
           final extra = state.extra as Map<String, dynamic>? ?? {};
@@ -214,6 +264,7 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: '/vehicles/:id',
         name: 'vehicle-detail',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final id = state.pathParameters['id'] ?? '';
           final extra = state.extra as Map<String, dynamic>?;
@@ -224,6 +275,7 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: '/invoices/add',
         name: 'invoice-add',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
           return CreateInvoiceScreen(jobUuid: extra?['jobUuid'] as String?);
@@ -232,6 +284,7 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: '/invoices/:id',
         name: 'invoice-detail',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final id = state.pathParameters['id'] ?? '';
           return InvoiceDetailScreen(invoiceUuid: id);
@@ -241,11 +294,13 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: '/inventory/add',
         name: 'inventory-add',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const AddPartScreen(),
       ),
       GoRoute(
         path: '/inventory/:id',
         name: 'inventory-detail',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final id = state.pathParameters['id'] ?? '';
           return InventoryDetailScreen(itemUuid: id);
@@ -254,11 +309,13 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: '/team/add',
         name: 'team-add',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const AddTechnicianScreen(),
       ),
       GoRoute(
         path: '/team/:id',
         name: 'team-detail',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final id = state.pathParameters['id'] ?? '';
           return TechnicianDetailScreen(staffUuid: id);
@@ -267,21 +324,37 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: '/team',
         name: 'team',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const TechniciansScreen(),
+      ),
+      GoRoute(
+        path: '/settings/garage-profile',
+        name: 'garage-profile',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const GarageProfileScreen(),
+      ),
+      GoRoute(
+        path: '/settings/profile',
+        name: 'user-profile',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const UserProfileScreen(),
       ),
       GoRoute(
         path: '/settings/integrations',
         name: 'integrations',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const IntegrationsScreen(),
       ),
       GoRoute(
         path: '/settings',
         name: 'settings',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const SettingsScreen(),
       ),
       GoRoute(
         path: '/notifications',
         name: 'notifications',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const NotificationsScreen(),
       ),
     ],
@@ -310,9 +383,18 @@ class _ScaffoldWithNavState extends ConsumerState<ScaffoldWithNav> {
     });
   }
 
-  List<String> _tabs(bool hideInvoices) => hideInvoices
-      ? const ['/dashboard', '/jobs', '/customers', '/inventory']
-      : const ['/dashboard', '/jobs', '/customers', '/invoices', '/inventory'];
+  List<String> _tabs(bool isTechnician, bool showTeam, bool showPayments) {
+    if (isTechnician) {
+      return const ['/dashboard', '/jobs', '/appointments', '/customers', '/inventory'];
+    }
+    if (showTeam && showPayments) {
+      return const ['/dashboard', '/jobs', '/appointments', '/payments', '/team'];
+    }
+    if (showPayments) {
+      return const ['/dashboard', '/jobs', '/appointments', '/payments', '/customers'];
+    }
+    return const ['/dashboard', '/jobs', '/appointments', '/customers', '/inventory'];
+  }
 
   int _locationToIndex(String location, List<String> tabs) {
     for (int i = 0; i < tabs.length; i++) {
@@ -323,8 +405,10 @@ class _ScaffoldWithNavState extends ConsumerState<ScaffoldWithNav> {
 
   @override
   Widget build(BuildContext context) {
-    final hideInvoices = ref.watch(hideInvoicesTabProvider);
-    final tabs = _tabs(hideInvoices);
+    final isTechnician = ref.watch(isTechnicianProvider);
+    final showTeam = ref.watch(showTeamTabProvider);
+    final showPayments = ref.watch(showPaymentsTabProvider);
+    final tabs = _tabs(isTechnician, showTeam, showPayments);
     final location = GoRouterState.of(context).matchedLocation;
     final currentIndex = _locationToIndex(location, tabs);
 
@@ -347,7 +431,7 @@ class _ScaffoldWithNavState extends ConsumerState<ScaffoldWithNav> {
               _NavItem(
                 icon: PhosphorIconsRegular.squaresFour,
                 activeIcon: PhosphorIconsFill.squaresFour,
-                label: 'Dashboard',
+                label: 'Home',
                 isActive: currentIndex == 0,
                 onTap: () {
                   HapticFeedback.lightImpact();
@@ -365,36 +449,70 @@ class _ScaffoldWithNavState extends ConsumerState<ScaffoldWithNav> {
                 },
               ),
               _NavItem(
-                icon: PhosphorIconsRegular.users,
-                activeIcon: PhosphorIconsFill.users,
-                label: 'Customers',
+                icon: PhosphorIconsRegular.calendarBlank,
+                activeIcon: PhosphorIconsFill.calendarBlank,
+                label: 'Appts',
                 isActive: currentIndex == 2,
                 onTap: () {
                   HapticFeedback.lightImpact();
-                  context.go('/customers');
+                  context.go('/appointments');
                 },
               ),
-              if (!hideInvoices)
+              if (showPayments && !isTechnician)
                 _NavItem(
-                  icon: PhosphorIconsRegular.receipt,
-                  activeIcon: PhosphorIconsFill.receipt,
-                  label: 'Invoices',
+                  icon: PhosphorIconsRegular.currencyInr,
+                  activeIcon: PhosphorIconsFill.currencyInr,
+                  label: 'Pay',
                   isActive: currentIndex == 3,
                   onTap: () {
                     HapticFeedback.lightImpact();
-                    context.go('/invoices');
+                    context.go('/payments');
                   },
                 ),
-              _NavItem(
-                icon: PhosphorIconsRegular.package,
-                activeIcon: PhosphorIconsFill.package,
-                label: 'Parts',
-                isActive: currentIndex == (hideInvoices ? 3 : 4),
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  context.go('/inventory');
-                },
-              ),
+              if (showTeam && !isTechnician)
+                _NavItem(
+                  icon: PhosphorIconsRegular.usersThree,
+                  activeIcon: PhosphorIconsFill.usersThree,
+                  label: 'Team',
+                  isActive: currentIndex == 4,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    context.go('/team');
+                  },
+                ),
+              if (isTechnician)
+                _NavItem(
+                  icon: PhosphorIconsRegular.users,
+                  activeIcon: PhosphorIconsFill.users,
+                  label: 'Customers',
+                  isActive: currentIndex == 3,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    context.go('/customers');
+                  },
+                ),
+              if (isTechnician)
+                _NavItem(
+                  icon: PhosphorIconsRegular.package,
+                  activeIcon: PhosphorIconsFill.package,
+                  label: 'Parts',
+                  isActive: currentIndex == 4,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    context.go('/inventory');
+                  },
+                ),
+              if (!isTechnician && !showTeam && showPayments)
+                _NavItem(
+                  icon: PhosphorIconsRegular.users,
+                  activeIcon: PhosphorIconsFill.users,
+                  label: 'Customers',
+                  isActive: currentIndex == 4,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    context.go('/customers');
+                  },
+                ),
             ],
           ),
         ),

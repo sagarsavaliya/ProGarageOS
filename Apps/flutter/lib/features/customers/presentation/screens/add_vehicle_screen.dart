@@ -5,7 +5,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/storage/secure_storage.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../settings/presentation/widgets/gps_tracking_info_sheet.dart';
 import '../providers/create_vehicle_provider.dart';
 import '../providers/customers_provider.dart' show customerDetailProvider, customersProvider;
 
@@ -32,8 +34,20 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
   final _colorController = TextEditingController();
   final _odometerController = TextEditingController();
   String _fuelType = 'petrol';
+  bool _gpsConsent = false;
 
   static const _fuelTypes = ['petrol', 'diesel', 'cng', 'electric', 'hybrid'];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadGpsDefault();
+  }
+
+  Future<void> _loadGpsDefault() async {
+    final enabled = await ref.read(secureStorageProvider).isGpsDefaultConsentEnabled();
+    if (mounted) setState(() => _gpsConsent = enabled);
+  }
 
   @override
   void dispose() {
@@ -61,6 +75,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
           color: _colorController.text,
           fuelType: _fuelType,
           odometerReading: odo,
+          gpsTrackingConsent: _gpsConsent,
         );
 
     if (vehicle != null && mounted) {
@@ -72,7 +87,8 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
-      context.go('/customers/${widget.customerUuid}');
+      context.pop();
+      context.push('/customers/${widget.customerUuid}');
     }
   }
 
@@ -170,6 +186,22 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                 const SizedBox(height: 14),
                 _label('Odometer (km)'),
                 _field(_odometerController, '42500', keyboard: TextInputType.number),
+                const SizedBox(height: 14),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text('GPS odometer tracking', style: AppTextStyles.bodyMedium),
+                  subtitle: Text(
+                    'Customer consent to estimate km driven',
+                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted),
+                  ),
+                  secondary: IconButton(
+                    icon: const Icon(PhosphorIconsRegular.info, size: 18, color: AppColors.textMuted),
+                    onPressed: () => GpsTrackingInfoSheet.show(context),
+                  ),
+                  value: _gpsConsent,
+                  activeColor: AppColors.primaryOrange,
+                  onChanged: (v) => setState(() => _gpsConsent = v),
+                ),
                 if (state.errorMessage != null) ...[
                   const SizedBox(height: 12),
                   Text(

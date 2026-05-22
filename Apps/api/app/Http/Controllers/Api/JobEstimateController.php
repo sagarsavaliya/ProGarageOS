@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\ServiceJob;
+use App\Services\PushNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -70,6 +71,8 @@ class JobEstimateController extends Controller
 
         AuditLog::record('estimate.sent', 'service_jobs', $job->id, [], []);
 
+        $this->pushEstimateAlert($request, $job, 'Estimate sent', 'Waiting for customer approval');
+
         return response()->json([
             'success' => true,
             'data'    => [
@@ -96,6 +99,8 @@ class JobEstimateController extends Controller
         ]);
 
         AuditLog::record('estimate.approved', 'service_jobs', $job->id, [], ['by' => 'staff']);
+
+        $this->pushEstimateAlert($request, $job, 'Estimate approved', 'Work can proceed');
 
         return response()->json([
             'success' => true,
@@ -161,5 +166,30 @@ class JobEstimateController extends Controller
             'estimated_amount'     => (float) ($job->estimated_amount ?? $subtotal),
             'currency'             => 'INR',
         ];
+    }
+
+    private function pushEstimateAlert(Request $request, ServiceJob $job, string $title, string $body): void
+    {
+        $tenantId = $request->user()->tenant_id;
+        $job->loadMissing('customer', 'vehicle');
+
+        dispatch(function () use ($tenantId, $job, $title, $body, $request) {
+            $push = app(PushNotificationService::class);
+            $vehicle = $job->vehicle?->registration_number ?? 'Vehicle';
+            $fullTitle = "{$job->job_number} — {$title}";
+
+            $push->notifyTenantStaff(
+                $tenantId,
+                'estimate_update',
+                $fullTitle,
+                "{$vehicle} · {$body}",
+                [
+                    'type'     => 'job',
+                    'job_uuid' => $job->uuid,
+                    'status'   => $job->status,
+                ],
+                $request->user()->id,
+            );
+        })->afterResponse();
     }
 }

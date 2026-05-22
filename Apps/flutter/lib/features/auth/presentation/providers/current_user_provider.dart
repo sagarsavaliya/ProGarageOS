@@ -37,3 +37,18 @@ final isOwnerProvider = Provider<bool>((ref) {
   final user = ref.watch(currentUserProvider).valueOrNull;
   return user?.role == 'owner';
 });
+
+final isTechnicianProvider = Provider<bool>((ref) {
+  final user = ref.watch(currentUserProvider).valueOrNull;
+  return user?.role == 'technician';
+});
+
+final showTeamTabProvider = Provider<bool>((ref) {
+  final user = ref.watch(currentUserProvider).valueOrNull;
+  if (user == null) return false;
+  return user.role == 'owner' || user.role == 'service_advisor';
+});
+
+final showPaymentsTabProvider = Provider<bool>((ref) {
+  return !ref.watch(isTechnicianProvider);
+});

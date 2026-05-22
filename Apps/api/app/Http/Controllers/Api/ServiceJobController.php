@@ -94,6 +94,10 @@ class ServiceJobController extends Controller
             'scheduled_start_at'   => ['nullable', 'date'],
             'service_category_uuids' => ['nullable', 'array'],
             'service_category_uuids.*' => ['string', 'exists:service_categories,uuid'],
+            'is_insurance_job'       => ['boolean'],
+            'insurance_company'      => ['nullable', 'string', 'max:150'],
+            'claim_number'           => ['nullable', 'string', 'max:100'],
+            'insurance_survey_at'    => ['nullable', 'date'],
         ]);
 
         $customer = Customer::where('uuid', $data['customer_uuid'])->firstOrFail();
@@ -101,6 +105,16 @@ class ServiceJobController extends Controller
 
         $categoryIds = $this->resolveCategoryIds($tenantId, $data['service_category_uuids'] ?? []);
         unset($data['service_category_uuids'], $data['customer_uuid'], $data['vehicle_uuid']);
+
+        $isInsuranceCategory = $this->hasInsuranceCategory($tenantId, $categoryIds);
+        if ($isInsuranceCategory) {
+            $data['is_insurance_job'] = true;
+            $data['insurance_claim_status'] = 'survey_pending';
+        } elseif (! empty($data['is_insurance_job'])) {
+            $data['insurance_claim_status'] = 'survey_pending';
+        } else {
+            unset($data['is_insurance_job'], $data['insurance_company'], $data['claim_number'], $data['insurance_survey_at']);
+        }
 
         $job = ServiceJob::create([
             ...$data,
@@ -239,6 +253,37 @@ class ServiceJobController extends Controller
         ]);
     }
 
+    public function updateInsuranceClaim(Request $request, string $uuid): JsonResponse
+    {
+        $tenantId = $request->user()->tenant_id;
+        $job = ServiceJob::withoutGlobalScope('tenant')
+            ->where('uuid', $uuid)
+            ->where('tenant_id', $tenantId)
+            ->firstOrFail();
+
+        $data = $request->validate([
+            'insurance_claim_status'     => ['sometimes', 'in:none,survey_pending,estimate_submitted,approved,rejected,settled'],
+            'insurance_company'          => ['nullable', 'string', 'max:150'],
+            'claim_number'               => ['nullable', 'string', 'max:100'],
+            'insurance_survey_at'        => ['nullable', 'date'],
+            'customer_liability_amount'  => ['nullable', 'numeric', 'min:0'],
+            'job_insurance_claim_amount' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        if (isset($data['insurance_claim_status']) && $data['insurance_claim_status'] !== 'none') {
+            $data['is_insurance_job'] = true;
+        }
+
+        $job->update($data);
+
+        AuditLog::record('job.insurance_updated', 'service_jobs', $job->id, [], $data);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $this->formatJob($job->fresh(['customer', 'vehicle', 'serviceCategories']), true),
+        ]);
+    }
+
     private function resolveCategoryIds(int $tenantId, array $uuids): array
     {
         if ($uuids === []) {
@@ -249,6 +294,18 @@ class ServiceJobController extends Controller
             ->whereIn('uuid', $uuids)
             ->pluck('id')
             ->all();
+    }
+
+    private function hasInsuranceCategory(int $tenantId, array $categoryIds): bool
+    {
+        if ($categoryIds === []) {
+            return false;
+        }
+
+        return ServiceCategory::where('tenant_id', $tenantId)
+            ->whereIn('id', $categoryIds)
+            ->whereIn('code', ['ACCIDENT_RPR', 'BODY_WORK'])
+            ->exists();
     }
 
     /**
@@ -612,6 +669,7 @@ class ServiceJobController extends Controller
             'actual_start_at'    => $job->actual_start_at?->toIso8601String(),
             'eta'                => $job->estimated_completion_at?->toIso8601String(),
             'created_at'         => $job->created_at->toIso8601String(),
+            'insurance_claim'    => $this->formatInsuranceClaim($job),
         ];
 
         if ($full) {
@@ -661,6 +719,23 @@ class ServiceJobController extends Controller
         }
 
         return $base;
+    }
+
+    private function formatInsuranceClaim(ServiceJob $job): array
+    {
+        return [
+            'is_insurance_job'           => (bool) $job->is_insurance_job,
+            'insurance_company'          => $job->insurance_company,
+            'claim_number'               => $job->claim_number,
+            'status'                     => $job->insurance_claim_status ?? 'none',
+            'insurance_survey_at'        => $job->insurance_survey_at?->toIso8601String(),
+            'customer_liability_amount'  => $job->customer_liability_amount !== null
+                ? (float) $job->customer_liability_amount
+                : null,
+            'insurance_claim_amount'     => $job->job_insurance_claim_amount !== null
+                ? (float) $job->job_insurance_claim_amount
+                : null,
+        ];
     }
 
     private function pushJobAlert(

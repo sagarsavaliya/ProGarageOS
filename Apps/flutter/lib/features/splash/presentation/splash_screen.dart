@@ -67,9 +67,16 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     if (_navigating) return;
     _navigating = true;
     if (!mounted) return;
-    final hasToken = await ref.read(secureStorageProvider).hasToken();
+    final storage = ref.read(secureStorageProvider);
+    final hasToken = await storage.hasToken();
     if (!mounted) return;
-    context.go(hasToken ? '/dashboard' : '/auth/login');
+    if (hasToken) {
+      context.go('/dashboard');
+      return;
+    }
+    final onboardingDone = await storage.isOnboardingCompleted();
+    if (!mounted) return;
+    context.go(onboardingDone ? '/auth/login' : '/onboarding');
   }
 
   @override

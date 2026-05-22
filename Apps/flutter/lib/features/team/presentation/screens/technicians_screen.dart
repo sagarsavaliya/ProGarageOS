@@ -10,7 +10,9 @@ import '../../data/models/staff_models.dart';
 import '../providers/staff_provider.dart';
 
 class TechniciansScreen extends ConsumerWidget {
-  const TechniciansScreen({super.key});
+  final bool showBackButton;
+
+  const TechniciansScreen({super.key, this.showBackButton = true});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -22,10 +24,13 @@ class TechniciansScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: AppColors.bgSurface,
         surfaceTintColor: Colors.transparent,
-        leading: IconButton(
-          icon: Icon(PhosphorIconsRegular.caretLeft, color: AppColors.textPrimary),
-          onPressed: () => context.pop(),
-        ),
+        automaticallyImplyLeading: showBackButton,
+        leading: showBackButton
+            ? IconButton(
+                icon: Icon(PhosphorIconsRegular.caretLeft, color: AppColors.textPrimary),
+                onPressed: () => context.pop(),
+              )
+            : null,
         title: Text('Team', style: AppTextStyles.titleMedium),
         actions: [
           IconButton(

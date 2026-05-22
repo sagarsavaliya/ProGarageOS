@@ -7,6 +7,10 @@ use App\Http\Controllers\Api\InventoryController;
 use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\IntegrationController;
+use App\Http\Controllers\Api\InspectionTemplateController;
+use App\Http\Controllers\Api\AppointmentController;
+use App\Http\Controllers\Api\AuditLogController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\JobEstimateController;
 use App\Http\Controllers\Api\JobTaskController;
 use App\Http\Controllers\Api\PaymentMethodController;
@@ -15,6 +19,7 @@ use App\Http\Controllers\Api\ServiceCategoryController;
 use App\Http\Controllers\Api\VehicleDocumentController;
 use App\Http\Controllers\Api\ServiceJobController;
 use App\Http\Controllers\Api\StaffController;
+use App\Http\Controllers\Api\TenantController;
 use App\Http\Controllers\Api\VehicleController;
 use Illuminate\Support\Facades\Route;
 
@@ -64,6 +69,11 @@ Route::middleware(['auth:sanctum', 'throttle:300,1'])->group(function () {
     // Dashboard
     Route::get('/dashboard/summary', [DashboardController::class, 'summary']);
 
+    // Tenant profile
+    Route::get('/tenant/profile', [TenantController::class, 'show']);
+    Route::put('/tenant/profile', [TenantController::class, 'update']);
+    Route::patch('/tenant/setup', [TenantController::class, 'updateSetup']);
+
     // Push notifications (staff inbox + device token)
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::patch('/notifications/read-all', [NotificationController::class, 'markAllRead']);
@@ -73,6 +83,7 @@ Route::middleware(['auth:sanctum', 'throttle:300,1'])->group(function () {
     // Service Jobs
     Route::apiResource('jobs', ServiceJobController::class)->parameters(['jobs' => 'uuid']);
     Route::patch('/jobs/{uuid}/status', [ServiceJobController::class, 'updateStatus']);
+    Route::patch('/jobs/{uuid}/insurance-claim', [ServiceJobController::class, 'updateInsuranceClaim']);
     Route::get('/jobs/{uuid}/inspections', [ServiceJobController::class, 'showInspection']);
     Route::post('/jobs/{uuid}/inspections', [ServiceJobController::class, 'storeInspection']);
     Route::post('/jobs/{uuid}/inspections/photos', [ServiceJobController::class, 'uploadInspectionPhoto']);
@@ -90,13 +101,21 @@ Route::middleware(['auth:sanctum', 'throttle:300,1'])->group(function () {
 
     Route::get('/service-categories', [ServiceCategoryController::class, 'index']);
 
+    // Appointments
+    Route::get('/appointments', [AppointmentController::class, 'index']);
+    Route::post('/appointments', [AppointmentController::class, 'store']);
+    Route::put('/appointments/{uuid}/check-in', [AppointmentController::class, 'checkIn']);
+
+    // Payments hub
+    Route::get('/payments/outstanding', [PaymentController::class, 'outstanding']);
+
     // Customers
     Route::apiResource('customers', CustomerController::class)->parameters(['customers' => 'uuid'])->except(['destroy']);
     Route::get('/customers/{uuid}/vehicles', [CustomerController::class, 'vehicles']);
     Route::get('/customers/{uuid}/service-history', [CustomerController::class, 'serviceHistory']);
 
     // Vehicles
-    Route::apiResource('vehicles', VehicleController::class)->parameters(['vehicles' => 'uuid'])->except(['destroy']);
+    Route::apiResource('vehicles', VehicleController::class)->parameters(['vehicles' => 'uuid']);
     Route::patch('/vehicles/{uuid}/odometer', [VehicleController::class, 'updateOdometer']);
     Route::get('/vehicles/{uuid}/documents', [VehicleDocumentController::class, 'index']);
     Route::post('/vehicles/{uuid}/documents', [VehicleDocumentController::class, 'store']);
@@ -114,7 +133,12 @@ Route::middleware(['auth:sanctum', 'throttle:300,1'])->group(function () {
 
     // Invoices
     Route::apiResource('invoices', InvoiceController::class)->parameters(['invoices' => 'uuid'])->only(['index', 'show', 'store']);
+    Route::get('/invoices/{uuid}/pdf', [InvoiceController::class, 'pdf']);
     Route::post('/invoices/{uuid}/payments', [InvoiceController::class, 'recordPayment']);
+    Route::patch('/invoices/{uuid}/split-billing', [InvoiceController::class, 'updateSplitBilling']);
+
+    // Audit trail (owner/advisor)
+    Route::get('/audit-logs', [AuditLogController::class, 'index']);
 
     // Inventory
     Route::get('/inventory', [InventoryController::class, 'index']);

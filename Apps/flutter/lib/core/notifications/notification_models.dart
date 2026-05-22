@@ -21,6 +21,8 @@ class StaffNotificationItem {
 
   String? get jobUuid => data['job_uuid'] as String?;
 
+  String? get invoiceUuid => data['invoice_uuid'] as String?;
+
   factory StaffNotificationItem.fromJson(Map<String, dynamic> json) {
     return StaffNotificationItem(
       uuid: json['uuid'] as String? ?? '',

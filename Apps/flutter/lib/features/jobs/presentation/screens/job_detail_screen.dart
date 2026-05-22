@@ -14,6 +14,10 @@ import '../../data/models/job_models.dart';
 import '../providers/job_tasks_provider.dart';
 import '../providers/jobs_provider.dart';
 import '../providers/vehicle_inspection_provider.dart';
+import '../../../audit/data/models/audit_models.dart';
+import '../../../audit/presentation/providers/audit_provider.dart';
+import '../../../auth/presentation/providers/current_user_provider.dart';
+import '../widgets/job_insurance_card.dart';
 import '../widgets/job_status_sheet.dart';
 
 class JobDetailScreen extends ConsumerWidget {
@@ -118,6 +122,10 @@ class _DetailView extends ConsumerWidget {
                 if (_showDeliveryPath)
                   _buildCompareBanner(context, ref.watch(inspectionCompareProvider(jobUuid))),
                 _buildVehicleCustomerCard(),
+                if (detail.insuranceClaim.isInsuranceJob) ...[
+                  const SizedBox(height: 16),
+                  JobInsuranceCard(jobUuid: jobUuid, claim: detail.insuranceClaim),
+                ],
                 const SizedBox(height: 16),
                 _buildTasksSection(context, ref, tasksState, tasksNotifier),
                 if (tasksState.tasks.isNotEmpty) ...[
@@ -130,6 +138,11 @@ class _DetailView extends ConsumerWidget {
                 const SizedBox(height: 16),
                 _buildSectionHeader('Timeline', null),
                 _buildTimelineCard(),
+                if (ref.watch(isOwnerProvider)) ...[
+                  const SizedBox(height: 16),
+                  _buildSectionHeader('Activity log', null),
+                  _buildAuditSection(ref),
+                ],
                 const SizedBox(height: 100),
               ],
             ),
@@ -879,6 +892,71 @@ class _DetailView extends ConsumerWidget {
     );
   }
 
+  Widget _buildAuditSection(WidgetRef ref) {
+    final auditAsync = ref.watch(jobAuditProvider(jobUuid));
+    final fmt = DateFormat('d MMM, h:mm a');
+
+    return auditAsync.when(
+      loading: () => Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.bgSurface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.divider),
+        ),
+        child: const Center(
+          child: SizedBox(
+            width: 22,
+            height: 22,
+            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryOrange),
+          ),
+        ),
+      ),
+      error: (_, __) => Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.bgSurface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.divider),
+        ),
+        child: Text('Activity log unavailable', style: AppTextStyles.bodySmall),
+      ),
+      data: (entries) {
+        if (entries.isEmpty) {
+          return Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.bgSurface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.divider),
+            ),
+            child: Text('No recorded activity yet', style: AppTextStyles.bodySmall),
+          );
+        }
+
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppColors.bgSurface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.divider),
+          ),
+          child: Column(
+            children: [
+              for (int i = 0; i < entries.length; i++) ...[
+                _AuditRow(entry: entries[i], fmt: fmt, isLast: i == entries.length - 1),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   String _initials(String name) {
     final parts = name.trim().split(RegExp(r'\s+'));
     if (parts.length >= 2) return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
@@ -1087,6 +1165,54 @@ class _ErrorView extends StatelessWidget {
       title: 'Could not load job',
       message: 'Check your connection and try again.',
       onRetry: onRetry,
+    );
+  }
+}
+
+class _AuditRow extends StatelessWidget {
+  final AuditLogEntry entry;
+  final DateFormat fmt;
+  final bool isLast;
+
+  const _AuditRow({
+    required this.entry,
+    required this.fmt,
+    this.isLast = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(PhosphorIconsRegular.clockCounterClockwise, size: 16, color: AppColors.textMuted),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    entry.actionLabel,
+                    style: AppTextStyles.bodyMedium,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${entry.user?.name ?? 'System'} · ${fmt.format(entry.createdAt)}',
+                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        if (!isLast) ...[
+          const SizedBox(height: 10),
+          Divider(height: 1, color: AppColors.divider),
+          const SizedBox(height: 10),
+        ],
+      ],
     );
   }
 }

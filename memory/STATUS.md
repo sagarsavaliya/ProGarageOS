@@ -5,27 +5,34 @@
 ## Overall Status
 - **Project:** Pro Garage OS (ProGarageOS)
 - **Infrastructure:** ✅ Live — `https://api.progarage.cloud/api`
-- **WhatsApp:** ✅ Production + **Owner Integrations UI** approved
+- **Staff app v1:** ✅ Pack 4 complete — ready for production deploy + device sign-off
 - **Last Updated:** 2026-05-21 IST
 
 ---
 
-## 🏗️ Technical
-- **Integrations UI:** Owner can manage WhatsApp in app (encrypted DB, no redeploy)
-- **Staff PIN:** WhatsApp OTP for first-time setup + Forgot PIN reset
-- **Wave 3:** In progress (inventory, GST, integrations polish)
-- **Device test:** Login `8141302341` / `123456` · try Forgot PIN flow
+## ✅ Staff app v1 — Pack 4 (complete)
+| Feature | Status |
+|---------|--------|
+| **Invoice PDF** | Generate + view/share from invoice detail |
+| **Fleet** | Searchable fleet list (Settings → Fleet) |
+| **Audit log** | Read-only activity on job detail (owners) |
+| **Push G10** | Payment + estimate alerts; invoice deep links |
+
+Prior packs (1–3): onboarding, insurance, appointments, payments hub, team nav — all built.
 
 ---
 
-## ✅ Approved by Sagar
-- Owner Settings → Integrations screen
-- WhatsApp OTP for phone verify + 6-digit PIN setup/reset
+## ⚠️ Production deploy checklist (Sagar / ops)
+1. `php artisan migrate --force` on production (all May 21 migrations)
+2. Redeploy API via `deploy/hostinger/scripts/redeploy.sh`
+3. Ensure `storage:link` and public disk writable (invoice PDFs)
+4. Set `FCM_SERVER_KEY` in production `.env` (optional — inbox works without)
+5. Full device test: invoice PDF → fleet search → job audit → payment push
+
+See `memory/RUNBOOK.md` for full ops steps.
 
 ---
 
-## 🔲 Coming next
-- Wave 3 remaining modules after device sign-off
-
----
-*Strategy: memory/INTEGRATIONS_STRATEGY.md*
+## 🔲 After staff v1 sign-off
+- Customer app C0–C6 (~6–7 weeks)
+- Web owner portal W1–W6

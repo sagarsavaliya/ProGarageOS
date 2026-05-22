@@ -8,6 +8,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/notifications/fcm_service.dart';
+import '../../../onboarding/presentation/utils/post_login_navigation.dart';
 import '../providers/staff_login_provider.dart';
 
 const Color _skyBlue = Color(0xFF2BB0ED);
@@ -86,7 +87,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         ref.read(fcmServiceProvider).initialize().then((_) {
           ref.read(fcmServiceProvider).registerTokenIfAvailable();
         });
-        context.go('/dashboard');
+        resolvePostLoginRoute(ref).then((route) {
+          if (context.mounted) context.go(route);
+        });
       }
       if (next.status == StaffLoginStatus.error &&
           prev?.status == StaffLoginStatus.loading) {
@@ -129,9 +132,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              const SizedBox(height: 56),
+                              const SizedBox(height: 32),
                               _buildLogo(),
-                              const SizedBox(height: 28),
+                              const SizedBox(height: 16),
                               _IdentifierInput(
                                 usePhone: _usePhone,
                                 phoneController: _phoneController,
@@ -146,7 +149,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 },
                                 onChanged: _onIdentifierChanged,
                               ),
-                              const SizedBox(height: 28),
+                              const SizedBox(height: 8),
+                              Text(
+                                _usePhone
+                                    ? 'Enter 10-digit mobile number, then your 6-digit PIN'
+                                    : 'Enter email, then your 6-digit PIN',
+                                textAlign: TextAlign.center,
+                                style: AppTextStyles.labelSmall.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.35),
+                                  height: 1.35,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
                               _PinSection(
                                 pin: state.pin,
                                 status: state.status,
@@ -161,9 +175,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 onClear: notifier.clearPin,
                                 onBiometric: notifier.triggerBiometric,
                               ),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: 8),
                               _buildForgotPin(state),
-                              const SizedBox(height: 40),
+                              const SizedBox(height: 24),
                             ],
                           ),
                         ),

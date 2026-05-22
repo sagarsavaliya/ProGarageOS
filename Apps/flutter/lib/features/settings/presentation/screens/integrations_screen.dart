@@ -7,7 +7,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/api_error_view.dart';
 import '../../../auth/presentation/providers/current_user_provider.dart';
-import '../data/integrations_repository.dart';
+import '../../data/integrations_repository.dart';
 
 class IntegrationsScreen extends ConsumerStatefulWidget {
   const IntegrationsScreen({super.key});

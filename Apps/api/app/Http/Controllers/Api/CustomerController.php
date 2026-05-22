@@ -199,6 +199,7 @@ class CustomerController extends Controller
             'first_name'    => $customer->first_name,
             'last_name'     => $customer->last_name,
             'email'         => $customer->email,
+            'vehicles_count' => $customer->vehicles->where('is_active', true)->count(),
             'garage_profile' => $garage ? [
                 'loyalty_points'    => $garage->loyalty_points,
                 'total_spent'       => (float) $garage->total_spent,

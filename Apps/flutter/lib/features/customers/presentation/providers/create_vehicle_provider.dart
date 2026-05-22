@@ -44,6 +44,7 @@ class CreateVehicleNotifier extends StateNotifier<CreateVehicleState> {
     String? color,
     String fuelType = 'petrol',
     int? odometerReading,
+    bool? gpsTrackingConsent,
   }) async {
     if (registrationNumber.trim().isEmpty) {
       state = state.copyWith(errorMessage: 'Registration number is required.');
@@ -67,6 +68,7 @@ class CreateVehicleNotifier extends StateNotifier<CreateVehicleState> {
         color: color,
         fuelType: fuelType,
         odometerReading: odometerReading,
+        gpsTrackingConsent: gpsTrackingConsent,
       );
       state = state.copyWith(isSubmitting: false, createdVehicle: vehicle);
       return vehicle;

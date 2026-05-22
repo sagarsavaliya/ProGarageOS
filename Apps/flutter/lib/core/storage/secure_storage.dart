@@ -9,6 +9,9 @@ const _userJsonKey = 'auth_user_json';
 const _savedLoginKey = 'saved_login';
 const _failCountKey = 'pin_fail_count';
 const _lockExpiryKey = 'pin_lock_expiry';
+const _onboardingCompletedKey = 'onboarding_completed';
+const _garageSetupPrefix = 'garage_setup_completed_';
+const _gpsDefaultConsentKey = 'gps_default_consent_enabled';
 
 @Riverpod(keepAlive: true)
 SecureStorageService secureStorage(Ref ref) => SecureStorageService();
@@ -57,6 +60,31 @@ class SecureStorageService {
     await _storage.delete(key: _failCountKey);
     await _storage.delete(key: _lockExpiryKey);
   }
+
+  // --- Onboarding flags ---
+  Future<bool> isOnboardingCompleted() async =>
+      (await _storage.read(key: _onboardingCompletedKey)) == 'true';
+
+  Future<void> setOnboardingCompleted(bool value) =>
+      _storage.write(key: _onboardingCompletedKey, value: value.toString());
+
+  Future<bool> isGarageSetupCompleted(String tenantUuid) async =>
+      (await _storage.read(key: '$_garageSetupPrefix$tenantUuid')) == 'true';
+
+  Future<void> setGarageSetupCompleted(String tenantUuid, bool value) =>
+      _storage.write(key: '$_garageSetupPrefix$tenantUuid', value: value.toString());
+
+  // --- GPS default for new vehicles (local preference) ---
+  Future<bool> isGpsDefaultConsentEnabled() async =>
+      (await _storage.read(key: _gpsDefaultConsentKey)) == 'true';
+
+  Future<void> setGpsDefaultConsentEnabled(bool value) =>
+      _storage.write(key: _gpsDefaultConsentKey, value: value.toString());
+
+  // --- Generic read/write for draft JSON (used by onboarding) ---
+  Future<String?> readRaw(String key) => _storage.read(key: key);
+  Future<void> writeRaw(String key, String value) => _storage.write(key: key, value: value);
+  Future<void> deleteRaw(String key) => _storage.delete(key: key);
 
   // --- Clear all ---
   Future<void> clearAll() => _storage.deleteAll();

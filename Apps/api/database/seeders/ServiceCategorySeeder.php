@@ -42,6 +42,13 @@ class ServiceCategorySeeder extends Seeder
                 ['name' => '40-Point Inspection', 'code' => 'INSP_40', 'price' => 499],
                 ['name' => 'Pre-Purchase Inspection', 'code' => 'INSP_PPB', 'price' => 1500],
             ]],
+            ['name' => 'Accident Repair', 'code' => 'ACCIDENT_RPR', 'duration' => 480, 'requires_intake_inspection' => true, 'requires_approval' => true, 'items' => [
+                ['name' => 'Accident Assessment', 'code' => 'ACC_ASSESS', 'price' => 1500],
+                ['name' => 'Panel Repair (per panel)', 'code' => 'ACC_PANEL', 'price' => 3500],
+            ]],
+            ['name' => 'Body Work', 'code' => 'BODY_WORK', 'duration' => 360, 'requires_intake_inspection' => true, 'requires_approval' => true, 'items' => [
+                ['name' => 'Dent Removal', 'code' => 'BODY_DENT', 'price' => 2500],
+            ]],
         ];
 
         foreach ($categories as $i => $cat) {
@@ -50,6 +57,8 @@ class ServiceCategorySeeder extends Seeder
                 'name'            => $cat['name'],
                 'code'            => $cat['code'],
                 'default_duration_min' => $cat['duration'],
+                'requires_intake_inspection' => $cat['requires_intake_inspection'] ?? true,
+                'requires_approval' => $cat['requires_approval'] ?? false,
                 'sort_order'      => $i,
             ]);
 

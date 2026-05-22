@@ -82,8 +82,13 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
                       isLoadingCategories: state.isLoadingCategories,
                       selectedIds: state.selectedCategoryIds,
                       fuelLevel: state.fuelLevel,
+                      showInsuranceFields: state.isInsuranceJobSelected,
+                      insuranceCompany: state.insuranceCompany,
+                      claimNumber: state.claimNumber,
                       onToggle: notifier.toggleCategory,
                       onFuel: notifier.setFuelLevel,
+                      onInsuranceCompany: notifier.setInsuranceCompany,
+                      onClaimNumber: notifier.setClaimNumber,
                     ),
                   _ => _Step3Assign(
                       key: const ValueKey('step3'),
@@ -443,8 +448,13 @@ class _Step2Services extends StatelessWidget {
   final bool isLoadingCategories;
   final Set<String> selectedIds;
   final String? fuelLevel;
+  final bool showInsuranceFields;
+  final String insuranceCompany;
+  final String claimNumber;
   final void Function(String) onToggle;
   final void Function(String?) onFuel;
+  final void Function(String) onInsuranceCompany;
+  final void Function(String) onClaimNumber;
 
   const _Step2Services({
     super.key,
@@ -452,8 +462,13 @@ class _Step2Services extends StatelessWidget {
     required this.isLoadingCategories,
     required this.selectedIds,
     required this.fuelLevel,
+    required this.showInsuranceFields,
+    required this.insuranceCompany,
+    required this.claimNumber,
     required this.onToggle,
     required this.onFuel,
+    required this.onInsuranceCompany,
+    required this.onClaimNumber,
   });
 
   @override
@@ -543,6 +558,37 @@ class _Step2Services extends StatelessWidget {
             );
           }).toList(),
         ),
+        if (showInsuranceFields) ...[
+          const SizedBox(height: 20),
+          _FieldLabel('Insurance claim'),
+          const SizedBox(height: 4),
+          Text(
+            'Accident / body work — add insurer details for claim tracking',
+            style: AppTextStyles.bodySmall,
+          ),
+          const SizedBox(height: 10),
+          TextFormField(
+            initialValue: insuranceCompany,
+            onChanged: onInsuranceCompany,
+            decoration: InputDecoration(
+              hintText: 'Insurance company',
+              filled: true,
+              fillColor: AppColors.bgSurface,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextFormField(
+            initialValue: claimNumber,
+            onChanged: onClaimNumber,
+            decoration: InputDecoration(
+              hintText: 'Claim / policy number',
+              filled: true,
+              fillColor: AppColors.bgSurface,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+        ],
       ],
     );
   }

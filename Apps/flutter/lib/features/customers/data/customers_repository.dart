@@ -48,6 +48,7 @@ class CustomersRepository {
     String fuelType = 'petrol',
     String transmission = 'manual',
     int? odometerReading,
+    bool? gpsTrackingConsent,
   }) async {
     final response = await _dio.post(
       '/vehicles',
@@ -62,10 +63,16 @@ class CustomersRepository {
         'fuel_type': fuelType,
         'transmission': transmission,
         if (odometerReading != null) 'odometer_reading': odometerReading,
+        if (gpsTrackingConsent != null) 'gps_tracking_consent': gpsTrackingConsent,
       },
     );
     final data = (response.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
     return Vehicle.fromJson(data);
+  }
+
+  /// DELETE /vehicles/{uuid} — soft deactivate (is_active=false).
+  Future<void> deactivateVehicle(String uuid) async {
+    await _dio.delete('/vehicles/$uuid');
   }
 
   /// GET /customers — paginated, searchable list.
@@ -127,6 +134,7 @@ class CustomersRepository {
     String? color,
     String? fuelType,
     int? odometerReading,
+    bool? gpsTrackingConsent,
   }) async {
     final response = await _dio.patch(
       '/vehicles/$uuid',
@@ -138,6 +146,7 @@ class CustomersRepository {
         if (color != null) 'color': color,
         if (fuelType != null) 'fuel_type': fuelType,
         if (odometerReading != null) 'odometer_reading': odometerReading,
+        if (gpsTrackingConsent != null) 'gps_tracking_consent': gpsTrackingConsent,
       },
     );
     final data = (response.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;

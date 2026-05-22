@@ -9,6 +9,10 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/app_filter_chip.dart';
+import '../../../../core/widgets/guided_empty_state.dart';
+import '../../../../core/widgets/quick_action_chip.dart';
+import '../../data/invoices_repository.dart';
+import '../widgets/record_payment_sheet.dart';
 import '../../../../core/widgets/app_status_chip.dart';
 import '../../data/models/invoice_models.dart';
 import '../providers/invoices_provider.dart';
@@ -208,6 +212,20 @@ class _InvoicesScreenState extends ConsumerState<InvoicesScreen> {
               HapticFeedback.lightImpact();
               context.push('/invoices/${displayInvoices[index].uuid}');
             },
+            onCollect: displayInvoices[index].balanceDue > 0
+                ? () async {
+                    final invoice = displayInvoices[index];
+                    final repo = ref.read(invoicesRepositoryProvider);
+                    await showRecordPaymentSheet(
+                      context: context,
+                      balanceDue: invoice.balanceDue,
+                      onRecordPayment: (req) async {
+                        await repo.recordPayment(invoice.uuid, req);
+                        await notifier.refresh();
+                      },
+                    );
+                  }
+                : null,
           );
         },
       ),
@@ -252,20 +270,12 @@ class _InvoicesScreenState extends ConsumerState<InvoicesScreen> {
   }
 
   Widget _buildEmpty() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(PhosphorIconsRegular.receipt, color: AppColors.textMuted, size: 48),
-          const SizedBox(height: 16),
-          Text('No invoices found', style: AppTextStyles.titleMedium),
-          const SizedBox(height: 8),
-          Text(
-            'Try a different filter or search term',
-            style: AppTextStyles.bodySmall,
-          ),
-        ],
-      ),
+    return GuidedEmptyState(
+      icon: PhosphorIconsRegular.receipt,
+      title: 'No invoices found',
+      subtitle: 'Create an invoice from a completed job',
+      actionLabel: 'Create invoice',
+      onAction: () => context.push('/invoices/add'),
     );
   }
 }
@@ -277,36 +287,42 @@ class _InvoicesScreenState extends ConsumerState<InvoicesScreen> {
 class _InvoiceListTile extends StatelessWidget {
   final InvoiceListItem invoice;
   final VoidCallback onTap;
+  final VoidCallback? onCollect;
 
-  const _InvoiceListTile({required this.invoice, required this.onTap});
+  const _InvoiceListTile({
+    required this.invoice,
+    required this.onTap,
+    this.onCollect,
+  });
 
   @override
   Widget build(BuildContext context) {
     final isOverdue = invoice.isOverdue;
     final currencyFmt = NumberFormat('#,##,##0.00', 'en_IN');
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.bgSurface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.divider),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Left — invoice info
-            Expanded(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Ink(
+            decoration: BoxDecoration(
+              color: AppColors.bgSurface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isOverdue ? AppColors.statusRed.withValues(alpha: 0.4) : AppColors.divider,
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Invoice number + job number
                   Row(
                     children: [
-                      Flexible(
+                      Expanded(
                         child: Text(
                           invoice.invoiceNumber,
                           style: AppTextStyles.monoMedium.copyWith(
@@ -314,113 +330,49 @@ class _InvoiceListTile extends StatelessWidget {
                             fontWeight: FontWeight.w600,
                           ),
                           overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          invoice.serviceJob.jobNumber,
-                          style: AppTextStyles.bodySmall,
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                      ),
+                      AppStatusChip(status: invoice.status),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  // Customer name
+                  const SizedBox(height: 4),
+                  Text(invoice.customer.fullName, style: AppTextStyles.titleSmall, maxLines: 1, overflow: TextOverflow.ellipsis),
                   Text(
-                    invoice.customer.fullName,
-                    style: AppTextStyles.titleSmall,
-                    overflow: TextOverflow.ellipsis,
+                    '${invoice.vehicle.registrationNumber} · ${invoice.serviceJob.jobNumber}',
+                    style: AppTextStyles.bodySmall,
                     maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 3),
-                  // Vehicle
+                  const SizedBox(height: 8),
                   Row(
                     children: [
-                      Icon(
-                        PhosphorIconsRegular.car,
-                        color: AppColors.textMuted,
-                        size: 12,
+                      Text(
+                        '₹${currencyFmt.format(invoice.totalAmount)}',
+                        style: AppTextStyles.monoSmall.copyWith(fontWeight: FontWeight.w600),
                       ),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          '${invoice.vehicle.makeModel} · ${invoice.vehicle.registrationNumber}',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.textMuted,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  // Due date
-                  if (invoice.dueDate != null)
-                    Row(
-                      children: [
-                        Icon(
-                          PhosphorIconsRegular.calendarBlank,
-                          color: isOverdue ? AppColors.statusRed : AppColors.textMuted,
-                          size: 12,
-                        ),
-                        const SizedBox(width: 4),
+                      if (invoice.balanceDue > 0) ...[
+                        const SizedBox(width: 8),
                         Text(
-                          'Due ${DateFormat('d MMM yyyy').format(invoice.dueDate!)}',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: isOverdue ? AppColors.statusRed : AppColors.textMuted,
-                            fontWeight: isOverdue ? FontWeight.w500 : FontWeight.w400,
+                          'Due ₹${currencyFmt.format(invoice.balanceDue)}',
+                          style: AppTextStyles.monoSmall.copyWith(
+                            color: isOverdue ? AppColors.statusRed : AppColors.statusOrange,
                           ),
                         ),
                       ],
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            // Right — amounts + status (fixed width to prevent row overflow)
-            SizedBox(
-              width: 96,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  AppStatusChip(status: invoice.status),
-                  const SizedBox(height: 8),
-                  Text(
-                    '₹${currencyFmt.format(invoice.totalAmount)}',
-                    style: AppTextStyles.monoLarge.copyWith(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
+                      const Spacer(),
+                      if (onCollect != null)
+                        QuickActionChip(
+                          icon: PhosphorIconsRegular.currencyInr,
+                          label: 'Collect',
+                          color: AppColors.statusGreen,
+                          onTap: onCollect!,
+                        ),
+                    ],
                   ),
-                  const SizedBox(height: 2),
-                  if (invoice.balanceDue > 0)
-                    Text(
-                      'Due ₹${currencyFmt.format(invoice.balanceDue)}',
-                      style: AppTextStyles.monoSmall.copyWith(
-                        color: invoice.isOverdue
-                            ? AppColors.statusRed
-                            : AppColors.statusOrange,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    )
-                  else
-                    Text(
-                      'Paid in full',
-                      style: AppTextStyles.labelSmall.copyWith(
-                        color: AppColors.statusGreen,
-                      ),
-                    ),
                 ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

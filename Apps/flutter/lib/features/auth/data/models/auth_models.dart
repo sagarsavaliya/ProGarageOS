@@ -11,6 +11,7 @@ class UserModel {
   final String? phone;
   final String? avatar;
   final String? garageName; // from tenant.business_name
+  final String? tenantUuid;
 
   const UserModel({
     required this.uuid,
@@ -21,6 +22,7 @@ class UserModel {
     this.phone,
     this.avatar,
     this.garageName,
+    this.tenantUuid,
   });
 
   String get name => '$firstName $lastName'.trim();
@@ -37,8 +39,9 @@ class UserModel {
           ? roles.first as String
           : json['role'] as String? ?? 'technician',
       phone: json['phone'] as String?,
-      avatar: json['avatar'] as String?,
+      avatar: json['avatar'] as String? ?? json['avatar_url'] as String?,
       garageName: tenant?['business_name'] as String? ?? json['garage_name'] as String?,
+      tenantUuid: tenant?['uuid'] as String?,
     );
   }
 
@@ -51,6 +54,7 @@ class UserModel {
         if (phone != null) 'phone': phone,
         if (avatar != null) 'avatar': avatar,
         if (garageName != null) 'garage_name': garageName,
+        if (tenantUuid != null) 'tenant_uuid': tenantUuid,
       };
 
   String toJsonString() => jsonEncode(toJson());

@@ -4,13 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_status_chip.dart';
-import '../../../../core/widgets/app_text_field.dart';
 import '../../data/models/invoice_models.dart';
 import '../providers/invoices_provider.dart';
+import '../widgets/record_payment_sheet.dart';
 
 class InvoiceDetailScreen extends ConsumerWidget {
   final String invoiceUuid;
@@ -28,9 +30,12 @@ class InvoiceDetailScreen extends ConsumerWidget {
         loading: () => const _LoadingView(),
         error: (_, __) => _ErrorView(onRetry: notifier.refresh),
         data: (detail) => _DetailView(
+          invoiceUuid: invoiceUuid,
           detail: detail,
           onRefresh: notifier.refresh,
           onRecordPayment: (req) => notifier.recordPayment(req),
+          onUpdateSplitBilling: notifier.updateSplitBilling,
+          onGeneratePdf: () => notifier.generatePdfUrl(),
         ),
       ),
     );
@@ -41,21 +46,66 @@ class InvoiceDetailScreen extends ConsumerWidget {
 // Main detail view
 // ---------------------------------------------------------------------------
 
-class _DetailView extends StatelessWidget {
+class _DetailView extends ConsumerStatefulWidget {
+  final String invoiceUuid;
   final InvoiceDetail detail;
   final Future<void> Function() onRefresh;
   final Future<void> Function(RecordPaymentRequest) onRecordPayment;
+  final Future<void> Function({
+    required double customerPayAmount,
+    required double insuranceClaimAmount,
+  }) onUpdateSplitBilling;
+  final Future<String> Function() onGeneratePdf;
 
   const _DetailView({
+    required this.invoiceUuid,
     required this.detail,
     required this.onRefresh,
     required this.onRecordPayment,
+    required this.onUpdateSplitBilling,
+    required this.onGeneratePdf,
   });
+
+  @override
+  ConsumerState<_DetailView> createState() => _DetailViewState();
+}
+
+class _DetailViewState extends ConsumerState<_DetailView> {
+  bool _pdfLoading = false;
+
+  InvoiceDetail get detail => widget.detail;
+
+  Future<void> _openPdf({required bool share}) async {
+    if (_pdfLoading) return;
+    setState(() => _pdfLoading = true);
+    try {
+      final url = detail.pdfUrl ?? await widget.onGeneratePdf();
+      final uri = Uri.parse(url);
+      if (share) {
+        await Share.share(url, subject: 'Invoice ${detail.invoiceNumber}');
+      } else {
+        final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+        if (!opened && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not open invoice PDF')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _pdfLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-      onRefresh: onRefresh,
+      onRefresh: widget.onRefresh,
       color: AppColors.primaryOrange,
       backgroundColor: AppColors.bgSurface,
       child: CustomScrollView(
@@ -72,6 +122,8 @@ class _DetailView extends StatelessWidget {
                 const SizedBox(height: 16),
                 _buildSectionHeader('Summary', null),
                 _buildFinancialCard(),
+                const SizedBox(height: 12),
+                _buildSplitBillingCard(context),
                 if (detail.payments.isNotEmpty) ...[
                   const SizedBox(height: 16),
                   _buildSectionHeader('Payments', '${detail.payments.length}'),
@@ -100,6 +152,9 @@ class _DetailView extends StatelessWidget {
     );
   }
 
+  bool get _hasInsuranceSplit =>
+      detail.customerPayAmount != null || detail.insuranceClaimAmount != null;
+
   Widget _buildAppBar(BuildContext context) {
     return SliverAppBar(
       backgroundColor: AppColors.bgSurface,
@@ -124,8 +179,29 @@ class _DetailView extends StatelessWidget {
         ],
       ),
       actions: [
+        if (_pdfLoading)
+          const Padding(
+            padding: EdgeInsets.only(right: 8),
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryOrange),
+            ),
+          )
+        else ...[
+          IconButton(
+            tooltip: 'View PDF',
+            onPressed: () => _openPdf(share: false),
+            icon: Icon(PhosphorIconsRegular.filePdf, color: AppColors.textSecondary, size: 20),
+          ),
+          IconButton(
+            tooltip: 'Share PDF',
+            onPressed: () => _openPdf(share: true),
+            icon: Icon(PhosphorIconsRegular.shareNetwork, color: AppColors.textSecondary, size: 20),
+          ),
+        ],
         AppStatusChip(status: detail.status),
-        const SizedBox(width: 16),
+        const SizedBox(width: 8),
       ],
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(0.5),
@@ -462,16 +538,103 @@ class _DetailView extends StatelessWidget {
     );
   }
 
-  void _showPaymentSheet(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _RecordPaymentSheet(
-        balanceDue: detail.balanceDue,
-        invoiceUuid: detail.uuid,
-        onRecordPayment: onRecordPayment,
+  Widget _buildSplitBillingCard(BuildContext context) {
+    final fmt = NumberFormat('#,##,##0.00', 'en_IN');
+    final customerCtrl = TextEditingController(
+      text: (detail.customerPayAmount ?? detail.totalAmount).toStringAsFixed(0),
+    );
+    final insuranceCtrl = TextEditingController(
+      text: (detail.insuranceClaimAmount ?? 0).toStringAsFixed(0),
+    );
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.bgSurface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.primaryOrange.withValues(alpha: 0.3)),
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(PhosphorIconsFill.shield, color: AppColors.primaryOrange, size: 16),
+              const SizedBox(width: 8),
+              Text('Insurance split billing', style: AppTextStyles.titleSmall),
+            ],
+          ),
+          if (_hasInsuranceSplit) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Customer ₹${fmt.format(detail.customerPayAmount ?? 0)} · '
+              'Insurer ₹${fmt.format(detail.insuranceClaimAmount ?? 0)}',
+              style: AppTextStyles.bodySmall,
+            ),
+          ],
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: customerCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'Customer pays',
+                    filled: true,
+                    fillColor: AppColors.bgPrimary,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: insuranceCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'Insurer pays',
+                    filled: true,
+                    fillColor: AppColors.bgPrimary,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () async {
+                final customer = double.tryParse(customerCtrl.text.replaceAll(',', ''));
+                final insurance = double.tryParse(insuranceCtrl.text.replaceAll(',', ''));
+                if (customer == null || insurance == null) return;
+                await widget.onUpdateSplitBilling(
+                  customerPayAmount: customer,
+                  insuranceClaimAmount: insurance,
+                );
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Split billing saved')),
+                  );
+                }
+              },
+              child: const Text('Save split'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPaymentSheet(BuildContext context) {
+    showRecordPaymentSheet(
+      context: context,
+      balanceDue: detail.balanceDue,
+      onRecordPayment: widget.onRecordPayment,
+      allowInsuranceClaim: true,
     );
   }
 
@@ -720,277 +883,6 @@ class _PaymentRow extends StatelessWidget {
         if (!isLast) const Divider(height: 1, color: AppColors.divider, indent: 14),
       ],
     );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Record Payment bottom sheet
-// ---------------------------------------------------------------------------
-
-class _RecordPaymentSheet extends ConsumerStatefulWidget {
-  final double balanceDue;
-  final String invoiceUuid;
-  final Future<void> Function(RecordPaymentRequest) onRecordPayment;
-
-  const _RecordPaymentSheet({
-    required this.balanceDue,
-    required this.invoiceUuid,
-    required this.onRecordPayment,
-  });
-
-  @override
-  ConsumerState<_RecordPaymentSheet> createState() => _RecordPaymentSheetState();
-}
-
-class _RecordPaymentSheetState extends ConsumerState<_RecordPaymentSheet> {
-  final _amountController = TextEditingController();
-  final _referenceController = TextEditingController();
-  final _notesController = TextEditingController();
-
-  int? _selectedMethodId;
-  bool _isSubmitting = false;
-  String? _errorMessage;
-
-  @override
-  void initState() {
-    super.initState();
-    final fmt = NumberFormat('#,##,##0.00', 'en_IN');
-    _amountController.text = fmt.format(widget.balanceDue);
-  }
-
-  @override
-  void dispose() {
-    _amountController.dispose();
-    _referenceController.dispose();
-    _notesController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final methodsAsync = ref.watch(paymentMethodsProvider);
-    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-      padding: EdgeInsets.only(bottom: keyboardHeight),
-      decoration: BoxDecoration(
-        color: AppColors.bgSurface,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Handle + title
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.divider,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Text('Record Payment', style: AppTextStyles.titleLarge),
-                const Spacer(),
-                GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
-                  child: Container(
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      color: AppColors.bgElevated,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(PhosphorIconsRegular.x, color: AppColors.textMuted, size: 16),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // Amount field
-            AppTextField(
-              controller: _amountController,
-              label: 'Amount',
-              hint: '0.00',
-              prefixText: '₹ ',
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              textInputAction: TextInputAction.next,
-            ),
-            const SizedBox(height: 16),
-
-            // Payment method selector
-            Text('Payment Method', style: AppTextStyles.labelMedium),
-            const SizedBox(height: 8),
-            methodsAsync.when(
-              loading: () => const SizedBox(
-                height: 44,
-                child: Center(
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.primaryOrange,
-                    ),
-                  ),
-                ),
-              ),
-              error: (_, __) => Text('Failed to load methods', style: AppTextStyles.bodySmall),
-              data: (methods) => SizedBox(
-                height: 44,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: methods.length,
-                  itemBuilder: (context, i) {
-                    final method = methods[i];
-                    final isSelected = _selectedMethodId == method.id;
-                    return GestureDetector(
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        setState(() => _selectedMethodId = method.id);
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        margin: const EdgeInsets.only(right: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: isSelected ? AppColors.primaryOrange : AppColors.bgElevated,
-                          borderRadius: BorderRadius.circular(9999),
-                          border: Border.all(
-                            color: isSelected ? AppColors.primaryOrange : AppColors.divider,
-                          ),
-                        ),
-                        child: Text(
-                          method.name,
-                          style: GoogleFonts.dmSans(
-                            fontSize: 13,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                            color: isSelected ? Colors.white : AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Reference number
-            AppTextField(
-              controller: _referenceController,
-              label: 'Reference Number (optional)',
-              hint: 'UPI ID / Transaction ref',
-              textInputAction: TextInputAction.next,
-            ),
-            const SizedBox(height: 16),
-
-            // Notes
-            AppTextField(
-              controller: _notesController,
-              label: 'Notes (optional)',
-              hint: 'e.g. Customer paid partial amount',
-              maxLines: 2,
-              textInputAction: TextInputAction.done,
-            ),
-            const SizedBox(height: 8),
-
-            // Error message
-            if (_errorMessage != null) ...[
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.statusRedBg,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(PhosphorIconsRegular.warning, color: AppColors.statusRed, size: 14),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _errorMessage!,
-                        style: AppTextStyles.bodySmall.copyWith(color: AppColors.statusRed),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
-
-            const SizedBox(height: 8),
-            AppButton(
-              label: 'Record Payment',
-              isLoading: _isSubmitting,
-              onPressed: _selectedMethodId != null ? _submit : null,
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _submit() async {
-    final rawAmount = _amountController.text.replaceAll(',', '').trim();
-    final amount = double.tryParse(rawAmount);
-    if (amount == null || amount <= 0) {
-      setState(() => _errorMessage = 'Please enter a valid amount.');
-      return;
-    }
-
-    setState(() {
-      _isSubmitting = true;
-      _errorMessage = null;
-    });
-
-    try {
-      await widget.onRecordPayment(
-        RecordPaymentRequest(
-          amount: amount,
-          paymentMethodId: _selectedMethodId!,
-          referenceNumber: _referenceController.text.trim().isEmpty
-              ? null
-              : _referenceController.text.trim(),
-          notes: _notesController.text.trim().isEmpty
-              ? null
-              : _notesController.text.trim(),
-        ),
-      );
-
-      if (mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Payment recorded successfully',
-              style: GoogleFonts.dmSans(color: Colors.white),
-            ),
-            backgroundColor: AppColors.statusGreen,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            margin: const EdgeInsets.all(16),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-          _errorMessage = 'Failed to record payment. Please try again.';
-        });
-      }
-    }
   }
 }
 

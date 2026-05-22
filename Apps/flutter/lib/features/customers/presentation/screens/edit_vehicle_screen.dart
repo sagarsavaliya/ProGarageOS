@@ -6,6 +6,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../settings/presentation/widgets/gps_tracking_info_sheet.dart';
 import '../../data/models/customer_models.dart';
 import '../providers/customers_provider.dart';
 import '../providers/edit_vehicle_provider.dart';
@@ -34,6 +35,7 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
   String _fuelType = 'petrol';
   String _registration = '';
   bool _initialized = false;
+  bool _gpsConsent = false;
 
   static const _fuelTypes = ['petrol', 'diesel', 'cng', 'electric', 'hybrid'];
 
@@ -62,6 +64,7 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
     _odometerController.text =
         vehicle.odometerReading != null ? '${vehicle.odometerReading}' : '';
     _fuelType = vehicle.fuelType.isNotEmpty ? vehicle.fuelType : 'petrol';
+    _gpsConsent = vehicle.gpsTrackingConsent;
     _initialized = true;
   }
 
@@ -84,6 +87,7 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
           color: _colorController.text,
           fuelType: _fuelType,
           odometerReading: odo,
+          gpsTrackingConsent: _gpsConsent,
         );
 
     if (vehicle != null && mounted) {
@@ -215,6 +219,22 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
                     const SizedBox(height: 14),
                     _label('Odometer (km)'),
                     _field(_odometerController, '42500', keyboard: TextInputType.number),
+                    const SizedBox(height: 8),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text('GPS odometer tracking', style: AppTextStyles.bodyMedium),
+                      subtitle: Text(
+                        'Customer consent to estimate km driven',
+                        style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted),
+                      ),
+                      secondary: IconButton(
+                        icon: const Icon(PhosphorIconsRegular.info, size: 18, color: AppColors.textMuted),
+                        onPressed: () => GpsTrackingInfoSheet.show(context),
+                      ),
+                      value: _gpsConsent,
+                      activeColor: AppColors.primaryOrange,
+                      onChanged: (v) => setState(() => _gpsConsent = v),
+                    ),
                     if (editState.errorMessage != null) ...[
                       const SizedBox(height: 12),
                       Text(

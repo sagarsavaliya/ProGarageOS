@@ -9,7 +9,10 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/app_status_chip.dart';
+import '../../../../core/widgets/guided_empty_state.dart';
+import '../../../../core/widgets/quick_action_chip.dart';
 import '../../../../core/notifications/notification_models.dart';
+import '../../../auth/presentation/providers/current_user_provider.dart';
 import '../../../../core/notifications/notifications_provider.dart';
 import '../../../../core/notifications/fcm_service.dart';
 import '../providers/dashboard_provider.dart';
@@ -41,6 +44,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final dashState = ref.watch(dashboardProvider);
     final notifier = ref.read(dashboardProvider.notifier);
     final unreadCount = ref.watch(unreadNotificationsCountProvider);
+    final userName = ref.watch(currentUserProvider).valueOrNull?.firstName ?? '';
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -57,6 +61,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 children: [
                   // App bar
                   _AppBar(
+                    userName: userName,
                     onNotifTap: () {
                       if (!_notifPanelOpen) {
                         ref.read(notificationsProvider.notifier).load();
@@ -92,31 +97,53 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               child: _KpiRow(summary: summary),
                             ),
                             SliverToBoxAdapter(
+                              child: _QuickActionHub(summary: summary),
+                            ),
+                            SliverToBoxAdapter(
                               child: _RevenueChartCard(
                                 points: summary.weeklyRevenue,
                                 totalDisplay: summary.revenueDisplay,
                                 changePercent: summary.revenueChangePercent,
                               ),
                             ),
-                            const SliverToBoxAdapter(
-                              child: _SectionHeader(title: 'Service Bays', actionLabel: 'Manage'),
+                            SliverToBoxAdapter(
+                              child: _SectionHeader(
+                                title: 'Service Bays',
+                                actionLabel: 'View jobs',
+                                onAction: () => context.go('/jobs'),
+                              ),
                             ),
                             SliverToBoxAdapter(
                               child: _BayGrid(bays: summary.serviceBays),
                             ),
-                            const SliverToBoxAdapter(
-                              child: _SectionHeader(title: 'Active Jobs', actionLabel: 'View all'),
-                            ),
-                            SliverPadding(
-                              padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
-                              sliver: SliverList.builder(
-                                itemCount: summary.activeJobs.length,
-                                itemBuilder: (ctx, i) => Padding(
-                                  padding: const EdgeInsets.only(bottom: AppSizes.sm),
-                                  child: _JobCard(job: summary.activeJobs[i]),
-                                ),
+                            SliverToBoxAdapter(
+                              child: _SectionHeader(
+                                title: 'Active Jobs',
+                                actionLabel: 'View all',
+                                onAction: () => context.go('/jobs'),
                               ),
                             ),
+                            if (summary.activeJobs.isEmpty)
+                              SliverToBoxAdapter(
+                                child: GuidedEmptyState(
+                                  icon: PhosphorIconsRegular.clipboardText,
+                                  title: 'No active jobs right now',
+                                  subtitle: 'Create a job when a vehicle arrives',
+                                  actionLabel: 'New job',
+                                  onAction: () => context.push('/jobs/add'),
+                                ),
+                              )
+                            else
+                              SliverPadding(
+                                padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg),
+                                sliver: SliverList.builder(
+                                  itemCount: summary.activeJobs.length,
+                                  itemBuilder: (ctx, i) => Padding(
+                                    padding: const EdgeInsets.only(bottom: AppSizes.sm),
+                                    child: _JobCard(job: summary.activeJobs[i]),
+                                  ),
+                                ),
+                              ),
                             const SliverPadding(
                               padding: EdgeInsets.only(bottom: 88),
                             ),
@@ -167,12 +194,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 // ---------------------------------------------------------------------------
 
 class _AppBar extends StatelessWidget {
+  final String userName;
   final VoidCallback onNotifTap;
   final VoidCallback onSettingsTap;
   final bool hasUnread;
   final int unreadCount;
 
   const _AppBar({
+    required this.userName,
     required this.onNotifTap,
     required this.onSettingsTap,
     required this.hasUnread,
@@ -223,7 +252,7 @@ class _AppBar extends StatelessWidget {
                         ),
                       ),
                       TextSpan(
-                        text: 'Rajesh',
+                        text: userName.isEmpty ? 'there' : userName,
                         style: GoogleFonts.dmSans(
                           fontSize: 15,
                           fontWeight: FontWeight.w500,
@@ -360,6 +389,64 @@ class _PeriodSelector extends StatelessWidget {
 // KPI cards row
 // ---------------------------------------------------------------------------
 
+class _QuickActionHub extends StatelessWidget {
+  final DashboardSummary summary;
+
+  const _QuickActionHub({required this.summary});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppSizes.lg, 0, AppSizes.lg, AppSizes.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('QUICK ACTIONS', style: AppTextStyles.labelSmall.copyWith(letterSpacing: 0.08 * 10)),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              QuickActionChip(
+                icon: PhosphorIconsRegular.plus,
+                label: 'New job',
+                onTap: () => context.push('/jobs/add'),
+              ),
+              QuickActionChip(
+                icon: PhosphorIconsRegular.userPlus,
+                label: 'Add customer',
+                onTap: () => context.push('/customers/add'),
+              ),
+              QuickActionChip(
+                icon: PhosphorIconsRegular.calendarBlank,
+                label: 'Appointments',
+                onTap: () => context.go('/appointments'),
+              ),
+              QuickActionChip(
+                icon: PhosphorIconsRegular.currencyInr,
+                label: 'Collect payment',
+                color: AppColors.statusGreen,
+                onTap: () => context.go('/payments'),
+              ),
+              if (summary.pendingApprovals > 0)
+                QuickActionChip(
+                  icon: PhosphorIconsRegular.clipboardText,
+                  label: '${summary.pendingApprovals} pending',
+                  color: AppColors.statusOrange,
+                  onTap: () => context.go('/jobs'),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// KPI cards row
+// ---------------------------------------------------------------------------
+
 class _KpiRow extends StatelessWidget {
   final DashboardSummary summary;
 
@@ -376,8 +463,8 @@ class _KpiRow extends StatelessWidget {
           _KpiCard(
             label: 'Jobs Today',
             value: '${summary.jobsToday}',
-            delta: '↑ 3 from yesterday',
-            deltaType: _DeltaType.up,
+            delta: summary.jobsToday == 0 ? 'No jobs logged yet' : '${summary.jobsToday} logged today',
+            deltaType: summary.jobsToday > 0 ? _DeltaType.up : _DeltaType.neutral,
           ),
           _KpiCard(
             label: 'Revenue MTD',
@@ -746,8 +833,13 @@ class _RevenueSparkline extends StatelessWidget {
 class _SectionHeader extends StatelessWidget {
   final String title;
   final String actionLabel;
+  final VoidCallback? onAction;
 
-  const _SectionHeader({required this.title, required this.actionLabel});
+  const _SectionHeader({
+    required this.title,
+    required this.actionLabel,
+    this.onAction,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -757,9 +849,12 @@ class _SectionHeader extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(title.toUpperCase(), style: AppTextStyles.labelSmall.copyWith(letterSpacing: 0.08 * 10)),
-          Text(
-            '$actionLabel →',
-            style: AppTextStyles.bodySmall.copyWith(color: AppColors.primaryOrange),
+          GestureDetector(
+            onTap: onAction,
+            child: Text(
+              '$actionLabel →',
+              style: AppTextStyles.bodySmall.copyWith(color: AppColors.primaryOrange),
+            ),
           ),
         ],
       ),
@@ -778,6 +873,19 @@ class _BayGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (bays.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(AppSizes.lg, 0, AppSizes.lg, AppSizes.xl),
+        child: GuidedEmptyState(
+          icon: PhosphorIconsRegular.wrench,
+          title: 'No service bays configured',
+          subtitle: 'Jobs will appear here once bays are set up',
+          actionLabel: 'View jobs',
+          onAction: () => context.go('/jobs'),
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(AppSizes.lg, 0, AppSizes.lg, AppSizes.xl),
       child: GridView.builder(

@@ -8,7 +8,9 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../customers/data/models/customer_models.dart';
+import '../../../customers/data/customers_repository.dart';
 import '../../../customers/presentation/providers/customers_provider.dart';
+import '../../../customers/presentation/widgets/upload_vehicle_document_sheet.dart';
 
 class VehicleDetailScreen extends ConsumerWidget {
   final String vehicleUuid;
@@ -46,6 +48,7 @@ class VehicleDetailScreen extends ConsumerWidget {
         return _VehicleBody(
           vehicle: vehicle,
           customerUuid: customerUuid,
+          vehicleUuid: vehicleUuid,
           docsState: docsState,
           onDocsRefresh: docsNotifier.refresh,
         );
@@ -70,26 +73,56 @@ class VehicleDetailScreen extends ConsumerWidget {
 // Main body
 // ---------------------------------------------------------------------------
 
-class _VehicleBody extends StatelessWidget {
+class _VehicleBody extends ConsumerWidget {
   final Vehicle vehicle;
   final String customerUuid;
+  final String vehicleUuid;
   final AsyncValue<List<VehicleDocument>> docsState;
   final Future<void> Function() onDocsRefresh;
 
   const _VehicleBody({
     required this.vehicle,
     required this.customerUuid,
+    required this.vehicleUuid,
     required this.docsState,
     required this.onDocsRefresh,
   });
 
+  Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove vehicle?'),
+        content: Text(
+          '${vehicle.registrationNumber} will be hidden from active lists. Job history is kept.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Remove', style: TextStyle(color: AppColors.statusRed)),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+    await ref.read(customersRepositoryProvider).deactivateVehicle(vehicleUuid);
+    ref.invalidate(customerVehiclesProvider(customerUuid));
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vehicle removed'), behavior: SnackBarBehavior.floating),
+      );
+      context.pop();
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: AppColors.bgPrimary,
       body: CustomScrollView(
         slivers: [
-          _buildAppBar(context),
+          _buildAppBar(context, ref),
           SliverToBoxAdapter(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,7 +132,7 @@ class _VehicleBody extends StatelessWidget {
                 const SizedBox(height: 16),
                 _buildSpecsGrid(),
                 const SizedBox(height: 16),
-                _buildSectionHeader('Compliance Documents'),
+                _buildSectionHeader(context, ref, 'Compliance Documents'),
                 _buildDocsList(),
                 const SizedBox(height: 100),
               ],
@@ -110,7 +143,7 @@ class _VehicleBody extends StatelessWidget {
     );
   }
 
-  Widget _buildAppBar(BuildContext context) {
+  Widget _buildAppBar(BuildContext context, WidgetRef ref) {
     return SliverAppBar(
       backgroundColor: AppColors.bgSurface,
       surfaceTintColor: Colors.transparent,
@@ -139,6 +172,20 @@ class _VehicleBody extends StatelessWidget {
       ),
       actions: [
         IconButton(
+          onPressed: () async {
+            HapticFeedback.lightImpact();
+            final repo = ref.read(customersRepositoryProvider);
+            await showUploadVehicleDocumentSheet(
+              context: context,
+              repository: repo,
+              vehicleUuid: vehicleUuid,
+              onUploaded: onDocsRefresh,
+            );
+          },
+          icon: Icon(PhosphorIconsRegular.upload, color: AppColors.textSecondary, size: 20),
+          tooltip: 'Upload document',
+        ),
+        IconButton(
           onPressed: () {
             HapticFeedback.lightImpact();
             context.push(
@@ -148,6 +195,18 @@ class _VehicleBody extends StatelessWidget {
           },
           icon: Icon(PhosphorIconsRegular.pencilSimple, color: AppColors.textSecondary, size: 20),
           tooltip: 'Edit vehicle',
+        ),
+        PopupMenuButton<String>(
+          icon: Icon(PhosphorIconsRegular.dotsThreeVertical, color: AppColors.textSecondary, size: 20),
+          onSelected: (v) {
+            if (v == 'delete') _confirmDelete(context, ref);
+          },
+          itemBuilder: (_) => [
+            const PopupMenuItem(
+              value: 'delete',
+              child: Text('Remove vehicle', style: TextStyle(color: AppColors.statusRed)),
+            ),
+          ],
         ),
       ],
       bottom: PreferredSize(
@@ -320,10 +379,27 @@ class _VehicleBody extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(BuildContext context, WidgetRef ref, String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-      child: Text(title, style: AppTextStyles.titleMedium),
+      child: Row(
+        children: [
+          Expanded(child: Text(title, style: AppTextStyles.titleMedium)),
+          TextButton.icon(
+            onPressed: () async {
+              final repo = ref.read(customersRepositoryProvider);
+              await showUploadVehicleDocumentSheet(
+                context: context,
+                repository: repo,
+                vehicleUuid: vehicleUuid,
+                onUploaded: onDocsRefresh,
+              );
+            },
+            icon: const Icon(PhosphorIconsRegular.plus, size: 16),
+            label: const Text('Upload'),
+          ),
+        ],
+      ),
     );
   }
 

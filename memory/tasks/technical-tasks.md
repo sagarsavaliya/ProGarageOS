@@ -1,19 +1,18 @@
-# TECHNICAL TASKS — ProGarageOS
-# Wave testing checklist (Sagar)
+# TECHNICAL TASKS — Staff app v1 (Pack 4)
+# Updated: 2026-05-21
 
-## Wave 1
-- [ ] Login — real API only (no offline demo)
-- [ ] Customers: edit, service history
-- [ ] Jobs: API service categories, edit job, tasks add/complete
-- [ ] Errors show Retry (not fake lists)
+## Pack 4 — complete
+- [x] Invoice PDF API (`GET /invoices/{uuid}/pdf`, HTML template, auto-generate on create)
+- [x] Invoice PDF Flutter (view + share on detail screen)
+- [x] Fleet tab (tenant-scoped `GET /vehicles`, searchable list, Settings → Fleet)
+- [x] Audit read API (`GET /audit-logs?job_uuid=`) + job detail activity log (owners)
+- [x] Push on payment + estimate; invoice notification deep links
+- [x] Production runbook (`memory/RUNBOOK.md`)
 
-## Wave 2
-- [ ] Intake inspection → estimate pending
-- [ ] Estimate screen: edit lines, send, approve/reject
-- [ ] Delivery inspection before “Ready for delivery”
-- [ ] Compare shows new damage if any
-- [ ] Settings → Team → add/view technician
-- [ ] Technician role: no Invoices tab
+## Pending (Sagar)
+- [ ] Production migrate + redeploy
+- [ ] Device E2E sign-off (see RUNBOOK checklist)
+- [ ] Git commit + internal Play Store build
 
-## After test
-- [ ] Wave 3 kickoff (inventory + GST + appointments)
+## Next product track
+- Customer app C0 (after staff v1 sign-off)

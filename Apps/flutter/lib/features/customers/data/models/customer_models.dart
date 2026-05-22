@@ -1,6 +1,8 @@
 // Customer + Vehicle data models — aligned with GET /customers, GET /customers/{uuid},
 // GET /customers/{uuid}/vehicles, GET /vehicles/{uuid}/documents API contracts.
 
+import '../../../../core/utils/json_parsing.dart';
+
 // ---------------------------------------------------------------------------
 // Customer (list item)
 // ---------------------------------------------------------------------------
@@ -115,10 +117,10 @@ class CustomerVehicleSummary {
         registrationNumber: json['registration_number'] as String? ?? '',
         maker: json['maker'] as String? ?? '',
         model: json['model'] as String? ?? '',
-        year: (json['year'] as num?)?.toInt() ?? 0,
+        year: jsonAsInt(json['year']),
         fuelType: json['fuel_type'] as String? ?? '',
         color: json['color'] as String?,
-        odometerReading: (json['odometer_reading'] as num?)?.toInt(),
+        odometerReading: jsonAsIntOrNull(json['odometer_reading']),
       );
 }
 
@@ -323,13 +325,13 @@ class Vehicle {
         maker: json['maker'] as String? ?? '',
         model: json['model'] as String? ?? '',
         variant: json['variant'] as String?,
-        year: (json['year'] as num?)?.toInt() ?? 0,
+        year: jsonAsInt(json['year']),
         color: json['color'] as String?,
         fuelType: json['fuel_type'] as String? ?? '',
         transmission: json['transmission'] as String?,
         bodyType: json['body_type'] as String?,
         emissionNorms: json['emission_norms'] as String?,
-        odometerReading: (json['odometer_reading'] as num?)?.toInt(),
+        odometerReading: jsonAsIntOrNull(json['odometer_reading']),
         gpsTrackingConsent: json['gps_tracking_consent'] as bool? ?? false,
         registrationDate: json['registration_date'] as String?,
         registrationValidity: json['registration_validity'] as String?,

@@ -9,6 +9,7 @@ import '../../data/jobs_repository.dart';
 /// Static service categories for the create-job wizard (Step 2).
 class ServiceCategoryOption {
   final String uuid;
+  final String code;
   final String name;
   final String durationLabel;
   final String iconLabel;
@@ -17,12 +18,18 @@ class ServiceCategoryOption {
 
   const ServiceCategoryOption({
     required this.uuid,
+    required this.code,
     required this.name,
     required this.durationLabel,
     required this.iconLabel,
     this.requiresInspection = false,
     this.requiresApproval = false,
   });
+
+  bool get isInsuranceCategory {
+    final c = code.toUpperCase();
+    return c == 'ACCIDENT_RPR' || c == 'BODY_WORK';
+  }
 }
 
 class BayOption {
@@ -81,6 +88,8 @@ class CreateJobState {
   final List<ServiceCategoryOption> serviceCategories;
   final bool isLoadingResources;
   final bool isLoadingCategories;
+  final String insuranceCompany;
+  final String claimNumber;
 
   const CreateJobState({
     this.step = 0,
@@ -108,7 +117,13 @@ class CreateJobState {
     this.serviceCategories = const [],
     this.isLoadingResources = false,
     this.isLoadingCategories = false,
+    this.insuranceCompany = '',
+    this.claimNumber = '',
   });
+
+  bool get isInsuranceJobSelected => serviceCategories.any(
+        (c) => selectedCategoryIds.contains(c.uuid) && c.isInsuranceCategory,
+      );
 
   bool get step1Valid =>
       selectedCustomer != null && selectedVehicle != null;
@@ -149,6 +164,8 @@ class CreateJobState {
     List<ServiceCategoryOption>? serviceCategories,
     bool? isLoadingResources,
     bool? isLoadingCategories,
+    String? insuranceCompany,
+    String? claimNumber,
   }) {
     return CreateJobState(
       step: step ?? this.step,
@@ -178,6 +195,8 @@ class CreateJobState {
       serviceCategories: serviceCategories ?? this.serviceCategories,
       isLoadingResources: isLoadingResources ?? this.isLoadingResources,
       isLoadingCategories: isLoadingCategories ?? this.isLoadingCategories,
+      insuranceCompany: insuranceCompany ?? this.insuranceCompany,
+      claimNumber: claimNumber ?? this.claimNumber,
     );
   }
 }
@@ -314,6 +333,8 @@ class CreateJobNotifier extends StateNotifier<CreateJobState> {
   void setComplaint(String v) => state = state.copyWith(complaint: v);
   void setOdometer(String v) => state = state.copyWith(odometer: v);
   void setFuelLevel(String? v) => state = state.copyWith(fuelLevel: v, clearFuel: v == null);
+  void setInsuranceCompany(String v) => state = state.copyWith(insuranceCompany: v);
+  void setClaimNumber(String v) => state = state.copyWith(claimNumber: v);
 
   void toggleCategory(String id) {
     final next = Set<String>.from(state.selectedCategoryIds);
@@ -362,6 +383,12 @@ class CreateJobNotifier extends StateNotifier<CreateJobState> {
         if (scheduled != null) 'scheduled_start_at': scheduled.toIso8601String(),
         if (state.selectedCategoryIds.isNotEmpty)
           'service_category_uuids': state.selectedCategoryIds.toList(),
+        if (state.isInsuranceJobSelected) ...{
+          'is_insurance_job': true,
+          if (state.insuranceCompany.trim().isNotEmpty)
+            'insurance_company': state.insuranceCompany.trim(),
+          if (state.claimNumber.trim().isNotEmpty) 'claim_number': state.claimNumber.trim(),
+        },
         'delivery_method': 'pickup',
       });
 

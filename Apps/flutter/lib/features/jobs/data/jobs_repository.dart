@@ -52,6 +52,29 @@ class JobsRepository {
     await _dio.patch('/jobs/$uuid', data: body);
   }
 
+  /// PATCH /jobs/{uuid}/insurance-claim
+  Future<void> updateInsuranceClaim(
+    String uuid, {
+    String? insuranceClaimStatus,
+    String? insuranceCompany,
+    String? claimNumber,
+    double? customerLiabilityAmount,
+    double? jobInsuranceClaimAmount,
+  }) async {
+    await _dio.patch(
+      '/jobs/$uuid/insurance-claim',
+      data: {
+        if (insuranceClaimStatus != null) 'insurance_claim_status': insuranceClaimStatus,
+        if (insuranceCompany != null) 'insurance_company': insuranceCompany,
+        if (claimNumber != null) 'claim_number': claimNumber,
+        if (customerLiabilityAmount != null)
+          'customer_liability_amount': customerLiabilityAmount,
+        if (jobInsuranceClaimAmount != null)
+          'job_insurance_claim_amount': jobInsuranceClaimAmount,
+      },
+    );
+  }
+
   /// PATCH /jobs/{uuid}/status — transition job status.
   Future<void> updateStatus(String uuid, String status, {String? notes}) async {
     await _dio.patch(

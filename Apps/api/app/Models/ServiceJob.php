@@ -25,6 +25,9 @@ class ServiceJob extends Model
         'estimated_completion_at', 'actual_completion_at',
         'delivery_method', 'delivery_address', 'handover_notes',
         'customer_complaint', 'created_by',
+        'is_insurance_job', 'insurance_company', 'claim_number',
+        'insurance_claim_status', 'insurance_survey_at',
+        'customer_liability_amount', 'job_insurance_claim_amount',
     ];
 
     protected $casts = [
@@ -35,6 +38,10 @@ class ServiceJob extends Model
         'actual_start_at'       => 'datetime',
         'estimated_completion_at' => 'datetime',
         'actual_completion_at'  => 'datetime',
+        'is_insurance_job'      => 'boolean',
+        'insurance_survey_at'   => 'datetime',
+        'customer_liability_amount' => 'decimal:2',
+        'job_insurance_claim_amount' => 'decimal:2',
     ];
 
     protected static function boot(): void

@@ -339,6 +339,8 @@ class AuthController extends Controller
                 'status'        => $user->tenant->status,
                 'currency'      => $user->tenant->currency,
                 'timezone'      => $user->tenant->timezone,
+                'setup_step'    => $user->tenant->setup_step ?? 'welcome',
+                'setup_complete' => $user->tenant->setup_completed_at !== null,
             ] : null,
         ];
     }

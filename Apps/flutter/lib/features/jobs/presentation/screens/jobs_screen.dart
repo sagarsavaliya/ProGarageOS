@@ -7,8 +7,11 @@ import 'package:shimmer/shimmer.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/widgets/app_filter_chip.dart';
 import '../../../../core/widgets/app_status_chip.dart';
+import '../../../../core/widgets/guided_empty_state.dart';
+import '../../../../core/widgets/quick_action_chip.dart';
 import '../../data/models/job_models.dart';
 import '../providers/jobs_provider.dart';
 
@@ -231,20 +234,12 @@ class _JobsScreenState extends ConsumerState<JobsScreen> {
   }
 
   Widget _buildEmpty() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(PhosphorIconsRegular.clipboardText, color: AppColors.textMuted, size: 48),
-          const SizedBox(height: 16),
-          Text('No jobs found', style: AppTextStyles.titleMedium),
-          const SizedBox(height: 8),
-          Text(
-            'Try a different filter or search term',
-            style: AppTextStyles.bodySmall,
-          ),
-        ],
-      ),
+    return GuidedEmptyState(
+      icon: PhosphorIconsRegular.clipboardText,
+      title: 'No jobs found',
+      subtitle: 'Try a different filter or create a new job',
+      actionLabel: 'New job',
+      onAction: () => context.push('/jobs/add'),
     );
   }
 
@@ -272,280 +267,123 @@ class _JobListTile extends StatelessWidget {
 
   const _JobListTile({required this.job, required this.onTap});
 
+  Future<void> _callCustomer() async {
+    final phone = job.customer.phone.replaceAll(RegExp(r'[^\d+]'), '');
+    final uri = Uri(scheme: 'tel', path: phone);
+    if (await canLaunchUrl(uri)) await launchUrl(uri);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        decoration: BoxDecoration(
-          color: AppColors.bgSurface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.divider),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildTileHeader(),
-            const Divider(height: 1, color: AppColors.divider),
-            _buildTileBody(),
-            _buildTileFooter(),
-          ],
-        ),
-      ),
-    );
-  }
+    final showInspect = job.status == JobStatus.intakeInspection;
 
-  Widget _buildTileHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
-      child: Row(
-        children: [
-          // Job number
-          Expanded(
-            child: Text(job.jobNumber, style: AppTextStyles.monoMedium),
-          ),
-          // Priority badge (only for urgent/VIP)
-          if (job.priority != JobPriority.normal)
-            Container(
-              margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: job.priority == JobPriority.vip
-                    ? AppColors.statusPurpleBg
-                    : AppColors.statusRedBg,
-                borderRadius: BorderRadius.circular(9999),
-              ),
-              child: Text(
-                job.priority.label.toUpperCase(),
-                style: GoogleFonts.dmSans(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w700,
-                  color: job.priority == JobPriority.vip
-                      ? AppColors.statusPurple
-                      : AppColors.statusRed,
-                  letterSpacing: 0.8,
-                ),
-              ),
-            ),
-          AppStatusChip(status: job.status.apiValue),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTileBody() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Vehicle icon
-          Container(
-            width: 40,
-            height: 40,
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Ink(
             decoration: BoxDecoration(
-              color: AppColors.bgElevated,
-              borderRadius: BorderRadius.circular(10),
+              color: AppColors.bgSurface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.divider),
             ),
-            child: const Icon(
-              PhosphorIconsRegular.car,
-              color: AppColors.textMuted,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(job.vehicle.makeModel, style: AppTextStyles.titleSmall),
-                const SizedBox(height: 2),
-                Row(
-                  children: [
-                    Text(
-                      job.vehicle.registrationNumber,
-                      style: AppTextStyles.monoSmall.copyWith(
-                        color: AppColors.textSecondary,
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      width: 3,
-                      height: 3,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        job.customer.name,
-                        style: AppTextStyles.bodySmall,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                if (job.serviceCategories.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 4,
-                    children: job.serviceCategories.take(2).map((cat) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.bgElevated,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(cat, style: AppTextStyles.labelSmall),
-                      );
-                    }).toList(),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          // Amount
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '₹${_formatAmount(job.estimatedAmount)}',
-                style: AppTextStyles.monoMedium.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              Text('est.', style: AppTextStyles.labelSmall),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTileFooter() {
-    final summary = job.tasksSummary;
-    final hasTech = job.primaryTechnician != null;
-    final hasBay = job.serviceBay != null;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-      child: Row(
-        children: [
-          // Task progress
-          if (summary.total > 0) ...[
-            Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Text(
-                        '${summary.completed}/${summary.total} tasks',
-                        style: AppTextStyles.labelSmall,
-                      ),
-                      const Spacer(),
-                      if (hasTech)
-                        _TechBadge(name: job.primaryTechnician!.name),
+                      Expanded(child: Text(job.jobNumber, style: AppTextStyles.monoMedium)),
+                      if (job.priority != JobPriority.normal) ...[
+                        Container(
+                          margin: const EdgeInsets.only(right: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: job.priority == JobPriority.vip
+                                ? AppColors.statusPurpleBg
+                                : AppColors.statusRedBg,
+                            borderRadius: BorderRadius.circular(9999),
+                          ),
+                          child: Text(
+                            job.priority.label.toUpperCase(),
+                            style: GoogleFonts.dmSans(
+                              fontSize: 8,
+                              fontWeight: FontWeight.w700,
+                              color: job.priority == JobPriority.vip
+                                  ? AppColors.statusPurple
+                                  : AppColors.statusRed,
+                            ),
+                          ),
+                        ),
+                      ],
+                      AppStatusChip(status: job.status.apiValue),
                     ],
                   ),
-                  const SizedBox(height: 5),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: summary.progressPercent,
-                      minHeight: 4,
-                      backgroundColor: AppColors.bgElevated,
-                      valueColor: AlwaysStoppedAnimation(
-                        summary.progressPercent == 1.0
-                            ? AppColors.statusGreen
-                            : AppColors.primaryOrange,
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(PhosphorIconsRegular.car, size: 14, color: AppColors.textMuted),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          '${job.vehicle.registrationNumber} · ${job.customer.name}',
+                          style: AppTextStyles.bodySmall,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
+                      if (job.estimatedAmount > 0)
+                        Text(
+                          '₹${_formatAmount(job.estimatedAmount)}',
+                          style: AppTextStyles.monoSmall.copyWith(fontWeight: FontWeight.w600),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      if (job.customer.phone.isNotEmpty)
+                        QuickActionChip(
+                          icon: PhosphorIconsRegular.phone,
+                          label: 'Call',
+                          color: AppColors.statusGreen,
+                          onTap: _callCustomer,
+                        ),
+                      if (showInspect) ...[
+                        const SizedBox(width: 6),
+                        QuickActionChip(
+                          icon: PhosphorIconsRegular.clipboardText,
+                          label: 'Inspect',
+                          onTap: () => context.push('/jobs/${job.uuid}/inspection'),
+                        ),
+                      ],
+                      const Spacer(),
+                      if (job.primaryTechnician != null)
+                        Text(
+                          job.primaryTechnician!.name.split(' ').first,
+                          style: AppTextStyles.labelSmall,
+                        ),
+                      const SizedBox(width: 4),
+                      Icon(PhosphorIconsRegular.caretRight, color: AppColors.textMuted, size: 16),
+                    ],
                   ),
                 ],
               ),
             ),
-          ] else ...[
-            const Spacer(),
-            if (hasTech) _TechBadge(name: job.primaryTechnician!.name),
-          ],
-          if (hasBay) ...[
-            const SizedBox(width: 10),
-            Row(
-              children: [
-                Icon(PhosphorIconsRegular.wrench, color: AppColors.textMuted, size: 12),
-                const SizedBox(width: 4),
-                Text(
-                  job.serviceBay!.name.split('—').first.trim(),
-                  style: AppTextStyles.labelSmall,
-                ),
-              ],
-            ),
-          ],
-          const SizedBox(width: 8),
-          Icon(PhosphorIconsRegular.caretRight, color: AppColors.textMuted, size: 18),
-        ],
+          ),
+        ),
       ),
     );
   }
 
   String _formatAmount(double amount) {
-    if (amount >= 100000) {
-      return '${(amount / 100000).toStringAsFixed(1)}L';
-    } else if (amount >= 1000) {
-      return '${(amount / 1000).toStringAsFixed(1)}K';
-    }
+    if (amount >= 100000) return '${(amount / 100000).toStringAsFixed(1)}L';
+    if (amount >= 1000) return '${(amount / 1000).toStringAsFixed(1)}K';
     return amount.toInt().toString();
-  }
-}
-
-class _TechBadge extends StatelessWidget {
-  final String name;
-
-  const _TechBadge({required this.name});
-
-  String get _initials {
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.length >= 2) {
-      return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
-    }
-    return name.substring(0, name.length.clamp(1, 2)).toUpperCase();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 20,
-          height: 20,
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            color: AppColors.primaryOrangeDim,
-          ),
-          child: Center(
-            child: Text(
-              _initials,
-              style: GoogleFonts.dmSans(
-                fontSize: 8,
-                fontWeight: FontWeight.w700,
-                color: AppColors.primaryOrange,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 5),
-        Text(name.split(' ').first, style: AppTextStyles.labelSmall),
-      ],
-    );
   }
 }
 

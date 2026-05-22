@@ -13,6 +13,8 @@ import '../../../../core/storage/secure_storage.dart';
 import '../../../../core/widgets/api_error_view.dart';
 import '../../../auth/data/auth_repository.dart';
 import '../../../auth/presentation/providers/current_user_provider.dart';
+import '../../data/tenant_repository.dart';
+import '../widgets/gps_tracking_info_sheet.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -25,11 +27,38 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String? _apiVersion;
   bool _checkingHealth = false;
   String? _healthError;
+  bool _gpsDefaultEnabled = false;
+  bool _gpsPrefLoaded = false;
+  bool? _garageSetupDone;
 
   @override
   void initState() {
     super.initState();
     _checkHealth();
+    _loadLocalPrefs();
+  }
+
+  Future<void> _loadLocalPrefs() async {
+    final storage = ref.read(secureStorageProvider);
+    final gps = await storage.isGpsDefaultConsentEnabled();
+    final user = ref.read(currentUserProvider).valueOrNull;
+    bool? setupDone;
+    if (ref.read(isOwnerProvider) && user?.tenantUuid != null) {
+      setupDone = await resolveGarageSetupComplete(
+        tenantRepo: ref.read(tenantRepositoryProvider),
+        storage: storage,
+        tenantUuid: user!.tenantUuid!,
+      );
+    } else if (user?.tenantUuid != null) {
+      setupDone = await storage.isGarageSetupCompleted(user!.tenantUuid!);
+    }
+    if (mounted) {
+      setState(() {
+        _gpsDefaultEnabled = gps;
+        _gpsPrefLoaded = true;
+        _garageSetupDone = setupDone;
+      });
+    }
   }
 
   Future<void> _checkHealth() async {
@@ -105,6 +134,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
         children: [
+          _ProfileHeader(
+            onTap: () => context.push('/settings/profile'),
+          ),
+          const SizedBox(height: 16),
           _SectionTitle('Connection'),
           _SettingsTile(
             icon: PhosphorIconsRegular.globe,
@@ -147,13 +180,45 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ],
           const SizedBox(height: 24),
           _SectionTitle('Garage'),
-          if (ref.watch(isOwnerProvider))
+          if (ref.watch(isOwnerProvider)) ...[
+            if (_garageSetupDone == false)
+              _SettingsTile(
+                icon: PhosphorIconsRegular.flag,
+                title: 'Complete setup',
+                subtitle: 'Finish garage profile and bays',
+                onTap: () => context.push('/onboarding/setup'),
+              ),
+            _SettingsTile(
+              icon: PhosphorIconsRegular.storefront,
+              title: 'Garage profile',
+              subtitle: 'Business name, GSTIN, address for invoices',
+              onTap: () => context.push('/settings/garage-profile'),
+            ),
+            _SettingsTile(
+              icon: PhosphorIconsRegular.car,
+              title: 'Fleet',
+              subtitle: 'All registered vehicles',
+              onTap: () => context.push('/vehicles'),
+            ),
+            _SettingsTile(
+              icon: PhosphorIconsRegular.receipt,
+              title: 'Invoices',
+              subtitle: 'All invoices and billing history',
+              onTap: () => context.push('/invoices'),
+            ),
+            _SettingsTile(
+              icon: PhosphorIconsRegular.package,
+              title: 'Parts inventory',
+              subtitle: 'Stock levels and low-stock alerts',
+              onTap: () => context.go('/inventory'),
+            ),
             _SettingsTile(
               icon: PhosphorIconsRegular.plugsConnected,
               title: 'Integrations',
               subtitle: 'WhatsApp and connected services',
               onTap: () => context.push('/settings/integrations'),
             ),
+          ],
           _SettingsTile(
             icon: PhosphorIconsRegular.usersThree,
             title: 'Team',
@@ -163,6 +228,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(height: 24),
           _SectionTitle('App'),
           _SettingsTile(
+            icon: PhosphorIconsRegular.mapPinLine,
+            title: 'GPS odometer tracking',
+            subtitle: 'Default consent for new vehicles',
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(PhosphorIconsRegular.info, size: 18, color: AppColors.textMuted),
+                  onPressed: () => GpsTrackingInfoSheet.show(context),
+                ),
+                if (_gpsPrefLoaded)
+                  Switch.adaptive(
+                    value: _gpsDefaultEnabled,
+                    activeColor: AppColors.primaryOrange,
+                    onChanged: (v) async {
+                      setState(() => _gpsDefaultEnabled = v);
+                      await ref.read(secureStorageProvider).setGpsDefaultConsentEnabled(v);
+                    },
+                  ),
+              ],
+            ),
+          ),
+          _SettingsTile(
             icon: PhosphorIconsRegular.bell,
             title: 'Notifications',
             subtitle: 'Job updates and alerts',
@@ -171,6 +259,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(height: 24),
           _SectionTitle('Account'),
           _SettingsTile(
+            icon: PhosphorIconsRegular.user,
+            title: 'My profile',
+            subtitle: 'Name, role, change PIN',
+            onTap: () => context.push('/settings/profile'),
+          ),
+          _SettingsTile(
             icon: PhosphorIconsRegular.signOut,
             title: 'Sign out',
             subtitle: 'End session on this device',
@@ -178,6 +272,56 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: _logout,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ProfileHeader extends ConsumerWidget {
+  final VoidCallback onTap;
+
+  const _ProfileHeader({required this.onTap});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(currentUserProvider).valueOrNull;
+    return Material(
+      color: AppColors.bgSurface,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: AppColors.bgPrimary,
+                child: Text(
+                  user?.initials ?? '?',
+                  style: AppTextStyles.titleSmall.copyWith(color: AppColors.primaryOrange),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(user?.name ?? 'Staff member', style: AppTextStyles.titleSmall),
+                    Text(
+                      user?.garageName ?? 'Tap to view profile',
+                      style: AppTextStyles.bodySmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(PhosphorIconsRegular.caretRight, size: 16, color: AppColors.textMuted),
+            ],
+          ),
+        ),
       ),
     );
   }

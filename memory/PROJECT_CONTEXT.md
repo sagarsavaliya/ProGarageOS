@@ -26,7 +26,7 @@ Multi-tenant from day 1 with tenant_id isolation via Laravel Global Scopes.
 
 ## Active Departments
 - [x] Technical (CTO Agent)
-- [ ] Product & Design (CPO Agent) — on hold until S5
+- [x] Product & Design (CPO Agent) — **Mobile UX Sprint Option B (2026-05-21)**
 - [ ] Sales (Sales Director) — activate at beta launch
 - [ ] Marketing (Marketing Director) — activate at beta launch
 - [ ] Legal (Legal Agent) — activate before commercial launch

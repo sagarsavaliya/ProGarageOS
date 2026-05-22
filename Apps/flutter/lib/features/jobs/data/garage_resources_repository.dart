@@ -32,6 +32,7 @@ class GarageResourcesRepository {
       final code = m['code'] as String? ?? name;
       return ServiceCategoryOption(
         uuid: m['uuid'] as String? ?? '',
+        code: m['code'] as String? ?? name,
         name: name,
         durationLabel: durationMin >= 60 ? '~${(durationMin / 60).round()} hrs' : '~$durationMin min',
         iconLabel: _iconLabelFor(code, name),

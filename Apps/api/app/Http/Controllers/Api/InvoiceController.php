@@ -3,11 +3,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\GenerateInvoicePdfJob;
+use App\Models\AuditLog;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\ServiceJob;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
+use App\Services\PushNotificationService;
 
 class InvoiceController extends Controller
 {
@@ -102,6 +107,13 @@ class InvoiceController extends Controller
 
         $invoice->recalculate();
 
+        AuditLog::record('invoice.created', 'invoices', $invoice->id, [], [
+            'invoice_number' => $invoice->invoice_number,
+            'job_id'         => $job->id,
+        ]);
+
+        GenerateInvoicePdfJob::dispatch($invoice->id);
+
         return response()->json(['success' => true, 'data' => $this->formatInvoice($invoice->fresh(['items', 'customer', 'vehicle']))], 201);
     }
 
@@ -139,6 +151,13 @@ class InvoiceController extends Controller
             $invoice->update(['status' => 'partially_paid']);
         }
 
+        AuditLog::record('invoice.payment_recorded', 'invoices', $invoice->id, [], [
+            'amount'  => (float) $payment->amount,
+            'balance' => (float) $invoice->balance_due,
+        ]);
+
+        $this->pushPaymentAlert($request, $invoice, (float) $payment->amount);
+
         return response()->json([
             'success' => true,
             'data'    => [
@@ -148,6 +167,64 @@ class InvoiceController extends Controller
                 'amount_paid'   => (float) $invoice->amount_paid,
                 'balance_due'   => (float) $invoice->balance_due,
                 'status'        => $invoice->status,
+            ],
+        ]);
+    }
+
+    public function updateSplitBilling(Request $request, string $uuid): JsonResponse
+    {
+        $tenantId = $request->user()->tenant_id;
+        $invoice  = Invoice::where('uuid', $uuid)->where('tenant_id', $tenantId)->firstOrFail();
+
+        $data = $request->validate([
+            'customer_pay_amount'    => ['required', 'numeric', 'min:0'],
+            'insurance_claim_amount' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        $splitTotal = round($data['customer_pay_amount'] + $data['insurance_claim_amount'], 2);
+        $grandTotal = round((float) $invoice->grand_total, 2);
+
+        if (abs($splitTotal - $grandTotal) > 1.0) {
+            throw ValidationException::withMessages([
+                'customer_pay_amount' => ['Customer + insurance amounts must equal invoice total (₹' . number_format($grandTotal, 2) . ').'],
+            ]);
+        }
+
+        $invoice->update([
+            'customer_pay_amount'    => $data['customer_pay_amount'],
+            'insurance_claim_amount' => $data['insurance_claim_amount'],
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $this->formatInvoice($invoice->fresh(['customer', 'vehicle', 'items', 'payments']), true),
+        ]);
+    }
+
+    public function pdf(Request $request, string $uuid): JsonResponse
+    {
+        $tenantId = $request->user()->tenant_id;
+        $invoice  = Invoice::where('uuid', $uuid)
+            ->where('tenant_id', $tenantId)
+            ->firstOrFail();
+
+        $path = "invoices/{$invoice->tenant_id}/{$invoice->uuid}.html";
+        if (! $invoice->pdf_url || ! Storage::disk('public')->exists($path)) {
+            GenerateInvoicePdfJob::dispatchSync($invoice->id);
+            $invoice->refresh();
+        }
+
+        $url = $invoice->pdf_url;
+        if (! $url && Storage::disk('public')->exists($path)) {
+            $url = url(Storage::disk('public')->url($path));
+            $invoice->update(['pdf_url' => $url]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'pdf_url'        => $url,
+                'invoice_number' => $invoice->invoice_number,
             ],
         ]);
     }
@@ -163,9 +240,24 @@ class InvoiceController extends Controller
             'balance_due'    => (float) $invoice->balance_due,
             'amount_paid'    => (float) $invoice->amount_paid,
             'issued_date'    => $invoice->issued_date?->toIso8601String(),
+            'pdf_url'        => $invoice->pdf_url,
+            'customer_pay_amount'    => $invoice->customer_pay_amount !== null
+                ? (float) $invoice->customer_pay_amount
+                : null,
+            'insurance_claim_amount' => $invoice->insurance_claim_amount !== null
+                ? (float) $invoice->insurance_claim_amount
+                : null,
             'customer'       => $invoice->customer ? [
-                'uuid' => $invoice->customer->uuid,
-                'name' => $invoice->customer->full_name,
+                'uuid'       => $invoice->customer->uuid,
+                'name'       => $invoice->customer->full_name,
+                'full_name'  => $invoice->customer->full_name,
+                'phone'      => $invoice->customer->phone_primary,
+            ] : null,
+            'vehicle'        => $invoice->vehicle ? [
+                'registration_number' => $invoice->vehicle->registration_number,
+                'make'                => $invoice->vehicle->maker,
+                'model'               => $invoice->vehicle->model,
+                'year'                => $invoice->vehicle->year,
             ] : null,
         ];
 
@@ -175,11 +267,12 @@ class InvoiceController extends Controller
             $base['discount_total'] = (float) $invoice->discount_total;
             $base['customer_notes'] = $invoice->customer_notes;
             $base['items']         = $invoice->items->map(fn ($i) => [
-                'line_type'   => $i->line_type,
-                'name'        => $i->name,
-                'quantity'    => (float) $i->quantity,
-                'unit_price'  => (float) $i->unit_price,
-                'tax_amount'  => (float) $i->tax_amount,
+                'line_type'    => $i->line_type,
+                'name'         => $i->name,
+                'description'  => $i->name,
+                'quantity'     => (float) $i->quantity,
+                'unit_price'   => (float) $i->unit_price,
+                'tax_amount'   => (float) $i->tax_amount,
                 'total_amount' => (float) $i->total_amount,
             ]);
             $base['payments']      = $invoice->payments->map(fn ($p) => [
@@ -187,9 +280,40 @@ class InvoiceController extends Controller
                 'status'    => $p->status,
                 'paid_at'   => $p->paid_at?->toIso8601String(),
                 'method'    => $p->paymentMethod?->name,
+                'payment_type' => $p->payment_type,
             ]);
         }
 
         return $base;
+    }
+
+    private function pushPaymentAlert(Request $request, Invoice $invoice, float $amount): void
+    {
+        $tenantId = $request->user()->tenant_id;
+        $invoice->loadMissing('customer', 'job');
+
+        dispatch(function () use ($tenantId, $invoice, $amount, $request) {
+            $push = app(PushNotificationService::class);
+            $title = "Payment received — {$invoice->invoice_number}";
+            $body  = '₹' . number_format($amount, 2) . ' recorded'
+                . ($invoice->customer ? ' · ' . $invoice->customer->full_name : '');
+
+            $data = [
+                'type'         => 'invoice',
+                'invoice_uuid' => $invoice->uuid,
+            ];
+            if ($invoice->job) {
+                $data['job_uuid'] = $invoice->job->uuid;
+            }
+
+            $push->notifyTenantStaff(
+                $tenantId,
+                'payment_received',
+                $title,
+                $body,
+                $data,
+                $request->user()->id,
+            );
+        })->afterResponse();
     }
 }

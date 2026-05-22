@@ -208,6 +208,28 @@ class JobDetailNotifier extends StateNotifier<AsyncValue<JobDetail>> {
       state = AsyncValue.error(failureMessage(e), st);
     }
   }
+
+  Future<void> updateInsuranceClaim({
+    String? insuranceClaimStatus,
+    String? insuranceCompany,
+    String? claimNumber,
+    double? customerLiabilityAmount,
+    double? jobInsuranceClaimAmount,
+  }) async {
+    try {
+      await _repo.updateInsuranceClaim(
+        _uuid,
+        insuranceClaimStatus: insuranceClaimStatus,
+        insuranceCompany: insuranceCompany,
+        claimNumber: claimNumber,
+        customerLiabilityAmount: customerLiabilityAmount,
+        jobInsuranceClaimAmount: jobInsuranceClaimAmount,
+      );
+      await refresh();
+    } catch (e, st) {
+      state = AsyncValue.error(failureMessage(e), st);
+    }
+  }
 }
 
 final jobDetailProvider =

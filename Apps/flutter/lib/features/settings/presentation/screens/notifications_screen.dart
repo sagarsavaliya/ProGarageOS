@@ -27,6 +27,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
   void _openNotification(StaffNotificationItem item) {
     final jobUuid = item.jobUuid;
+    final invoiceUuid = item.invoiceUuid;
+    if (invoiceUuid != null && invoiceUuid.isNotEmpty) {
+      context.push('/invoices/$invoiceUuid');
+      return;
+    }
     if (jobUuid != null && jobUuid.isNotEmpty) {
       context.push('/jobs/$jobUuid');
     }

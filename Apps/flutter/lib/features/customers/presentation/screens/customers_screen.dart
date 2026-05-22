@@ -8,6 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/widgets/guided_empty_state.dart';
 import '../../data/models/customer_models.dart';
 import '../providers/customers_provider.dart';
 
@@ -78,7 +79,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
 
   Widget _buildSearchBar(CustomersNotifier notifier) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
       child: Container(
         height: 44,
         decoration: BoxDecoration(
@@ -160,17 +161,12 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
           }).toList();
 
     if (displayCustomers.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(PhosphorIconsRegular.users, color: AppColors.textMuted, size: 48),
-            const SizedBox(height: 16),
-            Text('No customers found', style: AppTextStyles.titleMedium),
-            const SizedBox(height: 8),
-            Text('Try a different search term', style: AppTextStyles.bodySmall),
-          ],
-        ),
+      return GuidedEmptyState(
+        icon: PhosphorIconsRegular.users,
+        title: 'No customers found',
+        subtitle: 'Try a different search or add a new customer',
+        actionLabel: 'Add customer',
+        onAction: () => context.push('/customers/add'),
       );
     }
 
@@ -202,8 +198,14 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
           return _CustomerListTile(
             customer: customer,
             onTap: () {
+              if (customer.uuid.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Customer record is missing an ID. Pull to refresh.')),
+                );
+                return;
+              }
               HapticFeedback.lightImpact();
-              context.push('/customers/${customer.uuid}');
+              context.pushNamed('customer-detail', pathParameters: {'id': customer.uuid});
             },
           );
         },
@@ -239,17 +241,22 @@ class _CustomerListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final profile = customer.garageProfile;
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        decoration: BoxDecoration(
-          color: AppColors.bgSurface,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.divider),
-        ),
-        child: Row(
+          child: Ink(
+            decoration: BoxDecoration(
+              color: AppColors.bgSurface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.divider),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              child: Row(
           children: [
             Container(
               width: 42,
@@ -328,6 +335,9 @@ class _CustomerListTile extends StatelessWidget {
             const SizedBox(width: 4),
             Icon(PhosphorIconsRegular.caretRight, color: AppColors.textMuted, size: 16),
           ],
+        ),
+            ),
+          ),
         ),
       ),
     );

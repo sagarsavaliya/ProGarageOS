@@ -51,6 +51,32 @@ class InvoicesRepository {
     return fetchInvoice(uuid);
   }
 
+  Future<InvoiceDetail> updateSplitBilling(
+    String uuid, {
+    required double customerPayAmount,
+    required double insuranceClaimAmount,
+  }) async {
+    await _dio.patch(
+      '/invoices/$uuid/split-billing',
+      data: {
+        'customer_pay_amount': customerPayAmount,
+        'insurance_claim_amount': insuranceClaimAmount,
+      },
+    );
+    return fetchInvoice(uuid);
+  }
+
+  /// GET /invoices/{uuid}/pdf — generate or return invoice PDF URL.
+  Future<String> fetchInvoicePdfUrl(String uuid) async {
+    final response = await _dio.get('/invoices/$uuid/pdf');
+    final data = (response.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+    final url = data['pdf_url'] as String?;
+    if (url == null || url.isEmpty) {
+      throw Exception('Invoice PDF is not available yet. Try again in a moment.');
+    }
+    return url;
+  }
+
   /// GET /api/payment-methods — list available payment methods.
   Future<List<PaymentMethod>> fetchPaymentMethods() async {
     final response = await _dio.get('/payment-methods');

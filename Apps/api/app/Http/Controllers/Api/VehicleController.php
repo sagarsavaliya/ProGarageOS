@@ -12,7 +12,9 @@ class VehicleController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Vehicle::where('is_active', true);
+        $tenantId = $request->user()->tenant_id;
+        $query    = Vehicle::where('is_active', true)
+            ->whereHas('customer.garageProfiles', fn ($q) => $q->where('tenant_id', $tenantId));
 
         if ($customerId = $request->query('customer_uuid')) {
             $query->whereHas('customer', fn ($q) => $q->where('uuid', $customerId));
@@ -43,7 +45,8 @@ class VehicleController extends Controller
 
     public function show(Request $request, string $uuid): JsonResponse
     {
-        $vehicle = Vehicle::where('uuid', $uuid)
+        $tenantId = $request->user()->tenant_id;
+        $vehicle  = $this->resolveVehicle($request, $uuid, $tenantId)
             ->with(['customer:id,uuid,first_name,last_name,phone_primary', 'documents', 'mileageLogs' => fn ($q) => $q->limit(10)])
             ->firstOrFail();
 
@@ -63,6 +66,7 @@ class VehicleController extends Controller
             'chassis_number'        => ['nullable', 'string', 'max:100'],
             'engine_number'         => ['nullable', 'string', 'max:100'],
             'odometer_reading'      => ['nullable', 'integer', 'min:0'],
+            'gps_tracking_consent'  => ['nullable', 'boolean'],
         ]);
 
         $customer = \App\Models\Customer::where('uuid', $data['customer_uuid'])->firstOrFail();
@@ -76,7 +80,8 @@ class VehicleController extends Controller
 
     public function update(Request $request, string $uuid): JsonResponse
     {
-        $vehicle = Vehicle::where('uuid', $uuid)->firstOrFail();
+        $tenantId = $request->user()->tenant_id;
+        $vehicle  = $this->resolveVehicle($request, $uuid, $tenantId);
         $data = $request->validate([
             'maker'            => ['sometimes', 'string', 'max:100'],
             'model'            => ['sometimes', 'string', 'max:100'],
@@ -86,14 +91,29 @@ class VehicleController extends Controller
             'fuel_type'        => ['nullable', 'in:petrol,diesel,electric,cng,lpg,hybrid'],
             'odometer_reading' => ['nullable', 'integer', 'min:0'],
             'nickname'         => ['nullable', 'string', 'max:100'],
+            'is_active'            => ['sometimes', 'boolean'],
+            'gps_tracking_consent' => ['sometimes', 'boolean'],
         ]);
         $vehicle->update($data);
         return response()->json(['success' => true, 'data' => $this->formatVehicle($vehicle->fresh())]);
     }
 
+    public function destroy(Request $request, string $uuid): JsonResponse
+    {
+        $tenantId = $request->user()->tenant_id;
+        $vehicle  = $this->resolveVehicle($request, $uuid, $tenantId);
+        $vehicle->update(['is_active' => false]);
+
+        return response()->json([
+            'success' => true,
+            'data'    => ['uuid' => $vehicle->uuid, 'is_active' => false],
+        ]);
+    }
+
     public function updateOdometer(Request $request, string $uuid): JsonResponse
     {
-        $vehicle = Vehicle::where('uuid', $uuid)->firstOrFail();
+        $tenantId = $request->user()->tenant_id;
+        $vehicle  = $this->resolveVehicle($request, $uuid, $tenantId);
         $data = $request->validate([
             'odometer_value_km' => ['required', 'integer', 'min:0'],
             'source'            => ['required', 'in:customer_manual_correct,job_intake,admin_override'],
@@ -154,5 +174,12 @@ class VehicleController extends Controller
         }
 
         return $base;
+    }
+
+    private function resolveVehicle(Request $request, string $uuid, int $tenantId): Vehicle
+    {
+        return Vehicle::where('uuid', $uuid)
+            ->whereHas('customer.garageProfiles', fn ($q) => $q->where('tenant_id', $tenantId))
+            ->firstOrFail();
     }
 }

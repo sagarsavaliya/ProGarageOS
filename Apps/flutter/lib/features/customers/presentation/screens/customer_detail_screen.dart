@@ -9,8 +9,17 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/app_status_chip.dart';
+import '../../../../core/widgets/quick_action_chip.dart';
 import '../../data/models/customer_models.dart';
 import '../providers/customers_provider.dart';
+
+void _leaveCustomerDetail(BuildContext context) {
+  if (context.canPop()) {
+    context.pop();
+  } else {
+    context.go('/customers');
+  }
+}
 
 Future<void> _launchPhone(String phone) async {
   final uri = Uri(scheme: 'tel', path: phone);
@@ -40,17 +49,52 @@ class CustomerDetailScreen extends ConsumerWidget {
     final notifier = ref.read(customerDetailProvider(customerUuid).notifier);
     final historyAsync = ref.watch(customerServiceHistoryProvider(customerUuid));
 
-    return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
-      body: state.when(
-        loading: () => const _LoadingView(),
-        error: (_, __) => _ErrorView(onRetry: notifier.refresh),
-        data: (detail) => _DetailBody(
+    return state.when(
+      loading: () => _CustomerDetailShell(
+        child: const _LoadingView(),
+      ),
+      error: (_, __) => _CustomerDetailShell(
+        child: _ErrorView(onRetry: notifier.refresh),
+      ),
+      data: (detail) => Scaffold(
+        backgroundColor: AppColors.bgPrimary,
+        body: _DetailBody(
           detail: detail,
           onRefresh: notifier.refresh,
           serviceHistory: historyAsync,
         ),
       ),
+    );
+  }
+}
+
+class _CustomerDetailShell extends StatelessWidget {
+  final Widget child;
+
+  const _CustomerDetailShell({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.bgPrimary,
+      appBar: AppBar(
+        backgroundColor: AppColors.bgSurface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            _leaveCustomerDetail(context);
+          },
+          icon: Icon(PhosphorIconsRegular.caretLeft, color: AppColors.textPrimary, size: 20),
+        ),
+        title: Text('Customer', style: AppTextStyles.titleMedium),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(0.5),
+          child: Container(height: 0.5, color: AppColors.divider),
+        ),
+      ),
+      body: child,
     );
   }
 }
@@ -86,6 +130,26 @@ class _DetailBody extends StatelessWidget {
                 _buildProfileCard(context),
                 const SizedBox(height: 16),
                 _buildStatsRow(),
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      QuickActionChip(
+                        icon: PhosphorIconsRegular.plus,
+                        label: 'New job',
+                        onTap: () => context.push('/jobs/add'),
+                      ),
+                      QuickActionChip(
+                        icon: PhosphorIconsRegular.receipt,
+                        label: 'New invoice',
+                        onTap: () => context.push('/invoices/add'),
+                      ),
+                    ],
+                  ),
+                ),
                 const SizedBox(height: 16),
                 _buildVehiclesSection(context),
                 const SizedBox(height: 16),
@@ -111,7 +175,7 @@ class _DetailBody extends StatelessWidget {
       leading: IconButton(
         onPressed: () {
           HapticFeedback.lightImpact();
-          Navigator.of(context).pop();
+          _leaveCustomerDetail(context);
         },
         icon: Icon(PhosphorIconsRegular.caretLeft, color: AppColors.textPrimary, size: 20),
       ),
@@ -480,7 +544,7 @@ class _DetailBody extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: AppColors.divider),
         ),
-        child: Center(child: Text('No service history', style: AppTextStyles.bodySmall)),
+        child: Center(child: Text('No recent jobs yet', style: AppTextStyles.bodySmall)),
       );
     }
 

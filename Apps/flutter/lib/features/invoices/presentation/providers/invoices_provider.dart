@@ -204,6 +204,47 @@ class InvoiceDetailNotifier extends StateNotifier<AsyncValue<InvoiceDetail>> {
     final updated = await _repo.recordPayment(_uuid, request);
     state = AsyncValue.data(updated);
   }
+
+  Future<void> updateSplitBilling({
+    required double customerPayAmount,
+    required double insuranceClaimAmount,
+  }) async {
+    final updated = await _repo.updateSplitBilling(
+      _uuid,
+      customerPayAmount: customerPayAmount,
+      insuranceClaimAmount: insuranceClaimAmount,
+    );
+    state = AsyncValue.data(updated);
+  }
+
+  Future<String> generatePdfUrl() async {
+    final url = await _repo.fetchInvoicePdfUrl(_uuid);
+    state.whenData((detail) {
+      state = AsyncValue.data(InvoiceDetail(
+        uuid: detail.uuid,
+        invoiceNumber: detail.invoiceNumber,
+        status: detail.status,
+        issuedDate: detail.issuedDate,
+        dueDate: detail.dueDate,
+        notes: detail.notes,
+        subtotal: detail.subtotal,
+        taxAmount: detail.taxAmount,
+        discountAmount: detail.discountAmount,
+        totalAmount: detail.totalAmount,
+        paidAmount: detail.paidAmount,
+        balanceDue: detail.balanceDue,
+        customerPayAmount: detail.customerPayAmount,
+        insuranceClaimAmount: detail.insuranceClaimAmount,
+        serviceJob: detail.serviceJob,
+        customer: detail.customer,
+        vehicle: detail.vehicle,
+        items: detail.items,
+        payments: detail.payments,
+        pdfUrl: url,
+      ));
+    });
+    return url;
+  }
 }
 
 final invoiceDetailProvider = StateNotifierProvider.autoDispose

@@ -13,6 +13,7 @@ import '../../../../core/constants/app_text_styles.dart';
 import '../../data/models/inspection_models.dart';
 import '../providers/jobs_provider.dart';
 import '../providers/vehicle_inspection_provider.dart';
+import '../widgets/vehicle_damage_map.dart';
 
 class VehicleInspectionScreen extends ConsumerStatefulWidget {
   final String jobUuid;
@@ -202,10 +203,10 @@ class _InspectionBody extends StatelessWidget {
                   onSetCondition: onSetCondition,
                 ),
                 const SizedBox(height: 12),
-                _DamageMapCard(
+                VehicleDamageMap(
                   damageZones: state.damageZones,
-                  onCycle: onCycleDamage,
-                  onClear: onClearDamage,
+                  onZoneTap: onCycleDamage,
+                  onClearAll: state.damageZones.isEmpty ? null : onClearDamage,
                 ),
                 const SizedBox(height: 12),
                 _NotesCard(
@@ -532,68 +533,6 @@ class _CondChip extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _DamageMapCard extends StatelessWidget {
-  final Map<String, DamageSeverity> damageZones;
-  final void Function(String) onCycle;
-  final VoidCallback onClear;
-
-  const _DamageMapCard({
-    required this.damageZones,
-    required this.onCycle,
-    required this.onClear,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.bgSurface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text('DAMAGE MAP', style: _sectionTitleStyle()),
-              const Spacer(),
-              if (damageZones.isNotEmpty)
-                TextButton(onPressed: onClear, child: const Text('Clear')),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: carDamageZones.map((zone) {
-              final sev = damageZones[zone] ?? DamageSeverity.none;
-              final color = switch (sev) {
-                DamageSeverity.minor => AppColors.statusOrange,
-                DamageSeverity.major => AppColors.statusRed,
-                _ => AppColors.textMuted,
-              };
-              return GestureDetector(
-                onTap: () => onCycle(zone),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: sev != DamageSeverity.none ? color.withValues(alpha: 0.15) : AppColors.bgElevated,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: sev != DamageSeverity.none ? color : AppColors.divider),
-                  ),
-                  child: Text(zone, style: AppTextStyles.labelSmall.copyWith(color: color)),
-                ),
-              );
-            }).toList(),
-          ),
-        ],
       ),
     );
   }

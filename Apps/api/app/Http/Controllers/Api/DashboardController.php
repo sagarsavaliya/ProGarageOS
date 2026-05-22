@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ServiceJob;
 use App\Models\Invoice;
 use App\Models\ServiceBay;
+use App\Models\Appointment;
 use App\Models\Customer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -125,18 +126,40 @@ class DashboardController extends Controller
                 'eta'         => $job->estimated_completion_at?->toIso8601String(),
             ]);
 
+        $todayAppointments = Appointment::where('tenant_id', $tenantId)
+            ->whereDate('scheduled_date', now()->toDateString())
+            ->whereIn('status', ['booked', 'confirmed', 'checked_in'])
+            ->with([
+                'customer:id,uuid,first_name,last_name,phone_primary',
+                'vehicle:id,uuid,registration_number,maker,model',
+            ])
+            ->orderBy('start_time')
+            ->limit(8)
+            ->get()
+            ->map(fn ($a) => [
+                'uuid'               => $a->uuid,
+                'appointment_number' => $a->appointment_number,
+                'status'             => $a->status,
+                'start_time'         => substr((string) $a->start_time, 0, 5),
+                'end_time'           => substr((string) $a->end_time, 0, 5),
+                'customer_name'      => $a->customer?->full_name,
+                'vehicle'            => $a->vehicle?->registration_number,
+            ]);
+
         return [
             'period'  => $period,
             'kpis'    => [
-                'jobs_today'      => $jobsToday,
-                'active_jobs'     => $activeJobs,
-                'revenue'         => (float) $revenue,
-                'pending_amount'  => (float) $pendingAmount,
-                'new_customers'   => $newCustomers,
+                'jobs_today'           => $jobsToday,
+                'active_jobs'          => $activeJobs,
+                'revenue'              => (float) $revenue,
+                'pending_amount'       => (float) $pendingAmount,
+                'new_customers'        => $newCustomers,
+                'appointments_today'   => $todayAppointments->count(),
             ],
-            'revenue_chart'  => $chartData,
-            'service_bays'   => $bays,
-            'active_jobs'    => $activeJobsList,
+            'revenue_chart'     => $chartData,
+            'service_bays'      => $bays,
+            'active_jobs'       => $activeJobsList,
+            'today_appointments' => $todayAppointments,
         ];
     }
 

@@ -16,6 +16,12 @@ class Tenant extends Model
         'uuid', 'business_name', 'business_type', 'status', 'currency',
         'timezone', 'country_code', 'phone', 'email', 'address',
         'city', 'state', 'pincode', 'gst_number', 'logo_url',
+        'setup_step', 'setup_bay_count', 'setup_completed_at',
+    ];
+
+    protected $casts = [
+        'setup_completed_at' => 'datetime',
+        'setup_bay_count'    => 'integer',
     ];
 
     protected static function boot(): void
