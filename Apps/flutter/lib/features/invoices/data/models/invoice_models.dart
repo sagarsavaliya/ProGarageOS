@@ -107,7 +107,9 @@ class InvoiceItem {
         unitPrice: (json['unit_price'] as num?)?.toDouble() ?? 0,
         taxRate: (json['tax_rate'] as num?)?.toDouble() ?? 0,
         taxAmount: (json['tax_amount'] as num?)?.toDouble() ?? 0,
-        lineTotal: (json['line_total'] as num?)?.toDouble() ?? 0,
+        lineTotal: (json['line_total'] as num?)?.toDouble() ??
+            (json['total_amount'] as num?)?.toDouble() ??
+            0,
         sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
       );
 }
@@ -133,16 +135,25 @@ class PaymentRecord {
     this.notes,
   });
 
-  factory PaymentRecord.fromJson(Map<String, dynamic> json) => PaymentRecord(
-        uuid: json['uuid'] as String? ?? '',
-        amount: (json['amount'] as num?)?.toDouble() ?? 0,
-        paymentMethod: InvoicePaymentMethod.fromJson(
-          json['payment_method'] as Map<String, dynamic>? ?? {},
-        ),
-        referenceNumber: json['reference_number'] as String?,
-        paidAt: DateTime.tryParse(json['paid_at'] as String? ?? '') ?? DateTime.now(),
-        notes: json['notes'] as String?,
-      );
+  factory PaymentRecord.fromJson(Map<String, dynamic> json) {
+    final rawMethod = json['payment_method'];
+    final methodMap = rawMethod is Map<String, dynamic> ? rawMethod : null;
+    final methodName = json['method'] as String? ??
+        (rawMethod is String ? rawMethod : null);
+    return PaymentRecord(
+      uuid: json['uuid'] as String? ?? json['payment_uuid'] as String? ?? '',
+      amount: (json['amount'] as num?)?.toDouble() ?? 0,
+      paymentMethod: methodMap != null
+          ? InvoicePaymentMethod.fromJson(methodMap)
+          : InvoicePaymentMethod(
+              name: methodName ?? 'Payment',
+              iconKey: 'payment',
+            ),
+      referenceNumber: json['reference_number'] as String?,
+      paidAt: DateTime.tryParse('${json['paid_at'] ?? ''}') ?? DateTime.now(),
+      notes: json['notes'] as String?,
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -252,8 +263,12 @@ class InvoiceListItem {
         uuid: json['uuid'] as String? ?? '',
         invoiceNumber: json['invoice_number'] as String? ?? '',
         status: json['status'] as String? ?? 'draft',
-        totalAmount: (json['total_amount'] as num?)?.toDouble() ?? 0,
-        paidAmount: (json['paid_amount'] as num?)?.toDouble() ?? 0,
+        totalAmount: (json['grand_total'] as num?)?.toDouble() ??
+            (json['total_amount'] as num?)?.toDouble() ??
+            0,
+        paidAmount: (json['amount_paid'] as num?)?.toDouble() ??
+            (json['paid_amount'] as num?)?.toDouble() ??
+            0,
         balanceDue: (json['balance_due'] as num?)?.toDouble() ?? 0,
         issuedDate: DateTime.tryParse(json['issued_date'] as String? ?? '') ?? DateTime.now(),
         dueDate: json['due_date'] != null
@@ -327,9 +342,9 @@ class InvoiceDetail {
       status: data['status'] as String? ?? 'draft',
       issuedDate: DateTime.tryParse(data['issued_date'] as String? ?? '') ?? DateTime.now(),
       dueDate: data['due_date'] != null
-          ? DateTime.tryParse(data['due_date'] as String)
+          ? DateTime.tryParse('${data['due_date']}')
           : null,
-      notes: data['notes'] as String?,
+      notes: data['notes'] as String? ?? data['customer_notes'] as String?,
       subtotal: (data['subtotal'] as num?)?.toDouble() ?? 0,
       taxAmount: (data['tax_total'] as num?)?.toDouble() ??
           (data['tax_amount'] as num?)?.toDouble() ??
@@ -346,16 +361,20 @@ class InvoiceDetail {
       balanceDue: (data['balance_due'] as num?)?.toDouble() ?? 0,
       customerPayAmount: (data['customer_pay_amount'] as num?)?.toDouble(),
       insuranceClaimAmount: (data['insurance_claim_amount'] as num?)?.toDouble(),
-      serviceJob: InvoiceJob.fromJson(data['service_job'] as Map<String, dynamic>? ?? {}),
+      serviceJob: InvoiceJob.fromJson(
+        (data['service_job'] ?? data['job']) as Map<String, dynamic>? ?? {},
+      ),
       customer: InvoiceCustomer.fromJson(data['customer'] as Map<String, dynamic>? ?? {}),
       vehicle: InvoiceVehicle.fromJson(data['vehicle'] as Map<String, dynamic>? ?? {}),
       pdfUrl: data['pdf_url'] as String?,
       items: (data['items'] as List<dynamic>?)
-              ?.map((e) => InvoiceItem.fromJson(e as Map<String, dynamic>))
+              ?.whereType<Map<String, dynamic>>()
+              .map(InvoiceItem.fromJson)
               .toList() ??
           [],
       payments: (data['payments'] as List<dynamic>?)
-              ?.map((e) => PaymentRecord.fromJson(e as Map<String, dynamic>))
+              ?.whereType<Map<String, dynamic>>()
+              .map(PaymentRecord.fromJson)
               .toList() ??
           [],
     );

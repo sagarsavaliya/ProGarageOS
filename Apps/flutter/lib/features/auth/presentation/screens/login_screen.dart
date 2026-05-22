@@ -7,11 +7,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/widgets/staff_pin_pad.dart';
 import '../../../../core/notifications/fcm_service.dart';
 import '../../../onboarding/presentation/utils/post_login_navigation.dart';
 import '../providers/staff_login_provider.dart';
 
-const Color _skyBlue = Color(0xFF2BB0ED);
+// Accent matches app theme (orange)
+const Color _skyBlue = AppColors.accent;
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -22,9 +24,9 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen>
     with TickerProviderStateMixin {
-  final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   bool _usePhone = true;
+  String _phoneDigits = '';
 
   late AnimationController _shakeController;
   late Animation<double> _shakeAnimation;
@@ -44,29 +46,99 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       vsync: this,
       duration: const Duration(milliseconds: 580),
     )..forward();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final savedDigits = ref.read(staffLoginProvider).savedPhoneDigits;
+      if (savedDigits.isNotEmpty && _phoneDigits.isEmpty) {
+        setState(() {
+          _phoneDigits = savedDigits;
+          _syncPhoneLogin(ref.read(staffLoginProvider.notifier));
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
-    _phoneController.dispose();
     _emailController.dispose();
     _shakeController.dispose();
     _fadeController.dispose();
     super.dispose();
   }
 
-  void _onIdentifierChanged() {
-    final notifier = ref.read(staffLoginProvider.notifier);
-    if (_usePhone) {
-      final digits = _phoneController.text.trim();
-      if (digits.length == 10) {
-        notifier.setCurrentLogin('+91$digits');
-      } else {
-        notifier.setCurrentLogin('');
-      }
+  bool get _phoneComplete => _phoneDigits.length == 10;
+
+  bool _canEnterPin(StaffLoginState loginState) {
+    if (loginState.isLocked || loginState.isLoading) return false;
+    if (_usePhone) return _phoneComplete;
+    return _emailController.text.trim().isNotEmpty;
+  }
+
+  void _syncPhoneLogin(StaffLoginNotifier notifier) {
+    if (_phoneDigits.length == 10) {
+      notifier.setCurrentLogin('+91$_phoneDigits');
     } else {
-      notifier.setCurrentLogin(_emailController.text.trim());
+      notifier.setCurrentLogin('');
     }
+  }
+
+  void _onPadDigit(String digit) {
+    final notifier = ref.read(staffLoginProvider.notifier);
+    final loginState = ref.read(staffLoginProvider);
+    if (loginState.isLocked || loginState.isLoading) return;
+
+    if (_usePhone && !_phoneComplete) {
+      setState(() {
+        _phoneDigits += digit;
+        _syncPhoneLogin(notifier);
+      });
+      return;
+    }
+
+    if (!_canEnterPin(loginState)) return;
+    notifier.addDigit(digit);
+  }
+
+  void _onPadDelete() {
+    final notifier = ref.read(staffLoginProvider.notifier);
+    final loginState = ref.read(staffLoginProvider);
+    if (loginState.isLocked || loginState.isLoading) return;
+
+    if (loginState.pin.isNotEmpty) {
+      notifier.deleteDigit();
+      return;
+    }
+
+    if (_usePhone && _phoneDigits.isNotEmpty) {
+      setState(() {
+        _phoneDigits = _phoneDigits.substring(0, _phoneDigits.length - 1);
+        _syncPhoneLogin(notifier);
+      });
+    }
+  }
+
+  void _onPadClear() {
+    final notifier = ref.read(staffLoginProvider.notifier);
+    final loginState = ref.read(staffLoginProvider);
+    if (loginState.isLocked) return;
+
+    if (loginState.pin.isNotEmpty) {
+      notifier.clearPin();
+      return;
+    }
+
+    if (_usePhone && _phoneDigits.isNotEmpty) {
+      setState(() {
+        _phoneDigits = '';
+        notifier.setCurrentLogin('');
+      });
+    }
+  }
+
+  void _onIdentifierChanged() {
+    if (_usePhone) return;
+    setState(() {});
+    ref.read(staffLoginProvider.notifier).setCurrentLogin(_emailController.text.trim());
   }
 
   @override
@@ -78,7 +150,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       if (next.needsPinSetup && prev?.needsPinSetup != true) {
         final login = next.currentLogin.isNotEmpty
             ? next.currentLogin
-            : (_usePhone ? _phoneController.text.trim() : _emailController.text.trim());
+            : (_usePhone
+                ? (_phoneDigits.length == 10 ? '+91$_phoneDigits' : '')
+                : _emailController.text.trim());
         notifier.clearPinSetupRedirect();
         context.push('/auth/staff-pin', extra: {'login': login, 'purpose': 'setup'});
         return;
@@ -106,7 +180,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       ),
       child: Scaffold(
         backgroundColor: const Color(0xFF111420),
-        resizeToAvoidBottomInset: true,
+        resizeToAvoidBottomInset: false,
         body: Stack(
           children: [
             const Positioned.fill(child: _DotGridPainterWidget()),
@@ -137,23 +211,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               const SizedBox(height: 16),
                               _IdentifierInput(
                                 usePhone: _usePhone,
-                                phoneController: _phoneController,
+                                phoneDigits: _phoneDigits,
                                 emailController: _emailController,
                                 onToggle: (usePhone) {
                                   setState(() {
                                     _usePhone = usePhone;
-                                    _phoneController.clear();
+                                    _phoneDigits = '';
                                     _emailController.clear();
                                     notifier.setCurrentLogin('');
                                   });
                                 },
-                                onChanged: _onIdentifierChanged,
+                                onEmailChanged: _onIdentifierChanged,
                               ),
                               const SizedBox(height: 8),
                               Text(
                                 _usePhone
-                                    ? 'Enter 10-digit mobile number, then your 6-digit PIN'
-                                    : 'Enter email, then your 6-digit PIN',
+                                    ? (_phoneComplete
+                                        ? 'Enter your 6-digit PIN below'
+                                        : 'Use the keypad for your 10-digit mobile number')
+                                    : 'Enter email, then your 6-digit PIN on the keypad',
                                 textAlign: TextAlign.center,
                                 style: AppTextStyles.labelSmall.copyWith(
                                   color: Colors.white.withValues(alpha: 0.35),
@@ -168,12 +244,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 shakeAnimation: _shakeAnimation,
                               ),
                               const SizedBox(height: 20),
-                              _PinPad(
-                                enabled: !state.isLocked && !state.isLoading,
-                                onDigit: notifier.addDigit,
-                                onDelete: notifier.deleteDigit,
-                                onClear: notifier.clearPin,
-                                onBiometric: notifier.triggerBiometric,
+                              StaffPinPad(
+                                enabled: !state.isLocked &&
+                                    !state.isLoading &&
+                                    (_usePhone ? true : _emailController.text.trim().isNotEmpty || state.pin.isNotEmpty),
+                                headerText: _usePhone && !_phoneComplete
+                                    ? 'KEYPAD · MOBILE NUMBER'
+                                    : null,
+                                headerColor: _skyBlue,
+                                onDigit: _onPadDigit,
+                                onDelete: _onPadDelete,
+                                onClear: _onPadClear,
+                                onBiometric: () {
+                                  if (_canEnterPin(state)) notifier.triggerBiometric();
+                                },
                               ),
                               const SizedBox(height: 8),
                               _buildForgotPin(state),
@@ -188,7 +272,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               ),
             ),
             if (state.isLocked)
-              _LockedOverlay(secondsRemaining: state.lockSecondsRemaining),
+              Positioned.fill(
+                child: _LockedOverlay(secondsRemaining: state.lockSecondsRemaining),
+              ),
           ],
         ),
       ),
@@ -240,7 +326,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       onPressed: () {
         final login = state.currentLogin.isNotEmpty
             ? state.currentLogin
-            : (_usePhone ? _phoneController.text.trim() : _emailController.text.trim());
+            : (_usePhone
+                ? (_phoneDigits.length == 10 ? '+91$_phoneDigits' : '')
+                : _emailController.text.trim());
         if (login.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -276,18 +364,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
 class _IdentifierInput extends StatelessWidget {
   final bool usePhone;
-  final TextEditingController phoneController;
+  final String phoneDigits;
   final TextEditingController emailController;
   final void Function(bool) onToggle;
-  final VoidCallback onChanged;
+  final VoidCallback onEmailChanged;
 
   const _IdentifierInput({
     required this.usePhone,
-    required this.phoneController,
+    required this.phoneDigits,
     required this.emailController,
     required this.onToggle,
-    required this.onChanged,
+    required this.onEmailChanged,
   });
+
+  static const _fieldHeight = 52.0;
+  static const _toggleHeight = 44.0;
 
   @override
   Widget build(BuildContext context) {
@@ -302,54 +393,55 @@ class _IdentifierInput extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Full-width segmented toggle
-          Container(
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.white.withOpacity(0.07), width: 0.5),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _SegmentTab(
-                    label: 'Phone',
-                    icon: PhosphorIconsRegular.phone,
-                    selected: usePhone,
-                    isLeft: true,
-                    onTap: () => onToggle(true),
+          SizedBox(
+            height: _toggleHeight,
+            child: Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.white.withOpacity(0.07), width: 0.5),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _SegmentTab(
+                      label: 'Phone',
+                      icon: PhosphorIconsRegular.phone,
+                      selected: usePhone,
+                      onTap: () => onToggle(true),
+                    ),
                   ),
-                ),
-                Container(width: 0.5, height: 20, color: Colors.white.withOpacity(0.10)),
-                Expanded(
-                  child: _SegmentTab(
-                    label: 'Email',
-                    icon: PhosphorIconsRegular.envelope,
-                    selected: !usePhone,
-                    isLeft: false,
-                    onTap: () => onToggle(false),
+                  Container(width: 0.5, color: Colors.white.withOpacity(0.10)),
+                  Expanded(
+                    child: _SegmentTab(
+                      label: 'Email',
+                      icon: PhosphorIconsRegular.envelope,
+                      selected: !usePhone,
+                      onTap: () => onToggle(false),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 10),
-          // Input field — same width as toggle, no layout jump
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            transitionBuilder: (child, anim) => FadeTransition(opacity: anim, child: child),
-            child: usePhone
-                ? _PhoneField(
-                    key: const ValueKey('phone'),
-                    controller: phoneController,
-                    onChanged: onChanged,
-                  )
-                : _EmailField(
-                    key: const ValueKey('email'),
-                    controller: emailController,
-                    onChanged: onChanged,
-                  ),
+          SizedBox(
+            height: _fieldHeight,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              transitionBuilder: (child, anim) => FadeTransition(opacity: anim, child: child),
+              child: usePhone
+                  ? _PhoneField(
+                      key: const ValueKey('phone'),
+                      digits: phoneDigits,
+                    )
+                  : _EmailField(
+                      key: const ValueKey('email'),
+                      controller: emailController,
+                      onChanged: onEmailChanged,
+                    ),
+            ),
           ),
         ],
       ),
@@ -361,147 +453,115 @@ class _SegmentTab extends StatelessWidget {
   final String label;
   final PhosphorIconData icon;
   final bool selected;
-  final bool isLeft;
   final VoidCallback onTap;
 
   const _SegmentTab({
     required this.label,
     required this.icon,
     required this.selected,
-    required this.isLeft,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        decoration: BoxDecoration(
-          color: selected ? _skyBlue.withOpacity(0.15) : Colors.transparent,
-          borderRadius: BorderRadius.horizontal(
-            left: isLeft ? const Radius.circular(9) : Radius.zero,
-            right: !isLeft ? const Radius.circular(9) : Radius.zero,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: selected ? _skyBlue.withOpacity(0.15) : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
           ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 14,
-              color: selected ? _skyBlue : Colors.white.withOpacity(0.35),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: GoogleFonts.dmSans(
-                fontSize: 13,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 14,
                 color: selected ? _skyBlue : Colors.white.withOpacity(0.35),
               ),
-            ),
-          ],
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: GoogleFonts.dmSans(
+                  fontSize: 13,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                  color: selected ? _skyBlue : Colors.white.withOpacity(0.35),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _PhoneField extends StatefulWidget {
-  final TextEditingController controller;
-  final VoidCallback onChanged;
+class _PhoneField extends StatelessWidget {
+  final String digits;
 
-  const _PhoneField({super.key, required this.controller, required this.onChanged});
+  const _PhoneField({super.key, required this.digits});
 
-  @override
-  State<_PhoneField> createState() => _PhoneFieldState();
-}
-
-class _PhoneFieldState extends State<_PhoneField> {
-  final FocusNode _focus = FocusNode();
-  bool _focused = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _focus.addListener(() => setState(() => _focused = _focus.hasFocus));
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (mounted) FocusScope.of(context).requestFocus(_focus);
-    });
-  }
-
-  @override
-  void dispose() {
-    _focus.dispose();
-    super.dispose();
+  String _formatDigits(String value) {
+    if (value.isEmpty) return '';
+    if (value.length <= 5) return value;
+    return '${value.substring(0, 5)} ${value.substring(5)}';
   }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      height: 52,
+    final display = _formatDigits(digits);
+    final hasDigits = digits.isNotEmpty;
+
+    return Container(
+      width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.055),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: _focused ? _skyBlue : Colors.white.withOpacity(0.10),
-          width: _focused ? 1.5 : 0.5,
+          color: hasDigits ? _skyBlue : Colors.white.withOpacity(0.10),
+          width: hasDigits ? 1.5 : 0.5,
         ),
       ),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      alignment: Alignment.centerLeft,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // +91 prefix — fixed, never moves
-          Padding(
-            padding: const EdgeInsets.only(left: 16, right: 4),
-            child: Text(
-              '+91',
-              style: GoogleFonts.dmMono(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: _skyBlue,
-              ),
+          Text(
+            '+91',
+            style: GoogleFonts.dmMono(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: _skyBlue,
+              height: 1,
             ),
           ),
-          // Divider
           Container(
             width: 1,
-            height: 20,
+            height: 22,
+            margin: const EdgeInsets.symmetric(horizontal: 12),
             color: Colors.white.withOpacity(0.12),
           ),
-          // Number input
           Expanded(
-            child: TextField(
-              controller: widget.controller,
-              focusNode: _focus,
-              keyboardType: TextInputType.number,
-              keyboardAppearance: Brightness.dark,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(10),
-              ],
+            child: Text(
+              hasDigits ? display : '00000 00000',
+              maxLines: 1,
+              overflow: TextOverflow.fade,
+              softWrap: false,
               style: GoogleFonts.dmMono(
                 fontSize: 16,
                 fontWeight: FontWeight.w400,
-                color: Colors.white.withOpacity(0.90),
+                color: hasDigits
+                    ? Colors.white.withOpacity(0.90)
+                    : Colors.white.withOpacity(0.20),
                 letterSpacing: 2,
-              ),
-              onChanged: (_) => widget.onChanged(),
-              decoration: InputDecoration(
-                hintText: '00000 00000',
-                hintStyle: GoogleFonts.dmMono(
-                  fontSize: 15,
-                  color: Colors.white.withOpacity(0.20),
-                  letterSpacing: 2,
-                ),
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                contentPadding: const EdgeInsets.only(left: 12, right: 16),
-                isDense: true,
+                height: 1,
               ),
             ),
           ),
@@ -542,9 +602,8 @@ class _EmailFieldState extends State<_EmailField> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      height: 52,
+    return Container(
+      width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.055),
         borderRadius: BorderRadius.circular(12),
@@ -553,38 +612,41 @@ class _EmailFieldState extends State<_EmailField> {
           width: _focused ? 1.5 : 0.5,
         ),
       ),
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      alignment: Alignment.centerLeft,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 14, right: 10),
-            child: Icon(
-              PhosphorIconsRegular.envelope,
-              size: 18,
-              color: _focused ? _skyBlue : Colors.white.withOpacity(0.35),
-            ),
+          Icon(
+            PhosphorIconsRegular.envelope,
+            size: 18,
+            color: _focused ? _skyBlue : Colors.white.withOpacity(0.35),
           ),
+          const SizedBox(width: 10),
           Expanded(
             child: TextField(
               controller: widget.controller,
               focusNode: _focus,
               keyboardType: TextInputType.emailAddress,
               keyboardAppearance: Brightness.dark,
+              textAlignVertical: TextAlignVertical.center,
               style: GoogleFonts.dmSans(
                 fontSize: 15,
-                color: Colors.white.withOpacity(0.90),
+                height: 1.2,
+                color: Colors.white.withValues(alpha: 0.90),
               ),
               onChanged: (_) => widget.onChanged(),
               decoration: InputDecoration(
                 hintText: 'you@garage.com',
                 hintStyle: GoogleFonts.dmSans(
                   fontSize: 14,
-                  color: Colors.white.withOpacity(0.20),
+                  height: 1.2,
+                  color: Colors.white.withValues(alpha: 0.20),
                 ),
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
-                contentPadding: const EdgeInsets.only(right: 16),
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
                 isDense: true,
               ),
             ),
@@ -695,213 +757,6 @@ class _PinSection extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// PIN pad
-// ---------------------------------------------------------------------------
-
-class _PinPad extends StatelessWidget {
-  final bool enabled;
-  final void Function(String) onDigit;
-  final VoidCallback onDelete;
-  final VoidCallback onClear;
-  final VoidCallback onBiometric;
-
-  const _PinPad({
-    required this.enabled,
-    required this.onDigit,
-    required this.onDelete,
-    required this.onClear,
-    required this.onBiometric,
-  });
-
-  static const _rows = [
-    ['1', '2', '3'],
-    ['4', '5', '6'],
-    ['7', '8', '9'],
-  ];
-
-  static const _subLabels = {
-    '2': 'ABC', '3': 'DEF', '4': 'GHI', '5': 'JKL',
-    '6': 'MNO', '7': 'PQRS', '8': 'TUV', '9': 'WXYZ',
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ..._rows.map(
-          (row) => Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: row
-                  .map((d) => Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        child: _PinKey(
-                          label: d,
-                          subLabel: _subLabels[d],
-                          enabled: enabled,
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            onDigit(d);
-                          },
-                        ),
-                      ))
-                  .toList(),
-            ),
-          ),
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: _PinKey(
-                icon: Icon(PhosphorIconsRegular.fingerprint,
-                    size: 24, color: const Color(0xA6FFFFFF)),
-                enabled: enabled,
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  onBiometric();
-                },
-                opacity: 0.7,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: _PinKey(
-                label: '0',
-                enabled: enabled,
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  onDigit('0');
-                },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: _PinKey(
-                icon: Icon(PhosphorIconsRegular.backspace,
-                    size: 20, color: const Color(0x99FFFFFF)),
-                enabled: enabled,
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  onDelete();
-                },
-                onLongPress: () {
-                  HapticFeedback.mediumImpact();
-                  onClear();
-                },
-                opacity: 0.7,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _PinKey extends StatefulWidget {
-  final String? label;
-  final String? subLabel;
-  final Widget? icon;
-  final bool enabled;
-  final VoidCallback onTap;
-  final VoidCallback? onLongPress;
-  final double opacity;
-
-  const _PinKey({
-    this.label,
-    this.subLabel,
-    this.icon,
-    required this.enabled,
-    required this.onTap,
-    this.onLongPress,
-    this.opacity = 1.0,
-  });
-
-  @override
-  State<_PinKey> createState() => _PinKeyState();
-}
-
-class _PinKeyState extends State<_PinKey> with SingleTickerProviderStateMixin {
-  late AnimationController _pressController;
-  late Animation<double> _scaleAnim;
-
-  @override
-  void initState() {
-    super.initState();
-    _pressController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 80),
-      reverseDuration: const Duration(milliseconds: 140),
-    );
-    _scaleAnim = Tween<double>(begin: 1.0, end: 0.94).animate(
-      CurvedAnimation(parent: _pressController, curve: Curves.easeIn),
-    );
-  }
-
-  @override
-  void dispose() {
-    _pressController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: widget.enabled ? (_) => _pressController.forward() : null,
-      onTapUp: widget.enabled ? (_) => _pressController.reverse() : null,
-      onTapCancel: () => _pressController.reverse(),
-      onTap: widget.enabled ? widget.onTap : null,
-      onLongPress: widget.enabled ? widget.onLongPress : null,
-      child: ScaleTransition(
-        scale: _scaleAnim,
-        child: Opacity(
-          opacity: widget.enabled ? widget.opacity : 0.30,
-          child: Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.048),
-              border:
-                  Border.all(color: Colors.white.withOpacity(0.11), width: 0.5),
-            ),
-            child: widget.icon != null
-                ? Center(child: widget.icon)
-                : Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        widget.label ?? '',
-                        style: GoogleFonts.dmSans(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w300,
-                          color: Colors.white.withOpacity(0.90),
-                        ),
-                      ),
-                      if (widget.subLabel != null)
-                        Text(
-                          widget.subLabel!,
-                          style: GoogleFonts.dmSans(
-                            fontSize: 8,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white.withOpacity(0.30),
-                            letterSpacing: 0.08 * 8,
-                          ),
-                        ),
-                    ],
-                  ),
-          ),
-        ),
-      ),
     );
   }
 }

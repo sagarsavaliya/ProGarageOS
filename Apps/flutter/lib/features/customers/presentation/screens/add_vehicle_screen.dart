@@ -199,7 +199,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                     onPressed: () => GpsTrackingInfoSheet.show(context),
                   ),
                   value: _gpsConsent,
-                  activeColor: AppColors.primaryOrange,
+                  activeThumbColor: AppColors.primaryOrange,
                   onChanged: (v) => setState(() => _gpsConsent = v),
                 ),
                 if (state.errorMessage != null) ...[

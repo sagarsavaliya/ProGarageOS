@@ -194,18 +194,29 @@ class JobDetailNotifier extends StateNotifier<AsyncValue<JobDetail>> {
   }
 
   Future<void> refresh() async {
-    state = const AsyncValue.loading();
-    await _load();
+    final previous = state.valueOrNull;
+    try {
+      final detail = await _repo.fetchJob(_uuid);
+      state = AsyncValue.data(detail);
+    } catch (e, st) {
+      if (previous != null) {
+        state = AsyncValue.data(previous);
+      } else {
+        state = AsyncValue.error(failureMessage(e), st);
+      }
+    }
   }
 
   Future<void> updateStatus(String apiStatus, {String? notes}) async {
-    final current = state.valueOrNull;
-    if (current == null) return;
+    final previous = state.valueOrNull;
+    if (previous == null) return;
     try {
       await _repo.updateStatus(_uuid, apiStatus, notes: notes);
-      await refresh();
+      final detail = await _repo.fetchJob(_uuid);
+      state = AsyncValue.data(detail);
     } catch (e, st) {
-      state = AsyncValue.error(failureMessage(e), st);
+      state = AsyncValue.data(previous);
+      rethrow;
     }
   }
 
@@ -216,6 +227,7 @@ class JobDetailNotifier extends StateNotifier<AsyncValue<JobDetail>> {
     double? customerLiabilityAmount,
     double? jobInsuranceClaimAmount,
   }) async {
+    final previous = state.valueOrNull;
     try {
       await _repo.updateInsuranceClaim(
         _uuid,
@@ -225,9 +237,15 @@ class JobDetailNotifier extends StateNotifier<AsyncValue<JobDetail>> {
         customerLiabilityAmount: customerLiabilityAmount,
         jobInsuranceClaimAmount: jobInsuranceClaimAmount,
       );
-      await refresh();
+      final detail = await _repo.fetchJob(_uuid);
+      state = AsyncValue.data(detail);
     } catch (e, st) {
-      state = AsyncValue.error(failureMessage(e), st);
+      if (previous != null) {
+        state = AsyncValue.data(previous);
+      } else {
+        state = AsyncValue.error(failureMessage(e), st);
+      }
+      rethrow;
     }
   }
 }

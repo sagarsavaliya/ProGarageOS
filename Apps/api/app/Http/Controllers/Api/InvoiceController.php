@@ -45,7 +45,7 @@ class InvoiceController extends Controller
         $tenantId = $request->user()->tenant_id;
         $invoice  = Invoice::where('uuid', $uuid)
             ->where('tenant_id', $tenantId)
-            ->with(['customer', 'vehicle', 'items.taxRate', 'payments.paymentMethod'])
+            ->with(['customer', 'vehicle', 'job:id,uuid,job_number', 'items.taxRate', 'payments.paymentMethod'])
             ->firstOrFail();
 
         return response()->json(['success' => true, 'data' => $this->formatInvoice($invoice, true)]);
@@ -266,6 +266,10 @@ class InvoiceController extends Controller
             $base['tax_total']     = (float) $invoice->tax_total;
             $base['discount_total'] = (float) $invoice->discount_total;
             $base['customer_notes'] = $invoice->customer_notes;
+            $base['service_job']    = $invoice->job ? [
+                'uuid'       => $invoice->job->uuid,
+                'job_number' => $invoice->job->job_number,
+            ] : null;
             $base['items']         = $invoice->items->map(fn ($i) => [
                 'line_type'    => $i->line_type,
                 'name'         => $i->name,

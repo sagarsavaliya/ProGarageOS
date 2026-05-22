@@ -29,7 +29,11 @@ class InvoicesRepository {
   /// GET /api/invoices/{uuid} — full invoice detail with items + payments.
   Future<InvoiceDetail> fetchInvoice(String uuid) async {
     final response = await _dio.get('/invoices/$uuid');
-    return InvoiceDetail.fromJson(response.data as Map<String, dynamic>);
+    final raw = response.data;
+    if (raw is! Map<String, dynamic>) {
+      throw FormatException('Unexpected invoice response');
+    }
+    return InvoiceDetail.fromJson(raw);
   }
 
   /// POST /invoices — create invoice from job.

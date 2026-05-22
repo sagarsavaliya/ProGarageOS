@@ -70,91 +70,88 @@ class VehicleDamageMap extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
+          AspectRatio(
+            aspectRatio: _viewBox.width / _viewBox.height,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final scaleX = constraints.maxWidth / _viewBox.width;
+                final scaleY = constraints.maxHeight / _viewBox.height;
+
+                Offset scalePoint(Offset p) => Offset(p.dx * scaleX, p.dy * scaleY);
+                Rect scaleRect(Rect r) => Rect.fromLTWH(
+                      r.left * scaleX,
+                      r.top * scaleY,
+                      r.width * scaleX,
+                      r.height * scaleY,
+                    );
+
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    CustomPaint(
+                      size: Size(constraints.maxWidth, constraints.maxHeight),
+                      painter: _VehicleBodyPainter(),
+                    ),
+                    ...vehicleDamageZones.map((zone) {
+                      final sev = damageZones[zone.name] ?? DamageSeverity.none;
+                      if (sev == DamageSeverity.none) return const SizedBox.shrink();
+                      final center = scalePoint(zone.dotCenter);
+                      final color = sev == DamageSeverity.major
+                          ? AppColors.statusRed
+                          : AppColors.statusOrange;
+                      return Positioned(
+                        left: center.dx - 6,
+                        top: center.dy - 6,
+                        child: Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 1.5),
+                            boxShadow: [
+                              BoxShadow(
+                                color: color.withValues(alpha: 0.45),
+                                blurRadius: 4,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                    ...vehicleDamageZones.map((zone) {
+                      final rect = scaleRect(zone.rect);
+                      final sev = damageZones[zone.name] ?? DamageSeverity.none;
+                      final highlight = switch (sev) {
+                        DamageSeverity.minor => AppColors.statusOrange.withValues(alpha: 0.25),
+                        DamageSeverity.major => AppColors.statusRed.withValues(alpha: 0.28),
+                        _ => Colors.transparent,
+                      };
+                      return Positioned(
+                        left: rect.left,
+                        top: rect.top,
+                        width: rect.width,
+                        height: rect.height,
+                        child: Material(
+                          color: highlight,
+                          child: InkWell(
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              onZoneTap(zone.name);
+                            },
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(
-                width: 110,
-                child: AspectRatio(
-                  aspectRatio: _viewBox.width / _viewBox.height,
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final scaleX = constraints.maxWidth / _viewBox.width;
-                      final scaleY = constraints.maxHeight / _viewBox.height;
-
-                      Offset scalePoint(Offset p) => Offset(p.dx * scaleX, p.dy * scaleY);
-                      Rect scaleRect(Rect r) => Rect.fromLTWH(
-                            r.left * scaleX,
-                            r.top * scaleY,
-                            r.width * scaleX,
-                            r.height * scaleY,
-                          );
-
-                      return Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          CustomPaint(
-                            size: Size(constraints.maxWidth, constraints.maxHeight),
-                            painter: _VehicleBodyPainter(),
-                          ),
-                          ...vehicleDamageZones.map((zone) {
-                            final sev = damageZones[zone.name] ?? DamageSeverity.none;
-                            if (sev == DamageSeverity.none) return const SizedBox.shrink();
-                            final center = scalePoint(zone.dotCenter);
-                            final color = sev == DamageSeverity.major
-                                ? AppColors.statusRed
-                                : AppColors.statusOrange;
-                            return Positioned(
-                              left: center.dx - 5,
-                              top: center.dy - 5,
-                              child: Container(
-                                width: 10,
-                                height: 10,
-                                decoration: BoxDecoration(
-                                  color: color,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 1.5),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: color.withValues(alpha: 0.45),
-                                      blurRadius: 4,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }),
-                          ...vehicleDamageZones.map((zone) {
-                            final rect = scaleRect(zone.rect);
-                            final sev = damageZones[zone.name] ?? DamageSeverity.none;
-                            final highlight = switch (sev) {
-                              DamageSeverity.minor => AppColors.statusOrange.withValues(alpha: 0.25),
-                              DamageSeverity.major => AppColors.statusRed.withValues(alpha: 0.28),
-                              _ => Colors.transparent,
-                            };
-                            return Positioned(
-                              left: rect.left,
-                              top: rect.top,
-                              width: rect.width,
-                              height: rect.height,
-                              child: Material(
-                                color: highlight,
-                                child: InkWell(
-                                  onTap: () {
-                                    HapticFeedback.selectionClick();
-                                    onZoneTap(zone.name);
-                                  },
-                                ),
-                              ),
-                            );
-                          }),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,39 +161,42 @@ class VehicleDamageMap extends StatelessWidget {
                     _LegendRow(color: AppColors.statusRed, label: 'Major'),
                     const SizedBox(height: 8),
                     Text(
-                      'Tap car zones to mark damage. Tap again to escalate or clear.',
+                      'Tap zones on the car to mark damage.',
                       style: AppTextStyles.labelSmall.copyWith(height: 1.4),
                     ),
-                    if (marked.isNotEmpty) ...[
-                      const SizedBox(height: 10),
-                      ...marked.map((entry) {
-                        final color = entry.value == DamageSeverity.major
-                            ? AppColors.statusRed
-                            : AppColors.statusOrange;
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-                              ),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  entry.key,
-                                  style: AppTextStyles.labelSmall.copyWith(color: color),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
-                    ],
                   ],
                 ),
               ),
+              if (marked.isNotEmpty)
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: marked.map((entry) {
+                      final color = entry.value == DamageSeverity.major
+                          ? AppColors.statusRed
+                          : AppColors.statusOrange;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                entry.key,
+                                style: AppTextStyles.labelSmall.copyWith(color: color),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
             ],
           ),
         ],

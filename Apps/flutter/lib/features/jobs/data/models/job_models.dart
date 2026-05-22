@@ -278,6 +278,8 @@ class Job {
   final DateTime? scheduledStartAt;
   final DateTime? estimatedCompletionAt;
   final TasksSummary tasksSummary;
+  final bool hasInvoice;
+  final String? invoiceUuid;
 
   const Job({
     required this.uuid,
@@ -294,6 +296,8 @@ class Job {
     this.scheduledStartAt,
     this.estimatedCompletionAt,
     required this.tasksSummary,
+    this.hasInvoice = false,
+    this.invoiceUuid,
   });
 
   factory Job.fromJson(Map<String, dynamic> json) => Job(
@@ -323,6 +327,12 @@ class Job {
             : null,
         tasksSummary:
             TasksSummary.fromJson(json['tasks_summary'] as Map<String, dynamic>? ?? {}),
+        hasInvoice: json['has_invoice'] as bool? ??
+            (json['invoice'] is Map<String, dynamic>),
+        invoiceUuid: json['invoice_uuid'] as String? ??
+            ((json['invoice'] is Map<String, dynamic>)
+                ? (json['invoice'] as Map<String, dynamic>)['uuid'] as String?
+                : null),
       );
 }
 
@@ -498,10 +508,15 @@ class JobDetail {
       inspectionSummary: data['inspection_summary'] as Map<String, dynamic>? ?? {},
       deliveryInspectionCompleted: data['delivery_inspection_completed'] as bool? ?? false,
       estimateSummary: data['estimate'] as Map<String, dynamic>? ?? {},
-      billingSummary: data['billing_summary'] as Map<String, dynamic>? ??
-          (data['invoice'] is Map<String, dynamic>
-              ? {'invoice_uuid': (data['invoice'] as Map<String, dynamic>)['uuid']}
-              : {}),
+      billingSummary: {
+        ...?data['billing_summary'] as Map<String, dynamic>?,
+        if (data['estimate'] is Map<String, dynamic>) ...{
+          'estimated_amount': (data['estimate'] as Map<String, dynamic>)['estimated_amount'],
+          'approval_status': (data['estimate'] as Map<String, dynamic>)['approval_status'],
+        },
+        if (data['invoice'] is Map<String, dynamic>)
+          'invoice_uuid': (data['invoice'] as Map<String, dynamic>)['uuid'],
+      },
       timeline: timeline,
       insuranceClaim: JobInsuranceClaim.fromJson(
         data['insurance_claim'] as Map<String, dynamic>?,

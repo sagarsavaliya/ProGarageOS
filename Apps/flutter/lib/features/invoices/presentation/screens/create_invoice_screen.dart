@@ -14,8 +14,9 @@ import '../providers/invoices_provider.dart';
 
 class CreateInvoiceScreen extends ConsumerStatefulWidget {
   final String? jobUuid;
+  final String? customerUuid;
 
-  const CreateInvoiceScreen({super.key, this.jobUuid});
+  const CreateInvoiceScreen({super.key, this.jobUuid, this.customerUuid});
 
   @override
   ConsumerState<CreateInvoiceScreen> createState() => _CreateInvoiceScreenState();
@@ -24,8 +25,9 @@ class CreateInvoiceScreen extends ConsumerStatefulWidget {
 class _CreateInvoiceScreenState extends ConsumerState<CreateInvoiceScreen> {
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(createInvoiceProvider(widget.jobUuid));
-    final notifier = ref.read(createInvoiceProvider(widget.jobUuid).notifier);
+    final params = (jobUuid: widget.jobUuid, customerUuid: widget.customerUuid);
+    final state = ref.watch(createInvoiceProvider(params));
+    final notifier = ref.read(createInvoiceProvider(params).notifier);
 
     return Scaffold(
       backgroundColor: AppColors.bgPrimary,
@@ -183,7 +185,8 @@ class _LineEditorState extends State<_LineEditor> {
     super.initState();
     _name = TextEditingController(text: widget.line.name);
     _qty = TextEditingController(text: '${widget.line.quantity}');
-    _price = TextEditingController(text: '${widget.line.unitPrice}');
+    final price = widget.line.unitPrice;
+    _price = TextEditingController(text: price == 0 ? '' : '$price');
   }
 
   @override
@@ -237,7 +240,15 @@ class _LineEditorState extends State<_LineEditor> {
                 child: TextField(
                   controller: _price,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Rate (₹)'),
+                  decoration: const InputDecoration(
+                    labelText: 'Rate (₹)',
+                    hintText: '0',
+                  ),
+                  onTap: () {
+                    if (_price.text == '0' || _price.text == '0.0') {
+                      _price.clear();
+                    }
+                  },
                   onChanged: (_) => _emit(),
                 ),
               ),

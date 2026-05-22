@@ -68,7 +68,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       }
                       setState(() => _notifPanelOpen = !_notifPanelOpen);
                     },
-                    onSettingsTap: () => context.push('/settings'),
+                    onSettingsTap: () => context.go('/settings'),
                     hasUnread: unreadCount > 0,
                     unreadCount: unreadCount,
                   ),
@@ -155,6 +155,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ],
               ),
               // Notification panel overlay
+              if (_notifPanelOpen)
+                Positioned.fill(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _notifPanelOpen = false),
+                    child: Container(color: Colors.black.withValues(alpha: 0.35)),
+                  ),
+                ),
               AnimatedSlide(
                 offset: _notifPanelOpen ? Offset.zero : const Offset(0, -1),
                 duration: const Duration(milliseconds: 300),
@@ -403,39 +410,37 @@ class _QuickActionHub extends StatelessWidget {
         children: [
           Text('QUICK ACTIONS', style: AppTextStyles.labelSmall.copyWith(letterSpacing: 0.08 * 10)),
           const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              QuickActionChip(
-                icon: PhosphorIconsRegular.plus,
-                label: 'New job',
-                onTap: () => context.push('/jobs/add'),
-              ),
-              QuickActionChip(
-                icon: PhosphorIconsRegular.userPlus,
-                label: 'Add customer',
-                onTap: () => context.push('/customers/add'),
-              ),
-              QuickActionChip(
-                icon: PhosphorIconsRegular.calendarBlank,
-                label: 'Appointments',
-                onTap: () => context.go('/appointments'),
-              ),
-              QuickActionChip(
-                icon: PhosphorIconsRegular.currencyInr,
-                label: 'Collect payment',
-                color: AppColors.statusGreen,
-                onTap: () => context.go('/payments'),
-              ),
-              if (summary.pendingApprovals > 0)
+          SizedBox(
+            height: 36,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
                 QuickActionChip(
-                  icon: PhosphorIconsRegular.clipboardText,
-                  label: '${summary.pendingApprovals} pending',
-                  color: AppColors.statusOrange,
-                  onTap: () => context.go('/jobs'),
+                  icon: PhosphorIconsRegular.plus,
+                  label: 'New job',
+                  onTap: () => context.push('/jobs/add'),
                 ),
-            ],
+                const SizedBox(width: 8),
+                QuickActionChip(
+                  icon: PhosphorIconsRegular.userPlus,
+                  label: 'Customer',
+                  onTap: () => context.push('/customers/add'),
+                ),
+                const SizedBox(width: 8),
+                QuickActionChip(
+                  icon: PhosphorIconsRegular.calendarBlank,
+                  label: 'Appointment',
+                  onTap: () => context.go('/appointments'),
+                ),
+                const SizedBox(width: 8),
+                QuickActionChip(
+                  icon: PhosphorIconsRegular.currencyInr,
+                  label: 'Collect payment',
+                  color: AppColors.statusGreen,
+                  onTap: () => context.go('/payments'),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -964,38 +969,48 @@ class _BayCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(bay.name, style: AppTextStyles.titleSmall),
-                    // Status chip
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: chip.bg,
-                        borderRadius: BorderRadius.circular(9999),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 5,
-                            height: 5,
-                            decoration: BoxDecoration(shape: BoxShape.circle, color: chip.dot),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            chip.label,
-                            style: GoogleFonts.dmSans(
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.w500,
-                              color: chip.text,
-                              letterSpacing: 0.03 * 9.5,
-                            ),
-                          ),
-                        ],
+                    Expanded(
+                      child: Text(
+                        bay.name,
+                        style: AppTextStyles.titleSmall,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 6),
+                // Status chip — own row so long bay names don't clip the label
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: chip.bg,
+                      borderRadius: BorderRadius.circular(9999),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 5,
+                          height: 5,
+                          decoration: BoxDecoration(shape: BoxShape.circle, color: chip.dot),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          chip.label,
+                          style: GoogleFonts.dmSans(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w500,
+                            color: chip.text,
+                            letterSpacing: 0.03 * 9.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 3),
                 Text(bay.type, style: AppTextStyles.bodyMedium.copyWith(fontSize: 10)),
@@ -1249,20 +1264,31 @@ class _NotifPanel extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Notifications', style: AppTextStyles.titleSmall),
-                TextButton(
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    onMarkAllRead();
-                  },
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: Text(
-                    'Mark all read',
-                    style: AppTextStyles.labelMedium.copyWith(color: AppColors.primaryOrange),
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        onMarkAllRead();
+                      },
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        'Mark all read',
+                        style: AppTextStyles.labelMedium.copyWith(color: AppColors.accent),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: onDismiss,
+                      icon: const Icon(PhosphorIconsRegular.x, size: 18),
+                      color: AppColors.textMuted,
+                      splashRadius: 18,
+                    ),
+                  ],
                 ),
               ],
             ),

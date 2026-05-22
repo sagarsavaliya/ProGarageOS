@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
@@ -552,8 +553,13 @@ class _DocumentRow extends StatelessWidget {
           if (doc.fileUrl != null) ...[
             const SizedBox(width: 8),
             IconButton(
-              onPressed: () => HapticFeedback.lightImpact(),
-              icon: Icon(PhosphorIconsRegular.download, color: AppColors.textMuted, size: 18),
+              onPressed: () async {
+                HapticFeedback.lightImpact();
+                final uri = Uri.parse(doc.fileUrl!);
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              },
+              icon: Icon(PhosphorIconsRegular.eye, color: AppColors.primaryOrange, size: 18),
+              tooltip: 'View attachment',
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
             ),

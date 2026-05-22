@@ -44,7 +44,7 @@ class AuthRepository {
     } catch (_) {
       // Ignore API errors on logout — always clear local state.
     }
-    await _storage.clearAll();
+    await _storage.clearSession();
   }
 
   /// POST /auth/customer/otp/request

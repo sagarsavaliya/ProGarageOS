@@ -13,7 +13,9 @@ import '../../data/models/customer_models.dart';
 import '../providers/customers_provider.dart';
 
 class CustomersScreen extends ConsumerStatefulWidget {
-  const CustomersScreen({super.key});
+  final bool showBackButton;
+
+  const CustomersScreen({super.key, this.showBackButton = false});
 
   @override
   ConsumerState<CustomersScreen> createState() => _CustomersScreenState();
@@ -54,6 +56,11 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       child: Row(
         children: [
+          if (widget.showBackButton)
+            IconButton(
+              onPressed: () => context.pop(),
+              icon: const Icon(PhosphorIconsRegular.caretLeft, color: AppColors.textPrimary, size: 20),
+            ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

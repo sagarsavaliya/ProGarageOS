@@ -86,6 +86,13 @@ class SecureStorageService {
   Future<void> writeRaw(String key, String value) => _storage.write(key: key, value: value);
   Future<void> deleteRaw(String key) => _storage.delete(key: key);
 
-  // --- Clear all ---
+  // --- Clear session (logout) — keeps device prefs like onboarding + saved login ---
+  Future<void> clearSession() async {
+    await clearToken();
+    await clearUserJson();
+    await clearLockout();
+  }
+
+  // --- Clear all (factory reset only) ---
   Future<void> clearAll() => _storage.deleteAll();
 }

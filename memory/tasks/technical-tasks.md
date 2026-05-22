@@ -10,9 +10,8 @@
 - [x] Production runbook (`memory/RUNBOOK.md`)
 
 ## Pending (Sagar)
-- [ ] Production migrate + redeploy
-- [ ] Device E2E sign-off (see RUNBOOK checklist)
-- [ ] Git commit + internal Play Store build
+- [ ] Install APK on phone and run E2E checklist (RUNBOOK)
+- [ ] Sign off staff v1
 
 ## Next product track
 - Customer app C0 (after staff v1 sign-off)

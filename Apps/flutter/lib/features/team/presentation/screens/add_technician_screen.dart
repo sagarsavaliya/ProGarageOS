@@ -6,6 +6,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/app_filter_chip.dart';
 import '../providers/create_staff_provider.dart';
 import '../providers/staff_provider.dart';
 
@@ -88,13 +89,20 @@ class _AddTechnicianScreenState extends ConsumerState<AddTechnicianScreen> {
           const SizedBox(height: 12),
           Text('Role', style: AppTextStyles.labelMedium),
           const SizedBox(height: 8),
-          SegmentedButton<String>(
-            segments: const [
-              ButtonSegment(value: 'technician', label: Text('Technician')),
-              ButtonSegment(value: 'service_advisor', label: Text('Advisor')),
+          Wrap(
+            spacing: 8,
+            children: [
+              AppFilterChip(
+                label: 'Technician',
+                isSelected: _role == 'technician',
+                onTap: () => setState(() => _role = 'technician'),
+              ),
+              AppFilterChip(
+                label: 'Advisor',
+                isSelected: _role == 'service_advisor',
+                onTap: () => setState(() => _role = 'service_advisor'),
+              ),
             ],
-            selected: {_role},
-            onSelectionChanged: (s) => setState(() => _role = s.first),
           ),
           const SizedBox(height: 12),
           AppTextField(

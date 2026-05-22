@@ -49,10 +49,13 @@ class ApiErrorView extends StatelessWidget {
             ),
             if (onRetry != null) ...[
               const SizedBox(height: AppSizes.lg),
-              AppButton(
-                label: 'Try again',
-                onPressed: onRetry,
-                isFullWidth: false,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSizes.xl),
+                child: AppButton(
+                  label: 'Try again',
+                  onPressed: onRetry,
+                  isFullWidth: true,
+                ),
               ),
             ],
           ],

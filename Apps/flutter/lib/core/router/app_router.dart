@@ -67,7 +67,8 @@ GoRouter appRouter(Ref ref) {
       if (!hasToken && !isAuthRoute && !isOnboardingRoute && state.matchedLocation != '/') {
         return '/auth/login';
       }
-      if (hasToken && isAuthRoute) return '/dashboard';
+      final isStaffPinFlow = state.matchedLocation.startsWith('/auth/staff-pin');
+      if (hasToken && isAuthRoute && !isStaffPinFlow) return '/dashboard';
       return null;
     },
     routes: [
@@ -158,6 +159,11 @@ GoRouter appRouter(Ref ref) {
             name: 'inventory',
             builder: (context, state) => const InventoryScreen(),
           ),
+          GoRoute(
+            path: '/settings',
+            name: 'settings',
+            builder: (context, state) => const SettingsScreen(),
+          ),
         ],
       ),
       // Detail screens — full screen, no bottom nav
@@ -165,7 +171,12 @@ GoRouter appRouter(Ref ref) {
         path: '/jobs/add',
         name: 'job-add',
         parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => const CreateJobScreen(),
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return CreateJobScreen(
+            initialCustomerUuid: extra?['customerUuid'] as String?,
+          );
+        },
       ),
       GoRoute(
         path: '/jobs/:id/inspection/delivery',
@@ -278,7 +289,10 @@ GoRouter appRouter(Ref ref) {
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
-          return CreateInvoiceScreen(jobUuid: extra?['jobUuid'] as String?);
+          return CreateInvoiceScreen(
+            jobUuid: extra?['jobUuid'] as String?,
+            customerUuid: extra?['customerUuid'] as String?,
+          );
         },
       ),
       GoRoute(
@@ -346,12 +360,6 @@ GoRouter appRouter(Ref ref) {
         builder: (context, state) => const IntegrationsScreen(),
       ),
       GoRoute(
-        path: '/settings',
-        name: 'settings',
-        parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => const SettingsScreen(),
-      ),
-      GoRoute(
         path: '/notifications',
         name: 'notifications',
         parentNavigatorKey: rootNavigatorKey,
@@ -388,7 +396,7 @@ class _ScaffoldWithNavState extends ConsumerState<ScaffoldWithNav> {
       return const ['/dashboard', '/jobs', '/appointments', '/customers', '/inventory'];
     }
     if (showTeam && showPayments) {
-      return const ['/dashboard', '/jobs', '/appointments', '/payments', '/team'];
+      return const ['/dashboard', '/jobs', '/appointments', '/customers', '/payments'];
     }
     if (showPayments) {
       return const ['/dashboard', '/jobs', '/appointments', '/payments', '/customers'];
@@ -458,26 +466,26 @@ class _ScaffoldWithNavState extends ConsumerState<ScaffoldWithNav> {
                   context.go('/appointments');
                 },
               ),
+              if (showTeam && showPayments && !isTechnician)
+                _NavItem(
+                  icon: PhosphorIconsRegular.users,
+                  activeIcon: PhosphorIconsFill.users,
+                  label: 'Customers',
+                  isActive: currentIndex == 3,
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    context.go('/customers');
+                  },
+                ),
               if (showPayments && !isTechnician)
                 _NavItem(
                   icon: PhosphorIconsRegular.currencyInr,
                   activeIcon: PhosphorIconsFill.currencyInr,
                   label: 'Pay',
-                  isActive: currentIndex == 3,
+                  isActive: currentIndex == (showTeam && showPayments ? 4 : 3),
                   onTap: () {
                     HapticFeedback.lightImpact();
                     context.go('/payments');
-                  },
-                ),
-              if (showTeam && !isTechnician)
-                _NavItem(
-                  icon: PhosphorIconsRegular.usersThree,
-                  activeIcon: PhosphorIconsFill.usersThree,
-                  label: 'Team',
-                  isActive: currentIndex == 4,
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    context.go('/team');
                   },
                 ),
               if (isTechnician)

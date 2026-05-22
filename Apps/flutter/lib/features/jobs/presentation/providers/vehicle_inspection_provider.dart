@@ -59,9 +59,12 @@ class VehicleInspectionState {
 
   int get totalChecklistCount => checklistItems.length;
 
+  bool get photosRequired => phase != 'delivery';
+
   bool get allPhotosReady =>
-      photos.length >= requiredPhotoSlotCount &&
-      photos.take(requiredPhotoSlotCount).every((p) => p.hasPhoto && !p.isUploading);
+      !photosRequired ||
+      (photos.length >= requiredPhotoSlotCount &&
+          photos.take(requiredPhotoSlotCount).every((p) => p.hasPhoto && !p.isUploading));
 
   bool get hasUploading => photos.any((p) => p.isUploading);
 

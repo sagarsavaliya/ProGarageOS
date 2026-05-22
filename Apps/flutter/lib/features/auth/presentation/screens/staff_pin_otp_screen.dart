@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/api/api_helpers.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/api_error_view.dart';
+import '../../../../core/widgets/staff_pin_pad.dart';
 import '../../../auth/data/auth_repository.dart';
 import '../../../auth/data/models/auth_models.dart';
 
@@ -120,6 +120,9 @@ class _StaffPinOtpScreenState extends ConsumerState<StaffPinOtpScreen> {
         if (_newPin.length < 6) _newPin += digit;
       }
     });
+    if (confirm && _confirmPin.length == 6) {
+      _submitNewPin();
+    }
   }
 
   void _deletePinDigit({required bool confirm}) {
@@ -130,6 +133,16 @@ class _StaffPinOtpScreenState extends ConsumerState<StaffPinOtpScreen> {
         }
       } else if (_newPin.isNotEmpty) {
         _newPin = _newPin.substring(0, _newPin.length - 1);
+      }
+    });
+  }
+
+  void _clearPinDigit({required bool confirm}) {
+    setState(() {
+      if (confirm) {
+        _confirmPin = '';
+      } else {
+        _newPin = '';
       }
     });
   }
@@ -192,19 +205,15 @@ class _StaffPinOtpScreenState extends ConsumerState<StaffPinOtpScreen> {
             ),
           ],
           if (_step == StaffPinOtpStep.setPin) ...[
-            Text('New PIN', style: AppTextStyles.labelSmall),
-            const SizedBox(height: 8),
-            _PinDots(value: _newPin),
-            const SizedBox(height: 8),
-            Text('Confirm PIN', style: AppTextStyles.labelSmall),
-            const SizedBox(height: 8),
-            _PinDots(value: _confirmPin),
-            const SizedBox(height: 16),
-            _PinPad(
-              onDigit: (d) => _addPinDigit(d, confirm: _newPin.length >= 6),
-              onDelete: () => _deletePinDigit(confirm: _newPin.length >= 6),
+            _SetPinPanel(
+              newPin: _newPin,
+              confirmPin: _confirmPin,
+              hasError: _error != null,
+              onDigit: _addPinDigit,
+              onDelete: _deletePinDigit,
+              onClear: _clearPinDigit,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             FilledButton(
               onPressed: _loading ? null : _submitNewPin,
               child: _loading
@@ -227,73 +236,182 @@ class _StaffPinOtpScreenState extends ConsumerState<StaffPinOtpScreen> {
   }
 }
 
-class _PinDots extends StatelessWidget {
+// ---------------------------------------------------------------------------
+// Set PIN — aligned labels + dots + keypad (matches login screen language)
+// ---------------------------------------------------------------------------
+
+class _SetPinPanel extends StatelessWidget {
+  final String newPin;
+  final String confirmPin;
+  final bool hasError;
+  final void Function(String digit, {required bool confirm}) onDigit;
+  final void Function({required bool confirm}) onDelete;
+  final void Function({required bool confirm}) onClear;
+
+  const _SetPinPanel({
+    required this.newPin,
+    required this.confirmPin,
+    required this.hasError,
+    required this.onDigit,
+    required this.onDelete,
+    required this.onClear,
+  });
+
+  bool get _confirming => newPin.length >= 6;
+
+  @override
+  Widget build(BuildContext context) {
+    final pinsMismatch = newPin.length == 6 &&
+        confirmPin.length == 6 &&
+        newPin != confirmPin;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _PinFieldBlock(
+          label: 'NEW PIN',
+          value: newPin,
+          active: !_confirming,
+          complete: newPin.length == 6,
+          hasError: hasError && pinsMismatch,
+        ),
+        const SizedBox(height: 12),
+        _PinFieldBlock(
+          label: 'CONFIRM PIN',
+          value: confirmPin,
+          active: _confirming && confirmPin.length < 6,
+          complete: confirmPin.length == 6 && !pinsMismatch,
+          hasError: hasError && pinsMismatch,
+          dimmed: !_confirming,
+        ),
+        const SizedBox(height: 20),
+        StaffPinPad(
+          enabled: true,
+          headerText: _confirming ? 'KEYPAD · CONFIRM PIN' : 'KEYPAD · NEW PIN',
+          headerColor: AppColors.primaryOrange,
+          onDigit: (d) => onDigit(d, confirm: _confirming),
+          onDelete: () => onDelete(confirm: _confirming),
+          onClear: () => onClear(confirm: _confirming),
+        ),
+      ],
+    );
+  }
+}
+
+class _PinFieldBlock extends StatelessWidget {
+  final String label;
   final String value;
-  const _PinDots({required this.value});
+  final bool active;
+  final bool complete;
+  final bool hasError;
+  final bool dimmed;
+
+  const _PinFieldBlock({
+    required this.label,
+    required this.value,
+    required this.active,
+    this.complete = false,
+    this.hasError = false,
+    this.dimmed = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final borderColor = hasError
+        ? AppColors.statusRed
+        : active
+            ? AppColors.primaryOrange
+            : complete
+                ? AppColors.statusGreen
+                : AppColors.divider;
+
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 180),
+      opacity: dimmed ? 0.45 : 1,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: active
+              ? AppColors.primaryOrangeDim
+              : AppColors.bgSurface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: borderColor,
+            width: active || hasError ? 1.5 : 0.5,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.labelSmall.copyWith(
+                letterSpacing: 0.13 * 9,
+                color: active
+                    ? AppColors.primaryOrange
+                    : AppColors.textMuted,
+              ),
+            ),
+            const SizedBox(height: 14),
+            _PinDotsRow(value: value, hasError: hasError),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PinDotsRow extends StatelessWidget {
+  final String value;
+  final bool hasError;
+
+  const _PinDotsRow({required this.value, this.hasError = false});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: List.generate(6, (i) {
         final filled = i < value.length;
+        Color dotColor;
+        Color borderColor;
+        if (hasError) {
+          dotColor = AppColors.statusRed;
+          borderColor = AppColors.statusRed;
+        } else if (filled) {
+          dotColor = AppColors.primaryOrange;
+          borderColor = AppColors.primaryOrange;
+        } else {
+          dotColor = Colors.transparent;
+          borderColor = AppColors.textMuted.withValues(alpha: 0.35);
+        }
+
         return Container(
-          width: 12,
-          height: 12,
-          margin: const EdgeInsets.symmetric(horizontal: 6),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: filled ? AppColors.primaryOrange : AppColors.divider,
-          ),
-        );
-      }),
-    );
-  }
-}
-
-class _PinPad extends StatelessWidget {
-  final ValueChanged<String> onDigit;
-  final VoidCallback onDelete;
-
-  const _PinPad({required this.onDigit, required this.onDelete});
-
-  @override
-  Widget build(BuildContext context) {
-    const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'];
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
-        childAspectRatio: 1.6,
-      ),
-      itemCount: keys.length,
-      itemBuilder: (context, index) {
-        final key = keys[index];
-        if (key.isEmpty) return const SizedBox.shrink();
-        return Material(
-          color: AppColors.bgSurface,
-          borderRadius: BorderRadius.circular(12),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () {
-              if (key == '⌫') {
-                onDelete();
-              } else {
-                onDigit(key);
-              }
-            },
-            child: Center(
-              child: Text(
-                key,
-                style: GoogleFonts.dmSans(fontSize: 22, color: AppColors.textPrimary),
-              ),
+          margin: EdgeInsets.symmetric(horizontal: i == 0 || i == 5 ? 0 : 8),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 130),
+            curve: Curves.elasticOut,
+            width: filled ? 15 : 13,
+            height: filled ? 15 : 13,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: dotColor,
+              border: Border.all(color: borderColor, width: 1.5),
+              boxShadow: filled && !hasError
+                  ? [
+                      BoxShadow(
+                        color: AppColors.primaryOrange.withValues(alpha: 0.35),
+                        blurRadius: 7,
+                      ),
+                    ]
+                  : null,
             ),
           ),
         );
-      },
+      }),
     );
   }
 }

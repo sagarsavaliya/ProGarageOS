@@ -201,8 +201,18 @@ class InvoiceDetailNotifier extends StateNotifier<AsyncValue<InvoiceDetail>> {
   }
 
   Future<void> recordPayment(RecordPaymentRequest request) async {
-    final updated = await _repo.recordPayment(_uuid, request);
-    state = AsyncValue.data(updated);
+    try {
+      final updated = await _repo.recordPayment(_uuid, request);
+      state = AsyncValue.data(updated);
+    } catch (e) {
+      try {
+        final detail = await _repo.fetchInvoice(_uuid);
+        state = AsyncValue.data(detail);
+        return;
+      } catch (_) {
+        rethrow;
+      }
+    }
   }
 
   Future<void> updateSplitBilling({

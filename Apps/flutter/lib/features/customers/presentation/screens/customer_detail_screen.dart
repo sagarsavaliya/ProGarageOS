@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/utils/phone_launcher.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
@@ -140,12 +141,18 @@ class _DetailBody extends StatelessWidget {
                       QuickActionChip(
                         icon: PhosphorIconsRegular.plus,
                         label: 'New job',
-                        onTap: () => context.push('/jobs/add'),
+                        onTap: () => context.push(
+                          '/jobs/add',
+                          extra: {'customerUuid': detail.uuid},
+                        ),
                       ),
                       QuickActionChip(
                         icon: PhosphorIconsRegular.receipt,
                         label: 'New invoice',
-                        onTap: () => context.push('/invoices/add'),
+                        onTap: () => context.push(
+                          '/invoices/add',
+                          extra: {'customerUuid': detail.uuid},
+                        ),
                       ),
                     ],
                   ),

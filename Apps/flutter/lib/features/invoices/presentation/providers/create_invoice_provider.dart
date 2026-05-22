@@ -73,8 +73,14 @@ class CreateInvoiceNotifier extends StateNotifier<CreateInvoiceState> {
   final InvoicesRepository _invoicesRepo;
   final JobsRepository _jobsRepo;
   final String? preselectedJobUuid;
+  final String? customerUuid;
 
-  CreateInvoiceNotifier(this._invoicesRepo, this._jobsRepo, this.preselectedJobUuid)
+  CreateInvoiceNotifier(
+    this._invoicesRepo,
+    this._jobsRepo,
+    this.preselectedJobUuid,
+    this.customerUuid,
+  )
       : super(const CreateInvoiceState()) {
     _loadJobs();
   }
@@ -82,12 +88,21 @@ class CreateInvoiceNotifier extends StateNotifier<CreateInvoiceState> {
   Future<void> _loadJobs() async {
     try {
       final result = await _jobsRepo.fetchJobs(perPage: 50);
-      final jobs = result.jobs.where((j) {
+      var jobs = result.jobs.where((j) {
+        if (j.hasInvoice || (j.invoiceUuid != null && j.invoiceUuid!.isNotEmpty)) {
+          return false;
+        }
+        if (customerUuid != null &&
+            customerUuid!.isNotEmpty &&
+            j.customer.uuid != customerUuid) {
+          return false;
+        }
         final s = j.status;
         return s == JobStatus.estimateApproved ||
             s == JobStatus.inProgress ||
             s == JobStatus.readyForDelivery ||
-            s == JobStatus.qcPending;
+            s == JobStatus.qcPending ||
+            s == JobStatus.estimatePending;
       }).toList();
       Job? selected;
       if (preselectedJobUuid != null) {
@@ -97,17 +112,59 @@ class CreateInvoiceNotifier extends StateNotifier<CreateInvoiceState> {
             break;
           }
         }
+        if (selected == null) {
+          try {
+            final detail = await _jobsRepo.fetchJob(preselectedJobUuid!);
+            selected = Job(
+              uuid: detail.uuid,
+              jobNumber: detail.jobNumber,
+              status: detail.status,
+              priority: detail.priority,
+              customer: detail.customer,
+              vehicle: detail.vehicle,
+              primaryTechnician: detail.primaryTechnician,
+              serviceBay: detail.serviceBay,
+              serviceCategories: detail.serviceCategories
+                  .map((c) => c['name'] as String? ?? '')
+                  .where((s) => s.isNotEmpty)
+                  .toList(),
+              estimatedAmount:
+                  (detail.estimateSummary['total'] as num?)?.toDouble() ?? 0,
+              approvalStatus:
+                  detail.estimateSummary['approval_status'] as String? ?? 'pending',
+              scheduledStartAt: DateTime.tryParse(
+                detail.timeline['scheduled_start_at'] as String? ?? '',
+              ),
+              estimatedCompletionAt: DateTime.tryParse(
+                detail.timeline['estimated_completion_at'] as String? ?? '',
+              ),
+              tasksSummary: TasksSummary(
+                total: detail.tasks.length,
+                completed: detail.tasks.where((t) => t.status == 'completed').length,
+                inProgress: detail.tasks.where((t) => t.status == 'in_progress').length,
+                pending: detail.tasks.where((t) => t.status == 'pending').length,
+              ),
+            );
+            if (!jobs.any((j) => j.uuid == selected!.uuid)) {
+              jobs.insert(0, selected);
+            }
+          } catch (_) {}
+        }
       }
       state = state.copyWith(
         isLoadingJobs: false,
         billableJobs: jobs,
         selectedJob: selected,
         lines: selected != null
-            ? [InvoiceLineDraft(name: 'Service charges', unitPrice: 0)]
+            ? [InvoiceLineDraft(name: 'Service — ${selected.jobNumber}', unitPrice: 0)]
             : const [],
       );
     } catch (_) {
-      state = state.copyWith(isLoadingJobs: false, billableJobs: []);
+      state = state.copyWith(
+        isLoadingJobs: false,
+        errorMessage: 'Could not load billable jobs.',
+        billableJobs: [],
+      );
     }
   }
 
@@ -174,10 +231,12 @@ class CreateInvoiceNotifier extends StateNotifier<CreateInvoiceState> {
 }
 
 final createInvoiceProvider = StateNotifierProvider.autoDispose
-    .family<CreateInvoiceNotifier, CreateInvoiceState, String?>((ref, jobUuid) {
+    .family<CreateInvoiceNotifier, CreateInvoiceState, ({String? jobUuid, String? customerUuid})>(
+        (ref, params) {
   return CreateInvoiceNotifier(
     ref.watch(invoicesRepositoryProvider),
     ref.watch(jobsRepositoryProvider),
-    jobUuid,
+    params.jobUuid,
+    params.customerUuid,
   );
 });

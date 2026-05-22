@@ -5,8 +5,10 @@
 ## Overall Status
 - **Project:** Pro Garage OS (ProGarageOS)
 - **Infrastructure:** ✅ Live — `https://api.progarage.cloud/api`
-- **Staff app v1:** ✅ Pack 4 complete — ready for production deploy + device sign-off
-- **Last Updated:** 2026-05-21 IST
+- **Staff app v1:** ✅ Shipped to GitHub + production (commit `e08a2f9`)
+- **Test APK:** ✅ Standalone install — `Apps/flutter/build/app/outputs/flutter-apk/app-release.apk` (production API, no USB/WiFi debug)
+- **Next:** Device E2E sign-off on phone
+- **Last Updated:** 2026-05-22 IST
 
 ---
 

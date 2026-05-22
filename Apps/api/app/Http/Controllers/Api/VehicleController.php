@@ -149,6 +149,7 @@ class VehicleController extends Controller
             'fuel_type'           => $vehicle->fuel_type,
             'color'               => $vehicle->color,
             'odometer_reading'    => $vehicle->odometer_reading,
+            'gps_tracking_consent' => (bool) $vehicle->gps_tracking_consent,
             'is_active'           => $vehicle->is_active,
             'customer'            => $vehicle->customer ? [
                 'uuid'  => $vehicle->customer->uuid,

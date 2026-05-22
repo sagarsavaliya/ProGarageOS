@@ -24,6 +24,7 @@ class StaffLoginState {
   final UserModel? savedUser;
   final bool showSwitchUser;
   final bool needsPinSetup;
+  final String savedPhoneDigits;
 
   const StaffLoginState({
     this.status = StaffLoginStatus.idle,
@@ -35,6 +36,7 @@ class StaffLoginState {
     this.savedUser,
     this.showSwitchUser = false,
     this.needsPinSetup = false,
+    this.savedPhoneDigits = '',
   });
 
   bool get isLocked => status == StaffLoginStatus.locked;
@@ -51,6 +53,7 @@ class StaffLoginState {
     UserModel? savedUser,
     bool? showSwitchUser,
     bool? needsPinSetup,
+    String? savedPhoneDigits,
   }) =>
       StaffLoginState(
         status: status ?? this.status,
@@ -62,6 +65,7 @@ class StaffLoginState {
         savedUser: savedUser ?? this.savedUser,
         showSwitchUser: showSwitchUser ?? this.showSwitchUser,
         needsPinSetup: needsPinSetup ?? this.needsPinSetup,
+        savedPhoneDigits: savedPhoneDigits ?? this.savedPhoneDigits,
       );
 }
 
@@ -102,7 +106,33 @@ class StaffLoginNotifier extends StateNotifier<StaffLoginState> {
       );
       _startLockTimer(expiry);
     } else {
-      state = state.copyWith(savedUser: user, failCount: failCount);
+      final savedLogin = await _storage.getSavedLogin();
+      var phoneDigits = '';
+      var currentLogin = '';
+      if (savedLogin != null && savedLogin.isNotEmpty) {
+        if (savedLogin.startsWith('+91') && savedLogin.length >= 13) {
+          phoneDigits = savedLogin.substring(3);
+          currentLogin = savedLogin;
+        } else if (RegExp(r'^\d{10}$').hasMatch(savedLogin)) {
+          phoneDigits = savedLogin;
+          currentLogin = '+91$savedLogin';
+        } else {
+          currentLogin = savedLogin;
+        }
+      } else if (user?.phone != null && user!.phone!.isNotEmpty) {
+        final p = user.phone!.replaceAll(RegExp(r'\D'), '');
+        if (p.length >= 10) {
+          phoneDigits = p.substring(p.length - 10);
+          currentLogin = '+91$phoneDigits';
+        }
+      }
+      state = state.copyWith(
+        savedUser: user,
+        failCount: failCount,
+        currentLogin: currentLogin,
+        savedPhoneDigits: phoneDigits,
+        showSwitchUser: phoneDigits.isNotEmpty || (savedLogin?.contains('@') ?? false),
+      );
     }
   }
 
@@ -156,6 +186,7 @@ class StaffLoginNotifier extends StateNotifier<StaffLoginState> {
       );
       await _storage.saveToken(response.token);
       await _storage.saveUserJson(response.user.toJsonString());
+      await _storage.saveSavedLogin(login);
       await _storage.clearLockout();
       state = state.copyWith(status: StaffLoginStatus.success, savedUser: response.user);
     } on DioException catch (e) {

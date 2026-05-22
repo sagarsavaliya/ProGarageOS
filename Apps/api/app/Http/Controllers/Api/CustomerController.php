@@ -135,6 +135,7 @@ class CustomerController extends Controller
                 'fuel_type'           => $v->fuel_type,
                 'color'               => $v->color,
                 'odometer_reading'    => $v->odometer_reading,
+                'gps_tracking_consent' => (bool) $v->gps_tracking_consent,
             ]),
         ]);
     }

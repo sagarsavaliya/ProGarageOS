@@ -232,7 +232,7 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
                         onPressed: () => GpsTrackingInfoSheet.show(context),
                       ),
                       value: _gpsConsent,
-                      activeColor: AppColors.primaryOrange,
+                      activeThumbColor: AppColors.primaryOrange,
                       onChanged: (v) => setState(() => _gpsConsent = v),
                     ),
                     if (editState.errorMessage != null) ...[

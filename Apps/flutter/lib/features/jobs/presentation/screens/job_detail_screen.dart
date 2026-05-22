@@ -5,9 +5,12 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../../../../core/api/api_helpers.dart';
+import '../../../../core/utils/phone_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/api_error_view.dart';
+import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../../../../core/widgets/app_status_chip.dart';
 import '../../data/models/estimate_models.dart';
 import '../../data/models/job_models.dart';
@@ -30,6 +33,82 @@ class JobDetailScreen extends ConsumerWidget {
     final state = ref.watch(jobDetailProvider(jobUuid));
     final notifier = ref.read(jobDetailProvider(jobUuid).notifier);
 
+    Future<void> onStatusChange(String status, {String? notes}) async {
+      if (status == 'delivered') {
+        final detail = ref.read(jobDetailProvider(jobUuid)).valueOrNull;
+        if (detail != null && context.mounted) {
+          final missing = <String>[];
+          if (!detail.deliveryInspectionCompleted) {
+            missing.add('Delivery inspection not completed');
+          }
+          final invoiceUuid = detail.billingSummary['invoice_uuid'] as String?;
+          if (invoiceUuid == null || invoiceUuid.isEmpty) {
+            missing.add('No invoice generated yet');
+          }
+          if (missing.isNotEmpty && context.mounted) {
+            final proceed = await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                backgroundColor: AppColors.bgSurface,
+                title: Text('Complete before delivery?', style: AppTextStyles.titleMedium),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final m in missing) Text('• $m', style: AppTextStyles.bodySmall),
+                    const SizedBox(height: 8),
+                    Text(
+                      'You can still mark delivered, but billing and handover may be incomplete.',
+                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted),
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Go back')),
+                  if (!detail.deliveryInspectionCompleted)
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(ctx, false);
+                        context.push('/jobs/$jobUuid/inspection/delivery');
+                      },
+                      child: const Text('Delivery inspection'),
+                    ),
+                  if (invoiceUuid == null || invoiceUuid.isEmpty)
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(ctx, false);
+                        context.push('/invoices/add', extra: {'jobUuid': jobUuid});
+                      },
+                      child: const Text('Create invoice'),
+                    ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: Text('Mark delivered', style: TextStyle(color: AppColors.primaryOrange)),
+                  ),
+                ],
+              ),
+            );
+            if (proceed != true) return;
+          }
+        }
+      }
+      try {
+        await notifier.updateStatus(status, notes: notes);
+        ref.invalidate(jobsProvider);
+        ref.read(dashboardProvider.notifier).refresh();
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(failureMessage(e), style: const TextStyle(color: Colors.white)),
+              backgroundColor: AppColors.statusRed,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    }
+
     return Scaffold(
       backgroundColor: AppColors.bgPrimary,
       body: state.when(
@@ -41,8 +120,10 @@ class JobDetailScreen extends ConsumerWidget {
           onRefresh: () async {
             await notifier.refresh();
             ref.invalidate(jobTasksProvider(jobUuid));
+            ref.invalidate(jobsProvider);
+            ref.read(dashboardProvider.notifier).refresh();
           },
-          onUpdateStatus: notifier.updateStatus,
+          onUpdateStatus: onStatusChange,
         ),
       ),
       floatingActionButton: state.maybeWhen(
@@ -53,7 +134,7 @@ class JobDetailScreen extends ConsumerWidget {
               showJobStatusSheet(
                 context,
                 current: detail.status,
-                onSelect: (s) => notifier.updateStatus(s),
+                onSelect: onStatusChange,
               );
             },
             backgroundColor: AppColors.primaryOrange,
@@ -606,7 +687,9 @@ class _DetailView extends ConsumerWidget {
                   ],
                 ),
               IconButton(
-                onPressed: () {},
+                onPressed: customer.phone.isNotEmpty
+                    ? () => launchPhoneDialer(customer.phone)
+                    : null,
                 icon: Icon(PhosphorIconsRegular.phone, color: AppColors.primaryOrange, size: 18),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),

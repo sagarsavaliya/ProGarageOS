@@ -7,6 +7,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_filter_chip.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../data/models/invoice_models.dart';
 import '../providers/invoices_provider.dart';
@@ -133,20 +134,18 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
               Row(
                 children: [
                   Expanded(
-                    child: ChoiceChip(
-                      label: const Text('Customer'),
-                      selected: _paymentType == 'customer_pay',
-                      onSelected: (_) => setState(() => _paymentType = 'customer_pay'),
-                      selectedColor: AppColors.primaryOrangeDim,
+                    child: AppFilterChip(
+                      label: 'Customer',
+                      isSelected: _paymentType == 'customer_pay',
+                      onTap: () => setState(() => _paymentType = 'customer_pay'),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: ChoiceChip(
-                      label: const Text('Insurance'),
-                      selected: _paymentType == 'insurance_claim',
-                      onSelected: (_) => setState(() => _paymentType = 'insurance_claim'),
-                      selectedColor: AppColors.primaryOrangeDim,
+                    child: AppFilterChip(
+                      label: 'Insurance',
+                      isSelected: _paymentType == 'insurance_claim',
+                      onTap: () => setState(() => _paymentType = 'insurance_claim'),
                     ),
                   ),
                 ],
@@ -167,43 +166,35 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
                 ),
               ),
               error: (_, __) => Text('Failed to load methods', style: AppTextStyles.bodySmall),
-              data: (methods) => SizedBox(
-                height: 44,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: methods.length,
-                  itemBuilder: (context, i) {
-                    final method = methods[i];
-                    final isSelected = _selectedMethodId == method.id;
-                    return GestureDetector(
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        setState(() => _selectedMethodId = method.id);
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        margin: const EdgeInsets.only(right: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: isSelected ? AppColors.primaryOrange : AppColors.bgElevated,
-                          borderRadius: BorderRadius.circular(9999),
-                          border: Border.all(
-                            color: isSelected ? AppColors.primaryOrange : AppColors.divider,
+              data: (methods) {
+                if (_selectedMethodId == null && methods.isNotEmpty) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted || _selectedMethodId != null) return;
+                    PaymentMethod? cash;
+                    for (final m in methods) {
+                      if (m.name.toLowerCase().contains('cash')) {
+                        cash = m;
+                        break;
+                      }
+                    }
+                    setState(() => _selectedMethodId = (cash ?? methods.first).id);
+                  });
+                }
+                return AppFilterChipsBar(
+                  children: methods
+                      .map(
+                        (method) => Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: AppFilterChip(
+                            label: method.name,
+                            isSelected: _selectedMethodId == method.id,
+                            onTap: () => setState(() => _selectedMethodId = method.id),
                           ),
                         ),
-                        child: Text(
-                          method.name,
-                          style: GoogleFonts.dmSans(
-                            fontSize: 13,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                            color: isSelected ? Colors.white : AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
+                      )
+                      .toList(),
+                );
+              },
             ),
             const SizedBox(height: 16),
             AppTextField(
@@ -255,7 +246,7 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
   }
 
   Future<void> _submit() async {
-    final rawAmount = _amountController.text.replaceAll(',', '').trim();
+    final rawAmount = _amountController.text.replaceAll(RegExp(r'[^\d.]'), '').trim();
     final amount = double.tryParse(rawAmount);
     if (amount == null || amount <= 0) {
       setState(() => _errorMessage = 'Please enter a valid amount.');

@@ -18,7 +18,9 @@ import '../../data/models/invoice_models.dart';
 import '../providers/invoices_provider.dart';
 
 class InvoicesScreen extends ConsumerStatefulWidget {
-  const InvoicesScreen({super.key});
+  final bool showBackButton;
+
+  const InvoicesScreen({super.key, this.showBackButton = false});
 
   @override
   ConsumerState<InvoicesScreen> createState() => _InvoicesScreenState();
@@ -70,6 +72,11 @@ class _InvoicesScreenState extends ConsumerState<InvoicesScreen> {
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       child: Row(
         children: [
+          if (widget.showBackButton)
+            IconButton(
+              onPressed: () => context.pop(),
+              icon: const Icon(PhosphorIconsRegular.caretLeft, color: AppColors.textPrimary, size: 20),
+            ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

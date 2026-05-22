@@ -315,6 +315,30 @@ class CreateJobNotifier extends StateNotifier<CreateJobState> {
     }
   }
 
+  Future<void> preselectCustomerByUuid(String uuid) async {
+    try {
+      final detail = await _customersRepo.fetchCustomer(uuid);
+      final customer = Customer(
+        uuid: detail.uuid,
+        firstName: detail.firstName,
+        lastName: detail.lastName,
+        phonePrimary: detail.phonePrimary,
+        phoneSecondary: detail.phoneSecondary,
+        email: detail.email,
+        preferredLanguage: detail.preferredLanguage,
+        garageProfile: detail.garageProfile,
+        vehiclesCount: detail.vehicles.length,
+        isActive: true,
+      );
+      state = state.copyWith(
+        selectedCustomer: customer,
+        vehicles: detail.vehicles,
+        isLoadingVehicles: false,
+        selectedVehicle: detail.vehicles.length == 1 ? detail.vehicles.first : null,
+      );
+    } catch (_) {}
+  }
+
   void clearCustomer() {
     state = state.copyWith(
       clearCustomer: true,

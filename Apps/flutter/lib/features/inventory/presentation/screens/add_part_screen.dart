@@ -6,6 +6,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/app_filter_chip.dart';
 import '../providers/create_inventory_provider.dart';
 import '../providers/inventory_provider.dart';
 
@@ -102,13 +103,12 @@ class _AddPartScreenState extends ConsumerState<AddPartScreen> {
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
+            runSpacing: 8,
             children: _units.map((u) {
-              final selected = _unit == u;
-              return ChoiceChip(
-                label: Text(u),
-                selected: selected,
-                onSelected: (_) => setState(() => _unit = u),
-                selectedColor: AppColors.primaryOrangeDim,
+              return AppFilterChip(
+                label: u,
+                isSelected: _unit == u,
+                onTap: () => setState(() => _unit = u),
               );
             }).toList(),
           ),

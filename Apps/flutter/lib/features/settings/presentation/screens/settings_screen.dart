@@ -113,7 +113,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     } catch (_) {
       // Local sign-out even if API fails.
     }
-    await ref.read(secureStorageProvider).clearAll();
+    await ref.read(secureStorageProvider).clearSession();
     if (mounted) context.go('/auth/login');
   }
 
@@ -198,13 +198,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               icon: PhosphorIconsRegular.car,
               title: 'Fleet',
               subtitle: 'All registered vehicles',
-              onTap: () => context.push('/vehicles'),
+              onTap: () => context.go('/vehicles'),
+            ),
+            _SettingsTile(
+              icon: PhosphorIconsRegular.users,
+              title: 'Customers',
+              subtitle: 'Customer and vehicle records',
+              onTap: () => context.go('/customers'),
             ),
             _SettingsTile(
               icon: PhosphorIconsRegular.receipt,
               title: 'Invoices',
               subtitle: 'All invoices and billing history',
-              onTap: () => context.push('/invoices'),
+              onTap: () => context.go('/invoices'),
             ),
             _SettingsTile(
               icon: PhosphorIconsRegular.package,
@@ -223,7 +229,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             icon: PhosphorIconsRegular.usersThree,
             title: 'Team',
             subtitle: 'Technicians and service advisors',
-            onTap: () => context.push('/team'),
+            onTap: () => context.go('/team'),
           ),
           const SizedBox(height: 24),
           _SectionTitle('App'),
@@ -367,7 +373,9 @@ class _SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
       color: AppColors.bgSurface,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
@@ -396,6 +404,7 @@ class _SettingsTile extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }

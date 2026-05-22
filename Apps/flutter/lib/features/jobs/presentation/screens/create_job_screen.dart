@@ -10,7 +10,9 @@ import '../../../customers/data/models/customer_models.dart';
 import '../providers/create_job_provider.dart';
 
 class CreateJobScreen extends ConsumerStatefulWidget {
-  const CreateJobScreen({super.key});
+  final String? initialCustomerUuid;
+
+  const CreateJobScreen({super.key, this.initialCustomerUuid});
 
   @override
   ConsumerState<CreateJobScreen> createState() => _CreateJobScreenState();
@@ -27,6 +29,17 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
     _complaintController.dispose();
     _odometerController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    final customerUuid = widget.initialCustomerUuid;
+    if (customerUuid != null && customerUuid.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(createJobProvider.notifier).preselectCustomerByUuid(customerUuid);
+      });
+    }
   }
 
   @override
@@ -499,7 +512,7 @@ class _Step2Services extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           mainAxisSpacing: 10,
           crossAxisSpacing: 10,
-          childAspectRatio: 1.35,
+          childAspectRatio: 1.05,
           children: categories.map((cat) {
             final selected = selectedIds.contains(cat.uuid);
             return GestureDetector(
@@ -521,6 +534,7 @@ class _Step2Services extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
                           width: 34,
@@ -532,26 +546,27 @@ class _Step2Services extends StatelessWidget {
                           ),
                           child: Text(cat.iconLabel, style: AppTextStyles.labelSmall),
                         ),
+                        const SizedBox(width: 6),
+                        if (cat.requiresInspection || cat.requiresApproval)
+                          Wrap(
+                            spacing: 4,
+                            runSpacing: 4,
+                            children: [
+                              if (cat.requiresInspection)
+                                _MiniFlag('INSP', AppColors.statusOrangeBg, AppColors.statusOrange),
+                              if (cat.requiresApproval)
+                                _MiniFlag('APPR', AppColors.statusPurpleBg, AppColors.statusPurple),
+                            ],
+                          ),
                         const Spacer(),
                         if (selected)
                           const Icon(PhosphorIconsRegular.checkCircle, size: 18, color: AppColors.primaryOrange),
                       ],
                     ),
+                    const SizedBox(height: 8),
+                    Text(cat.name, style: AppTextStyles.titleSmall, maxLines: 2, overflow: TextOverflow.ellipsis),
                     const Spacer(),
-                    Text(cat.name, style: AppTextStyles.titleSmall, maxLines: 2),
                     Text(cat.durationLabel, style: AppTextStyles.labelSmall),
-                    if (cat.requiresInspection || cat.requiresApproval) ...[
-                      const SizedBox(height: 6),
-                      Wrap(
-                        spacing: 4,
-                        children: [
-                          if (cat.requiresInspection)
-                            _MiniFlag('INSP', AppColors.statusOrangeBg, AppColors.statusOrange),
-                          if (cat.requiresApproval)
-                            _MiniFlag('APPR', AppColors.statusPurpleBg, AppColors.statusPurple),
-                        ],
-                      ),
-                    ],
                   ],
                 ),
               ),

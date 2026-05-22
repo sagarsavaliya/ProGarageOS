@@ -10,6 +10,8 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/config/env.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/widgets/customer_signature_card.dart';
+import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../../data/models/inspection_models.dart';
 import '../providers/jobs_provider.dart';
 import '../providers/vehicle_inspection_provider.dart';
@@ -93,11 +95,13 @@ class _VehicleInspectionScreenState extends ConsumerState<VehicleInspectionScree
                   widget.isDelivery
                       ? 'Delivery inspection saved · $jobNumber'
                       : 'Intake saved · $jobNumber moved to estimate',
+                  style: const TextStyle(color: Colors.white),
                 ),
-                backgroundColor: AppColors.bgElevated,
+                backgroundColor: AppColors.statusGreen,
                 behavior: SnackBarBehavior.floating,
               ),
             );
+            ref.invalidate(dashboardProvider);
             context.pop();
           }
         },
@@ -214,11 +218,10 @@ class _InspectionBody extends StatelessWidget {
                   onChanged: onNotesChanged,
                 ),
                 const SizedBox(height: 12),
-                _SignatureCard(
+                CustomerSignatureCard(
                   isDelivery: isDelivery,
                   signed: state.customerAcknowledged,
-                  onSign: () => onAcknowledged(true),
-                  onClear: () => onAcknowledged(false),
+                  onSignedChanged: onAcknowledged,
                 ),
                 if (state.errorMessage != null) ...[
                   const SizedBox(height: 12),
@@ -256,7 +259,7 @@ class _InspectionBody extends StatelessWidget {
                   )
                 : Text(
                     state.canSubmit
-                        ? (isDelivery ? 'Save delivery inspection' : 'Save & send for estimate')
+                        ? (isDelivery ? 'Submit' : 'Save & send for estimate')
                         : _submitHint(state),
                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
                   ),
@@ -268,10 +271,10 @@ class _InspectionBody extends StatelessWidget {
 
   String _submitHint(VehicleInspectionState s) {
     if (s.hasUploading) return 'Uploading photos…';
-    if (!s.allPhotosReady) return 'Add all 6 vehicle photos';
+    if (s.photosRequired && !s.allPhotosReady) return 'Add vehicle photos (optional at delivery)';
     if (s.completedChecklistCount < s.totalChecklistCount) return 'Complete checklist';
     if (!s.customerAcknowledged) return 'Customer signature required';
-    return 'Complete inspection';
+    return isDelivery ? 'Submit delivery inspection' : 'Complete inspection';
   }
 }
 
@@ -570,64 +573,6 @@ class _NotesCard extends StatelessWidget {
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SignatureCard extends StatelessWidget {
-  final bool isDelivery;
-  final bool signed;
-  final VoidCallback onSign;
-  final VoidCallback onClear;
-
-  const _SignatureCard({
-    required this.isDelivery,
-    required this.signed,
-    required this.onSign,
-    required this.onClear,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.bgSurface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: signed ? AppColors.primaryOrange : AppColors.divider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('CUSTOMER ACKNOWLEDGMENT', style: _sectionTitleStyle()),
-          const SizedBox(height: 6),
-          Text(
-            isDelivery
-                ? 'Customer confirms vehicle condition at delivery'
-                : 'Customer acknowledges vehicle condition at intake',
-            style: AppTextStyles.bodySmall,
-          ),
-          const SizedBox(height: 12),
-          if (signed)
-            Row(
-              children: [
-                const Icon(PhosphorIconsRegular.checkCircle, color: AppColors.statusGreen),
-                const SizedBox(width: 8),
-                Expanded(child: Text('Signed', style: AppTextStyles.bodyMedium)),
-                TextButton(onPressed: onClear, child: const Text('Clear')),
-              ],
-            )
-          else
-            OutlinedButton.icon(
-              onPressed: () {
-                HapticFeedback.mediumImpact();
-                onSign();
-              },
-              icon: const Icon(PhosphorIconsRegular.penNib),
-              label: const Text('Customer confirms'),
-            ),
         ],
       ),
     );

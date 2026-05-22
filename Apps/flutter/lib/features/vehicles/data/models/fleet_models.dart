@@ -39,14 +39,21 @@ class FleetVehicle {
         maker: json['maker'] as String? ?? '',
         model: json['model'] as String? ?? '',
         variant: json['variant'] as String?,
-        year: (json['year'] as num?)?.toInt(),
+        year: _asInt(json['year']),
         fuelType: json['fuel_type'] as String?,
         color: json['color'] as String?,
-        odometerReading: (json['odometer_reading'] as num?)?.toInt(),
-        customer: json['customer'] != null
+        odometerReading: _asInt(json['odometer_reading']),
+        customer: json['customer'] is Map<String, dynamic>
             ? FleetVehicleCustomer.fromJson(json['customer'] as Map<String, dynamic>)
             : null,
       );
+
+  static int? _asInt(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
 }
 
 class FleetVehicleCustomer {

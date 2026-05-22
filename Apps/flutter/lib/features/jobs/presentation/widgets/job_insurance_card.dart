@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/widgets/app_filter_chip.dart';
 import '../../data/models/job_models.dart';
 import '../providers/jobs_provider.dart';
 
@@ -60,6 +61,19 @@ class _JobInsuranceCardState extends ConsumerState<JobInsuranceCard> {
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(covariant JobInsuranceCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.claim != widget.claim) {
+      _companyController.text = widget.claim.insuranceCompany ?? '';
+      _claimController.text = widget.claim.claimNumber ?? '';
+      _customerPayController.text =
+          widget.claim.customerLiabilityAmount?.toStringAsFixed(0) ?? '';
+      _insurancePayController.text =
+          widget.claim.insuranceClaimAmount?.toStringAsFixed(0) ?? '';
+    }
+  }
+
   Future<void> _updateStatus(String status) async {
     setState(() => _isSaving = true);
     try {
@@ -68,14 +82,33 @@ class _JobInsuranceCardState extends ConsumerState<JobInsuranceCard> {
             insuranceCompany: _companyController.text.trim(),
             claimNumber: _claimController.text.trim(),
           );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Claim status updated', style: TextStyle(color: Colors.white)),
+            backgroundColor: AppColors.statusGreen,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not update claim status', style: TextStyle(color: Colors.white)),
+            backgroundColor: AppColors.statusRed,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
   }
 
   Future<void> _saveSplit() async {
-    final customer = double.tryParse(_customerPayController.text.replaceAll(',', ''));
-    final insurance = double.tryParse(_insurancePayController.text.replaceAll(',', ''));
+    final customer = double.tryParse(_customerPayController.text.replaceAll(RegExp(r'[^\d.]'), ''));
+    final insurance = double.tryParse(_insurancePayController.text.replaceAll(RegExp(r'[^\d.]'), ''));
     setState(() => _isSaving = true);
     try {
       await ref.read(jobDetailProvider(widget.jobUuid).notifier).updateInsuranceClaim(
@@ -84,6 +117,25 @@ class _JobInsuranceCardState extends ConsumerState<JobInsuranceCard> {
             customerLiabilityAmount: customer,
             jobInsuranceClaimAmount: insurance,
           );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Claim details saved', style: TextStyle(color: Colors.white)),
+            backgroundColor: AppColors.statusGreen,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not save claim details', style: TextStyle(color: Colors.white)),
+            backgroundColor: AppColors.statusRed,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -133,19 +185,19 @@ class _JobInsuranceCardState extends ConsumerState<JobInsuranceCard> {
           const SizedBox(height: 12),
           Text('Claim status', style: AppTextStyles.labelSmall),
           const SizedBox(height: 8),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 6,
+            crossAxisSpacing: 6,
+            childAspectRatio: 2.8,
             children: _statusSteps.map((step) {
               final selected = current == step.$1;
-              return ChoiceChip(
-                label: Text(step.$2, style: AppTextStyles.labelSmall),
-                selected: selected,
-                onSelected: _isSaving ? null : (_) => _updateStatus(step.$1),
-                selectedColor: AppColors.primaryOrangeDim,
-                side: BorderSide(
-                  color: selected ? AppColors.primaryOrange : AppColors.divider,
-                ),
+              return AppFilterChip(
+                label: step.$2,
+                isSelected: selected,
+                onTap: _isSaving ? () {} : () => _updateStatus(step.$1),
               );
             }).toList(),
           ),

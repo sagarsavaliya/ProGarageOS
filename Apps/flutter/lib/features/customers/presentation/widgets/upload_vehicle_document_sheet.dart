@@ -143,7 +143,7 @@ class _UploadVehicleDocumentSheetState extends State<_UploadVehicleDocumentSheet
           Text('Upload document', style: AppTextStyles.titleMedium),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
-            value: _documentType,
+            initialValue: _documentType,
             decoration: InputDecoration(
               filled: true,
               fillColor: AppColors.bgPrimary,

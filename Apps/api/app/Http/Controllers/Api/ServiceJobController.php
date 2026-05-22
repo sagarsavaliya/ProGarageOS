@@ -30,6 +30,7 @@ class ServiceJobController extends Controller
                 'vehicle:id,uuid,maker,model,registration_number',
                 'primaryTechnician:id,uuid,first_name,last_name',
                 'assignedBay:id,uuid,name,code',
+                'invoice:id,uuid,job_id',
             ]);
 
         if ($status = $request->query('status')) {
@@ -669,6 +670,8 @@ class ServiceJobController extends Controller
             'actual_start_at'    => $job->actual_start_at?->toIso8601String(),
             'eta'                => $job->estimated_completion_at?->toIso8601String(),
             'created_at'         => $job->created_at->toIso8601String(),
+            'has_invoice'        => (bool) $job->invoice,
+            'invoice_uuid'       => $job->invoice?->uuid,
             'insurance_claim'    => $this->formatInsuranceClaim($job),
         ];
 

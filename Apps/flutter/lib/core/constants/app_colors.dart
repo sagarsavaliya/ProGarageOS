@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // Brand
+  // Brand — single accent used app-wide (login, PIN, chips, CTAs)
   static const Color primaryOrange = Color(0xFFFF6B2B);
+  static const Color accent = primaryOrange;
   static const Color primaryOrangeDim = Color(0x26FF6B2B); // 15% opacity
 
   // Backgrounds (dark-first)

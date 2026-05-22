@@ -9,9 +9,6 @@ import '../../../core/constants/app_text_styles.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/storage/secure_storage.dart';
 
-// Sky blue accent used only in the splash wordmark
-const Color _skyBlue = Color(0xFF2BB0ED);
-
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -103,9 +100,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                 child: Container(
                   width: 380,
                   height: 380,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     gradient: RadialGradient(
-                      colors: [Color(0x1A0A7DBF), Colors.transparent],
+                      colors: [AppColors.accent.withValues(alpha: 0.1), Colors.transparent],
                       radius: 0.7,
                     ),
                   ),
@@ -141,7 +138,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       decoration: BoxDecoration(
                         border: Border.all(
-                          color: _skyBlue.withOpacity(0.36),
+                          color: AppColors.accent.withOpacity(0.36),
                           width: 0.5,
                         ),
                         borderRadius: BorderRadius.circular(AppSizes.radiusMd),
@@ -152,12 +149,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                           Text(
                             'Continue to Login',
                             style: AppTextStyles.labelLarge.copyWith(
-                              color: _skyBlue,
+                              color: AppColors.accent,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                           const SizedBox(width: 7),
-                          Icon(PhosphorIconsRegular.arrowRight, color: _skyBlue, size: 14),
+                          Icon(PhosphorIconsRegular.arrowRight, color: AppColors.accent, size: 14),
                         ],
                       ),
                     ),
@@ -188,11 +185,11 @@ class _WordmarkGroup extends StatelessWidget {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(width: 22, height: 0.5, color: _skyBlue.withOpacity(0.45)),
+            Container(width: 22, height: 0.5, color: AppColors.accent.withOpacity(0.45)),
             const SizedBox(width: 6),
             const _PulsingDot(),
             const SizedBox(width: 6),
-            Container(width: 22, height: 0.5, color: _skyBlue.withOpacity(0.45)),
+            Container(width: 22, height: 0.5, color: AppColors.accent.withOpacity(0.45)),
           ],
         ),
         const SizedBox(height: 14),
@@ -214,7 +211,7 @@ class _WordmarkGroup extends StatelessWidget {
                 style: AppTextStyles.displayLarge.copyWith(
                   fontSize: 40,
                   fontWeight: FontWeight.w300,
-                  color: _skyBlue,
+                  color: AppColors.accent,
                   letterSpacing: -1.0,
                 ),
               ),
@@ -273,7 +270,7 @@ class _PulsingDotState extends State<_PulsingDot> with SingleTickerProviderState
       child: Container(
         width: 4,
         height: 4,
-        decoration: const BoxDecoration(color: _skyBlue, shape: BoxShape.circle),
+        decoration: const BoxDecoration(color: AppColors.accent, shape: BoxShape.circle),
       ),
     );
   }
