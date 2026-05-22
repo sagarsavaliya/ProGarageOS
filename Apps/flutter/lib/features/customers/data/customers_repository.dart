@@ -196,6 +196,14 @@ class CustomersRepository {
     final data = (response.data as Map<String, dynamic>)['data'] as List<dynamic>? ?? [];
     return data.map((e) => VehicleDocument.fromJson(e as Map<String, dynamic>)).toList();
   }
+
+  /// DELETE /vehicles/{uuid}/documents/{docUuid}
+  Future<void> deleteVehicleDocument({
+    required String vehicleUuid,
+    required String docUuid,
+  }) async {
+    await _dio.delete('/vehicles/$vehicleUuid/documents/$docUuid');
+  }
 }
 
 final customersRepositoryProvider = Provider<CustomersRepository>((ref) {

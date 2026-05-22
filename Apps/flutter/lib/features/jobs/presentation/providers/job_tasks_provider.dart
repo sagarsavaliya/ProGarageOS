@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/api/api_helpers.dart';
 import '../../data/jobs_repository.dart';
 import '../../data/models/job_models.dart';
+import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import 'jobs_provider.dart';
 
 class JobTasksState {
@@ -53,7 +54,12 @@ class JobTasksNotifier extends StateNotifier<JobTasksState> {
     }
   }
 
-  Future<bool> addTask(String name) async {
+  Future<bool> addTask({
+    required String name,
+    double estimatedPrice = 0,
+    int? laborMinutes,
+    bool requiresCustomerApproval = false,
+  }) async {
     final trimmed = name.trim();
     if (trimmed.isEmpty) return false;
 
@@ -62,7 +68,10 @@ class JobTasksNotifier extends StateNotifier<JobTasksState> {
       final task = await _repo.createTask(_jobUuid, {
         'name': trimmed,
         'source': 'discovered',
-        'status': 'approved',
+        'status': requiresCustomerApproval ? 'pending_approval' : 'approved',
+        'estimated_price': estimatedPrice,
+        if (laborMinutes != null) 'labor_minutes': laborMinutes,
+        'requires_customer_approval': requiresCustomerApproval,
         'is_billable': true,
       });
       state = state.copyWith(
@@ -70,6 +79,8 @@ class JobTasksNotifier extends StateNotifier<JobTasksState> {
         isMutating: false,
       );
       _ref.invalidate(jobDetailProvider(_jobUuid));
+      _ref.invalidate(jobsProvider);
+      _ref.read(dashboardProvider.notifier).refresh();
       return true;
     } catch (e) {
       state = state.copyWith(isMutating: false, error: failureMessage(e));
@@ -87,6 +98,8 @@ class JobTasksNotifier extends StateNotifier<JobTasksState> {
       final next = state.tasks.map((t) => t.id == taskId ? updated : t).toList();
       state = state.copyWith(tasks: next, isMutating: false);
       _ref.invalidate(jobDetailProvider(_jobUuid));
+      _ref.invalidate(jobsProvider);
+      _ref.read(dashboardProvider.notifier).refresh();
       return true;
     } catch (e) {
       state = state.copyWith(isMutating: false, error: failureMessage(e));

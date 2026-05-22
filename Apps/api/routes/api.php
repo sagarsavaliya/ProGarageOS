@@ -119,6 +119,7 @@ Route::middleware(['auth:sanctum', 'throttle:300,1'])->group(function () {
     Route::patch('/vehicles/{uuid}/odometer', [VehicleController::class, 'updateOdometer']);
     Route::get('/vehicles/{uuid}/documents', [VehicleDocumentController::class, 'index']);
     Route::post('/vehicles/{uuid}/documents', [VehicleDocumentController::class, 'store']);
+    Route::delete('/vehicles/{uuid}/documents/{docUuid}', [VehicleDocumentController::class, 'destroy']);
 
     // Service Bays
     Route::get('/staff/technicians', [StaffController::class, 'technicians']);

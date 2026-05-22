@@ -52,7 +52,15 @@ class InvoicesRepository {
       '/invoices/$uuid/payments',
       data: request.toJson(),
     );
-    return fetchInvoice(uuid);
+    Object? lastError;
+    for (var attempt = 0; attempt < 2; attempt++) {
+      try {
+        return await fetchInvoice(uuid);
+      } catch (e) {
+        lastError = e;
+      }
+    }
+    throw lastError ?? Exception('Payment recorded but invoice could not be refreshed');
   }
 
   Future<InvoiceDetail> updateSplitBilling(

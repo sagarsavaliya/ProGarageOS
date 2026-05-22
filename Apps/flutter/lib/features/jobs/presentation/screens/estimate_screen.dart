@@ -9,7 +9,9 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/api_error_view.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../auth/presentation/providers/current_user_provider.dart';
 import '../../data/models/estimate_models.dart';
+import '../../data/models/job_models.dart';
 import '../providers/estimate_provider.dart';
 import '../providers/jobs_provider.dart';
 
@@ -23,6 +25,9 @@ class EstimateScreen extends ConsumerWidget {
     final state = ref.watch(estimateProvider(jobUuid));
     final notifier = ref.read(estimateProvider(jobUuid).notifier);
     final detail = ref.watch(jobDetailProvider(jobUuid)).valueOrNull;
+    final canEditDelivered = ref.watch(canEditDeliveredJobProvider);
+    final readOnly =
+        detail?.status == JobStatus.delivered && !canEditDelivered;
 
     return Scaffold(
       backgroundColor: AppColors.bgPrimary,
@@ -42,7 +47,7 @@ class EstimateScreen extends ConsumerWidget {
           ],
         ),
       ),
-      body: _buildBody(context, ref, state, notifier),
+      body: _buildBody(context, ref, state, notifier, readOnly),
     );
   }
 
@@ -51,6 +56,7 @@ class EstimateScreen extends ConsumerWidget {
     WidgetRef ref,
     EstimateState state,
     EstimateNotifier notifier,
+    bool readOnly,
   ) {
     if (state.isLoading) {
       return const Center(
@@ -88,11 +94,34 @@ class EstimateScreen extends ConsumerWidget {
                 ),
               ],
               const SizedBox(height: 12),
+              if (readOnly) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.bgSurface,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.divider),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(PhosphorIconsRegular.lock, color: AppColors.textMuted, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Delivered job — estimate is read-only',
+                          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
               ...estimate.lines.map((line) => _LineCard(
                     line: line,
                     price: state.linePrice(line),
                     onPriceChanged: (v) => notifier.setLinePrice(line.id, v),
-                    enabled: !state.isSaving && !state.isSending,
+                    enabled: !readOnly && !state.isSaving && !state.isSending,
                   )),
               const SizedBox(height: 12),
               Container(
@@ -120,7 +149,8 @@ class EstimateScreen extends ConsumerWidget {
             ],
           ),
         ),
-        SafeArea(
+        if (!readOnly)
+          SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(

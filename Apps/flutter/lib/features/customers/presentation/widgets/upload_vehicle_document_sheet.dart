@@ -14,6 +14,8 @@ Future<bool?> showUploadVehicleDocumentSheet({
   required CustomersRepository repository,
   required String vehicleUuid,
   required VoidCallback onUploaded,
+  String? initialDocumentType,
+  String? initialDocumentNumber,
 }) {
   return showModalBottomSheet<bool>(
     context: context,
@@ -23,6 +25,8 @@ Future<bool?> showUploadVehicleDocumentSheet({
       repository: repository,
       vehicleUuid: vehicleUuid,
       onUploaded: onUploaded,
+      initialDocumentType: initialDocumentType,
+      initialDocumentNumber: initialDocumentNumber,
     ),
   );
 }
@@ -31,11 +35,15 @@ class _UploadVehicleDocumentSheet extends StatefulWidget {
   final CustomersRepository repository;
   final String vehicleUuid;
   final VoidCallback onUploaded;
+  final String? initialDocumentType;
+  final String? initialDocumentNumber;
 
   const _UploadVehicleDocumentSheet({
     required this.repository,
     required this.vehicleUuid,
     required this.onUploaded,
+    this.initialDocumentType,
+    this.initialDocumentNumber,
   });
 
   @override
@@ -58,6 +66,17 @@ class _UploadVehicleDocumentSheetState extends State<_UploadVehicleDocumentSheet
   File? _file;
   bool _isSubmitting = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialDocumentType != null && _types.containsKey(widget.initialDocumentType)) {
+      _documentType = widget.initialDocumentType!;
+    }
+    if (widget.initialDocumentNumber != null) {
+      _numberController.text = widget.initialDocumentNumber!;
+    }
+  }
 
   @override
   void dispose() {

@@ -7,6 +7,8 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../auth/presentation/providers/current_user_provider.dart';
+import '../../data/models/job_models.dart';
 import '../providers/edit_job_provider.dart';
 
 class EditJobScreen extends ConsumerStatefulWidget {
@@ -75,6 +77,42 @@ class _EditJobScreenState extends ConsumerState<EditJobScreen> {
         appBar: AppBar(backgroundColor: AppColors.bgSurface),
         body: Center(
           child: Text(state.errorMessage ?? 'Could not load job', style: AppTextStyles.bodyMedium),
+        ),
+      );
+    }
+
+    final canEditDelivered = ref.watch(canEditDeliveredJobProvider);
+    if (job.status == JobStatus.delivered && !canEditDelivered) {
+      return Scaffold(
+        backgroundColor: AppColors.bgPrimary,
+        appBar: AppBar(
+          backgroundColor: AppColors.bgSurface,
+          leading: IconButton(
+            onPressed: () => context.pop(),
+            icon: const Icon(PhosphorIconsRegular.caretLeft, color: AppColors.textSecondary, size: 20),
+          ),
+          title: Text('Edit Job', style: AppTextStyles.titleMedium),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(PhosphorIconsRegular.lock, color: AppColors.textMuted, size: 40),
+                const SizedBox(height: 16),
+                Text('Job is delivered', style: AppTextStyles.titleMedium, textAlign: TextAlign.center),
+                const SizedBox(height: 8),
+                Text(
+                  'This job is read-only. Only the owner can edit after delivery.',
+                  style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                AppButton(label: 'Go back', onPressed: () => context.pop()),
+              ],
+            ),
+          ),
         ),
       );
     }

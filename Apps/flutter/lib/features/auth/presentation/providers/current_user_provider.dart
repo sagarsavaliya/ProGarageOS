@@ -52,3 +52,18 @@ final showTeamTabProvider = Provider<bool>((ref) {
 final showPaymentsTabProvider = Provider<bool>((ref) {
   return !ref.watch(isTechnicianProvider);
 });
+
+/// Owners (and platform super-users) may edit jobs after delivery.
+final canEditDeliveredJobProvider = Provider<bool>((ref) {
+  final user = ref.watch(currentUserProvider).valueOrNull;
+  if (user == null) return false;
+  if (user.role == 'owner') return true;
+  // CEO / platform admin accounts used for garage sign-off.
+  const superUserPhones = {'8141302341'};
+  final phone = user.phone?.replaceAll(RegExp(r'\D'), '') ?? '';
+  if (phone.length >= 10) {
+    final last10 = phone.substring(phone.length - 10);
+    if (superUserPhones.contains(last10)) return true;
+  }
+  return false;
+});

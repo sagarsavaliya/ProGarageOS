@@ -22,10 +22,7 @@ void _leaveCustomerDetail(BuildContext context) {
   }
 }
 
-Future<void> _launchPhone(String phone) async {
-  final uri = Uri(scheme: 'tel', path: phone);
-  if (await canLaunchUrl(uri)) await launchUrl(uri);
-}
+Future<void> _launchPhone(String phone) => launchPhoneDialer(phone);
 
 Future<void> _launchWhatsApp(String phone) async {
   final cleaned = phone.replaceAll(RegExp(r'[^\d]'), '');

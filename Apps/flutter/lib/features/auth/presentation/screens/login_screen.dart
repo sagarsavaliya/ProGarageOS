@@ -147,6 +147,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     final notifier = ref.read(staffLoginProvider.notifier);
 
     ref.listen<StaffLoginState>(staffLoginProvider, (prev, next) {
+      if (_usePhone &&
+          _phoneDigits.isEmpty &&
+          next.savedPhoneDigits.isNotEmpty &&
+          prev?.savedPhoneDigits != next.savedPhoneDigits) {
+        setState(() {
+          _phoneDigits = next.savedPhoneDigits;
+          _syncPhoneLogin(notifier);
+        });
+      }
       if (next.needsPinSetup && prev?.needsPinSetup != true) {
         final login = next.currentLogin.isNotEmpty
             ? next.currentLogin
@@ -777,7 +786,7 @@ class _LockedOverlay extends StatelessWidget {
     final timerStr = '$mins:${secs.toString().padLeft(2, '0')}';
 
     return Container(
-      color: const Color(0xFF102A43),
+      color: AppColors.bgPrimary,
       child: Stack(
         children: [
           const Positioned.fill(child: _DotGridPainterWidget()),
@@ -890,11 +899,11 @@ class _AmbientGlow extends StatelessWidget {
         child: Container(
           width: 360,
           height: 360,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: RadialGradient(
-              colors: [Color(0x170A7DBF), Colors.transparent],
-              stops: [0.0, 0.68],
+              colors: [AppColors.accent.withValues(alpha: 0.09), Colors.transparent],
+              stops: const [0.0, 0.68],
             ),
           ),
         ),

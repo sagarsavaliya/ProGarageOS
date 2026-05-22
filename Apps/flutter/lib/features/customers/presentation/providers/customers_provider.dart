@@ -213,6 +213,11 @@ class _DocsNotifier extends StateNotifier<AsyncValue<List<VehicleDocument>>> {
     state = const AsyncValue.loading();
     await _load();
   }
+
+  Future<void> deleteDocument(String docUuid) async {
+    await _repo.deleteVehicleDocument(vehicleUuid: _vehicleUuid, docUuid: docUuid);
+    await refresh();
+  }
 }
 
 // ---------------------------------------------------------------------------

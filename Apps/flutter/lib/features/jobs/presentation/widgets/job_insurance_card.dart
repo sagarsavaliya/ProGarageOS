@@ -12,11 +12,13 @@ import '../providers/jobs_provider.dart';
 class JobInsuranceCard extends ConsumerStatefulWidget {
   final String jobUuid;
   final JobInsuranceClaim claim;
+  final bool readOnly;
 
   const JobInsuranceCard({
     super.key,
     required this.jobUuid,
     required this.claim,
+    this.readOnly = false,
   });
 
   @override
@@ -165,6 +167,7 @@ class _JobInsuranceCardState extends ConsumerState<JobInsuranceCard> {
           const SizedBox(height: 12),
           TextField(
             controller: _companyController,
+            readOnly: widget.readOnly,
             decoration: InputDecoration(
               labelText: 'Insurance company',
               filled: true,
@@ -175,6 +178,7 @@ class _JobInsuranceCardState extends ConsumerState<JobInsuranceCard> {
           const SizedBox(height: 8),
           TextField(
             controller: _claimController,
+            readOnly: widget.readOnly,
             decoration: InputDecoration(
               labelText: 'Claim number',
               filled: true,
@@ -197,7 +201,7 @@ class _JobInsuranceCardState extends ConsumerState<JobInsuranceCard> {
               return AppFilterChip(
                 label: step.$2,
                 isSelected: selected,
-                onTap: _isSaving ? () {} : () => _updateStatus(step.$1),
+                onTap: widget.readOnly || _isSaving ? () {} : () => _updateStatus(step.$1),
               );
             }).toList(),
           ),
@@ -209,6 +213,7 @@ class _JobInsuranceCardState extends ConsumerState<JobInsuranceCard> {
               Expanded(
                 child: TextField(
                   controller: _customerPayController,
+                  readOnly: widget.readOnly,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     labelText: 'Customer pays',
@@ -222,6 +227,7 @@ class _JobInsuranceCardState extends ConsumerState<JobInsuranceCard> {
               Expanded(
                 child: TextField(
                   controller: _insurancePayController,
+                  readOnly: widget.readOnly,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     labelText: 'Insurer pays',
@@ -233,20 +239,20 @@ class _JobInsuranceCardState extends ConsumerState<JobInsuranceCard> {
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: _isSaving ? null : () {
-                HapticFeedback.lightImpact();
-                _saveSplit();
-              },
-              child: Text(
-                _isSaving ? 'Saving…' : 'Save claim details',
-                style: GoogleFonts.dmSans(fontWeight: FontWeight.w600),
+          if (!widget.readOnly)
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: _isSaving ? null : () {
+                  HapticFeedback.lightImpact();
+                  _saveSplit();
+                },
+                child: Text(
+                  _isSaving ? 'Saving…' : 'Save claim details',
+                  style: GoogleFonts.dmSans(fontWeight: FontWeight.w600),
+                ),
               ),
             ),
-          ),
         ],
       ),
     );

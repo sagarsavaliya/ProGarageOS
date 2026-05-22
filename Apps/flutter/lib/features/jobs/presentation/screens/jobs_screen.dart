@@ -7,7 +7,7 @@ import 'package:shimmer/shimmer.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/utils/phone_launcher.dart';
 import '../../../../core/widgets/app_filter_chip.dart';
 import '../../../../core/widgets/app_status_chip.dart';
 import '../../../../core/widgets/guided_empty_state.dart';
@@ -267,11 +267,7 @@ class _JobListTile extends StatelessWidget {
 
   const _JobListTile({required this.job, required this.onTap});
 
-  Future<void> _callCustomer() async {
-    final phone = job.customer.phone.replaceAll(RegExp(r'[^\d+]'), '');
-    final uri = Uri(scheme: 'tel', path: phone);
-    if (await canLaunchUrl(uri)) await launchUrl(uri);
-  }
+  Future<void> _callCustomer() => launchPhoneDialer(job.customer.phone);
 
   @override
   Widget build(BuildContext context) {

@@ -5,8 +5,8 @@
 ## Overall Status
 - **Project:** Pro Garage OS (ProGarageOS)
 - **Infrastructure:** ✅ Live — `https://api.progarage.cloud/api`
-- **Staff app v1:** ✅ Shipped to GitHub + production (commit `e08a2f9`)
-- **Test APK:** ✅ Standalone install — `Apps/flutter/build/app/outputs/flutter-apk/app-release.apk` (production API, no USB/WiFi debug)
+- **Staff app v1:** ✅ Production build — commit `005d33b` (E2E fix batch)
+- **Test APK:** ✅ `Apps/flutter/build/app/outputs/flutter-apk/app-release.apk` (63.3MB, production API)
 - **Next:** Device E2E sign-off on phone
 - **Last Updated:** 2026-05-22 IST
 
@@ -25,11 +25,11 @@ Prior packs (1–3): onboarding, insurance, appointments, payments hub, team nav
 ---
 
 ## ⚠️ Production deploy checklist (Sagar / ops)
-1. `php artisan migrate --force` on production (all May 21 migrations)
-2. Redeploy API via `deploy/hostinger/scripts/redeploy.sh`
+1. ~~`php artisan migrate --force` on production~~ ✅ (nothing pending)
+2. ~~Redeploy API via `deploy/hostinger/scripts/redeploy.sh`~~ ✅ 2026-05-22 — commit `005d33b`
 3. Ensure `storage:link` and public disk writable (invoice PDFs)
 4. Set `FCM_SERVER_KEY` in production `.env` (optional — inbox works without)
-5. Full device test: invoice PDF → fleet search → job audit → payment push
+5. **Your turn:** Full device test on latest APK (see RUNBOOK)
 
 See `memory/RUNBOOK.md` for full ops steps.
 

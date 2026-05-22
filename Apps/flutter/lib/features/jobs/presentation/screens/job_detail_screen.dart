@@ -178,10 +178,14 @@ class _DetailView extends ConsumerWidget {
 
   bool get _needsDeliveryInspection => _showDeliveryPath && !detail.deliveryInspectionCompleted;
 
+  bool _isDeliveredLocked(WidgetRef ref) =>
+      detail.status == JobStatus.delivered && !ref.watch(canEditDeliveredJobProvider);
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tasksState = ref.watch(jobTasksProvider(jobUuid));
     final tasksNotifier = ref.read(jobTasksProvider(jobUuid).notifier);
+    final deliveredLocked = _isDeliveredLocked(ref);
     return RefreshIndicator(
       onRefresh: onRefresh,
       color: AppColors.primaryOrange,
@@ -205,13 +209,17 @@ class _DetailView extends ConsumerWidget {
                 _buildVehicleCustomerCard(),
                 if (detail.insuranceClaim.isInsuranceJob) ...[
                   const SizedBox(height: 16),
-                  JobInsuranceCard(jobUuid: jobUuid, claim: detail.insuranceClaim),
+                  JobInsuranceCard(
+                    jobUuid: jobUuid,
+                    claim: detail.insuranceClaim,
+                    readOnly: deliveredLocked,
+                  ),
                 ],
                 const SizedBox(height: 16),
-                _buildTasksSection(context, ref, tasksState, tasksNotifier),
+                _buildTasksSection(context, ref, tasksState, tasksNotifier, deliveredLocked),
                 if (tasksState.tasks.isNotEmpty) ...[
                   const SizedBox(height: 16),
-                  _buildEstimateCard(context),
+                  _buildEstimateCard(context, deliveredLocked),
                 ],
                 const SizedBox(height: 16),
                 _buildSectionHeader('Billing', null),
@@ -234,6 +242,7 @@ class _DetailView extends ConsumerWidget {
   }
 
   Widget _buildAppBar(BuildContext context, WidgetRef ref) {
+    final deliveredLocked = _isDeliveredLocked(ref);
     return SliverAppBar(
       backgroundColor: AppColors.bgSurface,
       surfaceTintColor: Colors.transparent,
@@ -261,14 +270,15 @@ class _DetailView extends ConsumerWidget {
         ],
       ),
       actions: [
-        IconButton(
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            context.push('/jobs/${detail.uuid}/edit');
-          },
-          icon: Icon(PhosphorIconsRegular.pencilSimple, color: AppColors.textSecondary, size: 20),
-          tooltip: 'Edit job',
-        ),
+        if (!deliveredLocked)
+          IconButton(
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              context.push('/jobs/${detail.uuid}/edit');
+            },
+            icon: Icon(PhosphorIconsRegular.pencilSimple, color: AppColors.textSecondary, size: 20),
+            tooltip: 'Edit job',
+          ),
         AppStatusChip(status: detail.status.apiValue),
         const SizedBox(width: 8),
       ],
@@ -444,7 +454,7 @@ class _DetailView extends ConsumerWidget {
     );
   }
 
-  Widget _buildEstimateCard(BuildContext context) {
+  Widget _buildEstimateCard(BuildContext context, bool deliveredLocked) {
     final approval = detail.estimateSummary['approval_status'] as String? ??
         detail.billingSummary['approval_status'] as String? ??
         'pending';
@@ -486,7 +496,7 @@ class _DetailView extends ConsumerWidget {
               TextButton(
                 onPressed: () => context.push('/jobs/${detail.uuid}/estimate'),
                 child: Text(
-                  'Open estimate',
+                  deliveredLocked ? 'View estimate' : 'Open estimate',
                   style: AppTextStyles.labelMedium.copyWith(color: AppColors.primaryOrange),
                 ),
               ),
@@ -749,6 +759,7 @@ class _DetailView extends ConsumerWidget {
     WidgetRef ref,
     JobTasksState tasksState,
     JobTasksNotifier tasksNotifier,
+    bool deliveredLocked,
   ) {
     final tasks = tasksState.tasks;
 
@@ -770,14 +781,17 @@ class _DetailView extends ConsumerWidget {
                 child: Text('${tasks.length}', style: AppTextStyles.labelSmall),
               ),
               const Spacer(),
-              TextButton.icon(
-                onPressed: tasksState.isMutating ? null : () => _showAddTaskDialog(context, tasksNotifier),
-                icon: const Icon(PhosphorIconsRegular.plus, size: 16, color: AppColors.primaryOrange),
-                label: Text(
-                  'Add',
-                  style: AppTextStyles.labelMedium.copyWith(color: AppColors.primaryOrange),
+              if (!deliveredLocked)
+                TextButton.icon(
+                  onPressed: tasksState.isMutating
+                      ? null
+                      : () => _showAddTaskDialog(context, tasksNotifier),
+                  icon: const Icon(PhosphorIconsRegular.plus, size: 16, color: AppColors.primaryOrange),
+                  label: Text(
+                    'Add',
+                    style: AppTextStyles.labelMedium.copyWith(color: AppColors.primaryOrange),
+                  ),
                 ),
-              ),
             ],
           ),
         ),
@@ -816,7 +830,9 @@ class _DetailView extends ConsumerWidget {
                 return _TaskRow(
                   task: entry.value,
                   isLast: isLast,
-                  onComplete: entry.value.status == 'completed' || tasksState.isMutating
+                  onComplete: deliveredLocked ||
+                          entry.value.status == 'completed' ||
+                          tasksState.isMutating
                       ? null
                       : () => tasksNotifier.completeTask(entry.value),
                 );
@@ -828,34 +844,74 @@ class _DetailView extends ConsumerWidget {
   }
 
   Future<void> _showAddTaskDialog(BuildContext context, JobTasksNotifier notifier) async {
-    final controller = TextEditingController();
+    final nameController = TextEditingController();
+    final priceController = TextEditingController();
+    final minutesController = TextEditingController();
+    var needsApproval = false;
+
     final added = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgSurface,
-        title: Text('Add task', style: AppTextStyles.titleMedium),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: InputDecoration(
-            hintText: 'Task name',
-            hintStyle: AppTextStyles.bodySmall,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setLocal) => AlertDialog(
+          backgroundColor: AppColors.bgSurface,
+          title: Text('Add discovered task', style: AppTextStyles.titleMedium),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  autofocus: true,
+                  decoration: const InputDecoration(labelText: 'Task name'),
+                  style: AppTextStyles.bodyMedium,
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: priceController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Estimated price (₹)'),
+                  style: AppTextStyles.bodyMedium,
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: minutesController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Labor time (minutes)'),
+                  style: AppTextStyles.bodyMedium,
+                ),
+                const SizedBox(height: 8),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: needsApproval,
+                  onChanged: (v) => setLocal(() => needsApproval = v ?? false),
+                  title: Text('Needs customer approval', style: AppTextStyles.bodySmall),
+                  controlAffinity: ListTileControlAffinity.leading,
+                ),
+              ],
+            ),
           ),
-          style: AppTextStyles.bodyMedium,
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text('Add', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primaryOrange)),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Add', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primaryOrange)),
-          ),
-        ],
       ),
     );
+
     if (added == true && context.mounted) {
-      await notifier.addTask(controller.text);
+      await notifier.addTask(
+        name: nameController.text,
+        estimatedPrice: double.tryParse(priceController.text.trim()) ?? 0,
+        laborMinutes: int.tryParse(minutesController.text.trim()),
+        requiresCustomerApproval: needsApproval,
+      );
     }
-    controller.dispose();
+    nameController.dispose();
+    priceController.dispose();
+    minutesController.dispose();
   }
 
   Widget _buildBillingCard(BuildContext context) {

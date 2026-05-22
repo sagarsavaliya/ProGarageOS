@@ -52,6 +52,7 @@ class VehicleDetailScreen extends ConsumerWidget {
           vehicleUuid: vehicleUuid,
           docsState: docsState,
           onDocsRefresh: docsNotifier.refresh,
+          onDeleteDocument: docsNotifier.deleteDocument,
         );
       },
     );
@@ -80,6 +81,7 @@ class _VehicleBody extends ConsumerWidget {
   final String vehicleUuid;
   final AsyncValue<List<VehicleDocument>> docsState;
   final Future<void> Function() onDocsRefresh;
+  final Future<void> Function(String docUuid) onDeleteDocument;
 
   const _VehicleBody({
     required this.vehicle,
@@ -87,6 +89,7 @@ class _VehicleBody extends ConsumerWidget {
     required this.vehicleUuid,
     required this.docsState,
     required this.onDocsRefresh,
+    required this.onDeleteDocument,
   });
 
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
@@ -456,7 +459,12 @@ class _VehicleBody extends ConsumerWidget {
               final isLast = entry.key == docs.length - 1;
               return Column(
                 children: [
-                  _DocumentRow(doc: doc),
+                  _DocumentRow(
+                    doc: doc,
+                    vehicleUuid: vehicleUuid,
+                    onDocsRefresh: onDocsRefresh,
+                    onDeleteDocument: onDeleteDocument,
+                  ),
                   if (!isLast) const Divider(height: 1, color: AppColors.divider, indent: 14),
                 ],
               );
@@ -481,13 +489,45 @@ class _VehicleBody extends ConsumerWidget {
 // Document row
 // ---------------------------------------------------------------------------
 
-class _DocumentRow extends StatelessWidget {
+class _DocumentRow extends ConsumerWidget {
   final VehicleDocument doc;
+  final String vehicleUuid;
+  final Future<void> Function() onDocsRefresh;
+  final Future<void> Function(String docUuid) onDeleteDocument;
 
-  const _DocumentRow({required this.doc});
+  const _DocumentRow({
+    required this.doc,
+    required this.vehicleUuid,
+    required this.onDocsRefresh,
+    required this.onDeleteDocument,
+  });
+
+  Future<void> _confirmDelete(BuildContext context) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Remove ${doc.typeLabel}?', style: AppTextStyles.titleMedium),
+        content: const Text('This document will be removed from the vehicle profile.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Remove', style: TextStyle(color: AppColors.statusRed)),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+    await onDeleteDocument(doc.uuid);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${doc.typeLabel} removed'), behavior: SnackBarBehavior.floating),
+      );
+    }
+  }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isExpired = doc.isExpired;
     final statusColor = isExpired ? AppColors.statusRed : AppColors.statusGreen;
 
@@ -551,7 +591,7 @@ class _DocumentRow extends StatelessWidget {
             ],
           ),
           if (doc.fileUrl != null) ...[
-            const SizedBox(width: 8),
+            const SizedBox(width: 4),
             IconButton(
               onPressed: () async {
                 HapticFeedback.lightImpact();
@@ -564,6 +604,32 @@ class _DocumentRow extends StatelessWidget {
               constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
             ),
           ],
+          PopupMenuButton<String>(
+            icon: Icon(PhosphorIconsRegular.dotsThreeVertical, color: AppColors.textMuted, size: 18),
+            onSelected: (value) async {
+              HapticFeedback.lightImpact();
+              if (value == 'replace') {
+                final repo = ref.read(customersRepositoryProvider);
+                await showUploadVehicleDocumentSheet(
+                  context: context,
+                  repository: repo,
+                  vehicleUuid: vehicleUuid,
+                  initialDocumentType: doc.documentType,
+                  initialDocumentNumber: doc.documentNumber,
+                  onUploaded: () => onDocsRefresh(),
+                );
+              } else if (value == 'delete') {
+                await _confirmDelete(context);
+              }
+            },
+            itemBuilder: (_) => [
+              const PopupMenuItem(value: 'replace', child: Text('Replace document')),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Text('Remove', style: TextStyle(color: AppColors.statusRed)),
+              ),
+            ],
+          ),
         ],
       ),
     );

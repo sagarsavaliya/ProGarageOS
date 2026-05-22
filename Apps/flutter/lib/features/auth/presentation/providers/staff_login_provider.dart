@@ -96,6 +96,27 @@ class StaffLoginNotifier extends StateNotifier<StaffLoginState> {
     final expiry = await _storage.getLockExpiry();
     final failCount = await _storage.getFailCount();
 
+    final savedLogin = await _storage.getSavedLogin();
+    var phoneDigits = '';
+    var currentLogin = '';
+    if (savedLogin != null && savedLogin.isNotEmpty) {
+      if (savedLogin.startsWith('+91') && savedLogin.length >= 13) {
+        phoneDigits = savedLogin.substring(3);
+        currentLogin = savedLogin;
+      } else if (RegExp(r'^\d{10}$').hasMatch(savedLogin)) {
+        phoneDigits = savedLogin;
+        currentLogin = '+91$savedLogin';
+      } else {
+        currentLogin = savedLogin;
+      }
+    } else if (user?.phone != null && user!.phone!.isNotEmpty) {
+      final p = user.phone!.replaceAll(RegExp(r'\D'), '');
+      if (p.length >= 10) {
+        phoneDigits = p.substring(p.length - 10);
+        currentLogin = '+91$phoneDigits';
+      }
+    }
+
     if (expiry != null && DateTime.now().isBefore(expiry)) {
       final remaining = expiry.difference(DateTime.now()).inSeconds;
       state = state.copyWith(
@@ -103,29 +124,11 @@ class StaffLoginNotifier extends StateNotifier<StaffLoginState> {
         failCount: failCount,
         status: StaffLoginStatus.locked,
         lockSecondsRemaining: remaining,
+        currentLogin: currentLogin,
+        savedPhoneDigits: phoneDigits,
       );
       _startLockTimer(expiry);
     } else {
-      final savedLogin = await _storage.getSavedLogin();
-      var phoneDigits = '';
-      var currentLogin = '';
-      if (savedLogin != null && savedLogin.isNotEmpty) {
-        if (savedLogin.startsWith('+91') && savedLogin.length >= 13) {
-          phoneDigits = savedLogin.substring(3);
-          currentLogin = savedLogin;
-        } else if (RegExp(r'^\d{10}$').hasMatch(savedLogin)) {
-          phoneDigits = savedLogin;
-          currentLogin = '+91$savedLogin';
-        } else {
-          currentLogin = savedLogin;
-        }
-      } else if (user?.phone != null && user!.phone!.isNotEmpty) {
-        final p = user.phone!.replaceAll(RegExp(r'\D'), '');
-        if (p.length >= 10) {
-          phoneDigits = p.substring(p.length - 10);
-          currentLogin = '+91$phoneDigits';
-        }
-      }
       state = state.copyWith(
         savedUser: user,
         failCount: failCount,

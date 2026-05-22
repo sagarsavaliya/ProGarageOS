@@ -6,6 +6,7 @@ import '../../data/jobs_repository.dart';
 import '../../data/models/job_models.dart';
 import 'create_job_provider.dart';
 import 'jobs_provider.dart';
+import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 
 class EditJobState {
   final bool isLoading;
@@ -167,6 +168,8 @@ class EditJobNotifier extends StateNotifier<EditJobState> {
       });
 
       _ref.invalidate(jobDetailProvider(_jobUuid));
+      _ref.invalidate(jobsProvider);
+      _ref.read(dashboardProvider.notifier).refresh();
       state = state.copyWith(isSubmitting: false);
       return true;
     } catch (e) {

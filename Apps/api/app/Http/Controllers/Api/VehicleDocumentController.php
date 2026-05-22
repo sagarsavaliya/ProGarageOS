@@ -73,6 +73,25 @@ class VehicleDocumentController extends Controller
         ], 201);
     }
 
+    public function destroy(Request $request, string $vehicleUuid, string $docUuid): JsonResponse
+    {
+        $vehicle  = Vehicle::where('uuid', $vehicleUuid)->firstOrFail();
+        $tenantId = $request->user()->tenant_id;
+
+        $doc = VehicleDocument::where('uuid', $docUuid)
+            ->where('vehicle_id', $vehicle->id)
+            ->where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $doc->update(['is_active' => false]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Document removed',
+        ]);
+    }
+
     private function formatDocument(VehicleDocument $doc, Request $request): array
     {
         $url = $doc->file_url;
