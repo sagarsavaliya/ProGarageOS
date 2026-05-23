@@ -31,9 +31,13 @@ class InvoicesRepository {
     final response = await _dio.get('/invoices/$uuid');
     final raw = response.data;
     if (raw is! Map<String, dynamic>) {
-      throw FormatException('Unexpected invoice response');
+      throw const FormatException('Unexpected invoice response');
     }
-    return InvoiceDetail.fromJson(raw);
+    try {
+      return InvoiceDetail.fromJson(raw);
+    } catch (e) {
+      throw FormatException('Could not parse invoice detail: $e');
+    }
   }
 
   /// POST /invoices — create invoice from job.

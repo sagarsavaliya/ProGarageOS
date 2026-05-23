@@ -229,3 +229,10 @@ final customerServiceHistoryProvider =
   final repo = ref.watch(customersRepositoryProvider);
   return repo.fetchServiceHistory(customerUuid);
 });
+
+/// Loads one vehicle by UUID when customer context is missing (e.g. Fleet tab).
+final vehicleByUuidProvider =
+    FutureProvider.autoDispose.family<Vehicle, String>((ref, vehicleUuid) async {
+  final repo = ref.watch(customersRepositoryProvider);
+  return repo.fetchVehicle(vehicleUuid);
+});

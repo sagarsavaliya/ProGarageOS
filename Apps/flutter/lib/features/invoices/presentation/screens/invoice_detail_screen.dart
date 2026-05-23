@@ -28,7 +28,7 @@ class InvoiceDetailScreen extends ConsumerWidget {
       backgroundColor: AppColors.bgPrimary,
       body: state.when(
         loading: () => const _LoadingView(),
-        error: (_, __) => _ErrorView(onRetry: notifier.refresh),
+        error: (err, _) => _ErrorView(message: err.toString(), onRetry: notifier.refresh),
         data: (detail) => _DetailView(
           invoiceUuid: invoiceUuid,
           detail: detail,
@@ -903,8 +903,9 @@ class _LoadingView extends StatelessWidget {
 
 class _ErrorView extends StatelessWidget {
   final Future<void> Function() onRetry;
+  final String? message;
 
-  const _ErrorView({required this.onRetry});
+  const _ErrorView({required this.onRetry, this.message});
 
   @override
   Widget build(BuildContext context) {
@@ -915,6 +916,17 @@ class _ErrorView extends StatelessWidget {
           Icon(PhosphorIconsRegular.warning, color: AppColors.textMuted, size: 48),
           const SizedBox(height: 16),
           Text('Could not load invoice', style: AppTextStyles.titleMedium),
+          if (message != null && message!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                message!,
+                style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
           const SizedBox(height: 8),
           TextButton(
             onPressed: onRetry,

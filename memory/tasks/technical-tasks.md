@@ -1,17 +1,16 @@
-# TECHNICAL TASKS — Staff app v1 (Pack 4)
-# Updated: 2026-05-21
+# TECHNICAL TASKS — Staff app v1
+# Updated: 2026-05-23
 
-## Pack 4 — complete
-- [x] Invoice PDF API (`GET /invoices/{uuid}/pdf`, HTML template, auto-generate on create)
-- [x] Invoice PDF Flutter (view + share on detail screen)
-- [x] Fleet tab (tenant-scoped `GET /vehicles`, searchable list, Settings → Fleet)
-- [x] Audit read API (`GET /audit-logs?job_uuid=`) + job detail activity log (owners)
-- [x] Push on payment + estimate; invoice notification deep links
-- [x] Production runbook (`memory/RUNBOOK.md`)
+## 🔲 ACTIVE — Sagar device test fixes
+- [x] Invoice detail: safe JSON parsing (items/payments/maps)
+- [x] Fleet → vehicle: pass customerUuid + GET /vehicles/{uuid} fallback
+- [x] API: invoice full response includes due_date
+- [ ] Deploy API to production
+- [ ] Build + deliver new APK (after Sagar approves)
+- [ ] Retest: open invoice, fleet vehicle, add task (₹ + minutes)
 
-## Pending (Sagar)
-- [ ] Install APK on phone and run E2E checklist (RUNBOOK)
-- [ ] Sign off staff v1
+## 🔲 Pending sign-off
+- [ ] Sagar staff v1 device sign-off
 
-## Next product track
-- Customer app C0 (after staff v1 sign-off)
+## Next track
+- Customer app C0 (after sign-off)

@@ -198,7 +198,14 @@ class _FleetTile extends StatelessWidget {
       child: InkWell(
         onTap: () {
           HapticFeedback.lightImpact();
-          context.push('/vehicles/${vehicle.uuid}');
+          final customerUuid = vehicle.customer?.uuid ?? '';
+          context.push(
+            '/vehicles/${vehicle.uuid}',
+            extra: {
+              if (customerUuid.isNotEmpty) 'customerUuid': customerUuid,
+              if (customerUuid.isNotEmpty) 'customer': customerUuid,
+            },
+          );
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(

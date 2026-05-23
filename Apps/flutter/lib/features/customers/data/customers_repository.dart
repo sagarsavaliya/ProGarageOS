@@ -183,6 +183,13 @@ class CustomersRepository {
     return VehicleDocument.fromJson(data);
   }
 
+  /// GET /vehicles/{uuid} — single vehicle (fleet / deep links).
+  Future<Vehicle> fetchVehicle(String vehicleUuid) async {
+    final response = await _dio.get('/vehicles/$vehicleUuid');
+    final data = (response.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+    return Vehicle.fromJson(data);
+  }
+
   /// GET /customers/{customer_uuid}/vehicles — vehicle list for a customer.
   Future<List<Vehicle>> fetchVehicles(String customerUuid) async {
     final response = await _dio.get('/customers/$customerUuid/vehicles');

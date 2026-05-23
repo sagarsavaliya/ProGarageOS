@@ -286,6 +286,7 @@ class Vehicle {
   final bool isActive;
   final String? photoUrl;
   final List<ComplianceAlert> complianceAlerts;
+  final String? customerUuid;
 
   const Vehicle({
     required this.uuid,
@@ -311,6 +312,7 @@ class Vehicle {
     required this.isActive,
     this.photoUrl,
     required this.complianceAlerts,
+    this.customerUuid,
   });
 
   String get makeModel => '$maker $model${variant != null ? ' $variant' : ''} $year';
@@ -344,6 +346,7 @@ class Vehicle {
                 ?.map((e) => ComplianceAlert.fromJson(e as Map<String, dynamic>))
                 .toList() ??
             [],
+        customerUuid: jsonAsMap(json['customer'])?['uuid'] as String?,
       );
 }
 

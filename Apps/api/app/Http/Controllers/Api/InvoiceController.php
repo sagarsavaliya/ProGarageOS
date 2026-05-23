@@ -257,7 +257,7 @@ class InvoiceController extends Controller
                 'registration_number' => $invoice->vehicle->registration_number,
                 'make'                => $invoice->vehicle->maker,
                 'model'               => $invoice->vehicle->model,
-                'year'                => $invoice->vehicle->year,
+                'year'                => $invoice->vehicle->year ? (int) $invoice->vehicle->year : null,
             ] : null,
         ];
 
@@ -265,6 +265,7 @@ class InvoiceController extends Controller
             $base['subtotal']      = (float) $invoice->subtotal;
             $base['tax_total']     = (float) $invoice->tax_total;
             $base['discount_total'] = (float) $invoice->discount_total;
+            $base['due_date']      = $invoice->due_date?->format('Y-m-d');
             $base['customer_notes'] = $invoice->customer_notes;
             $base['service_job']    = $invoice->job ? [
                 'uuid'       => $invoice->job->uuid,

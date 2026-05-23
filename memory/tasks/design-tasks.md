@@ -1,16 +1,16 @@
-# DESIGN TASKS — ProGarageOS Mobile UX Sprint (Option B)
-# Completed: 2026-05-21
+# DESIGN TASKS — ProGarageOS Mobile UX (Staff app v1)
+# Updated: 2026-05-22 EOD
 
-## Implemented in app (design goals met)
+## ✅ Implemented
 - [x] Dense, action-first list tiles (Jobs, Customers, Invoices, Parts)
-- [x] Quick action chips on list cards and dashboard
-- [x] Graphical car inspection damage map (from design brief)
-- [x] Guided empty states with primary CTAs (not blank space)
-- [x] Login inline hints for non-tech users
-- [x] Dashboard quick actions: New job, Add customer, Collect payment
-- [x] Customer detail: Call, WhatsApp, New job, New invoice
-- [x] Invoice collect payment from list (not detail-only)
+- [x] Quick action pills on dashboard + customer detail
+- [x] Graphical car inspection damage map
+- [x] Guided empty states with primary CTAs
+- [x] Login: orange accent, phone remember, full-screen lock overlay
+- [x] Customer detail: Call, WhatsApp, scoped New job / New invoice
+- [x] Collect payment from invoice list + payments hub
+- [x] AppFilterChip theme on add-part / add-team forms
 
-## Sagar sign-off
-- [ ] Walkthrough on emulator/phone
-- [ ] Approve before Wave 3 resume
+## 🔲 Sagar sign-off (device)
+- [ ] Install APK `80d6eaa` and walk through RUNBOOK checklist
+- [ ] Approve staff v1 UX → unlock customer app design track

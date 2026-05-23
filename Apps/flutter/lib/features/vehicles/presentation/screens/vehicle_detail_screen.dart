@@ -8,11 +8,13 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/widgets/api_error_view.dart';
 import '../../../customers/data/models/customer_models.dart';
 import '../../../customers/data/customers_repository.dart';
 import '../../../customers/presentation/providers/customers_provider.dart';
 import '../../../customers/presentation/widgets/upload_vehicle_document_sheet.dart';
 
+/// Vehicle detail — always loads via GET /vehicles/{uuid} (works from Fleet, Customers, Jobs).
 class VehicleDetailScreen extends ConsumerWidget {
   final String vehicleUuid;
   final String customerUuid;
@@ -25,30 +27,32 @@ class VehicleDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final vehiclesState = ref.watch(customerVehiclesProvider(customerUuid));
+    final vehicleState = ref.watch(vehicleByUuidProvider(vehicleUuid));
     final docsState = ref.watch(vehicleDocumentsProvider(vehicleUuid));
     final docsNotifier = ref.read(vehicleDocumentsProvider(vehicleUuid).notifier);
 
-    return vehiclesState.when(
+    return vehicleState.when(
       loading: () => const Scaffold(
         backgroundColor: AppColors.bgPrimary,
         body: Center(
           child: CircularProgressIndicator(color: AppColors.primaryOrange, strokeWidth: 2),
         ),
       ),
-      error: (_, __) => Scaffold(
+      error: (e, _) => Scaffold(
         backgroundColor: AppColors.bgPrimary,
         appBar: AppBar(backgroundColor: AppColors.bgSurface),
-        body: Center(child: Text('Could not load vehicle', style: AppTextStyles.bodyMedium)),
+        body: ApiErrorView(
+          title: 'Could not load vehicle',
+          message: e.toString(),
+          onRetry: () => ref.invalidate(vehicleByUuidProvider(vehicleUuid)),
+        ),
       ),
-      data: (vehicles) {
-        final vehicle = vehicles.firstWhere(
-          (v) => v.uuid == vehicleUuid,
-          orElse: () => vehicles.isNotEmpty ? vehicles.first : _emptyVehicle,
-        );
+      data: (vehicle) {
+        final resolvedCustomerUuid =
+            customerUuid.isNotEmpty ? customerUuid : (vehicle.customerUuid ?? '');
         return _VehicleBody(
           vehicle: vehicle,
-          customerUuid: customerUuid,
+          customerUuid: resolvedCustomerUuid,
           vehicleUuid: vehicleUuid,
           docsState: docsState,
           onDocsRefresh: docsNotifier.refresh,
@@ -57,18 +61,6 @@ class VehicleDetailScreen extends ConsumerWidget {
       },
     );
   }
-
-  static final _emptyVehicle = Vehicle(
-    uuid: '',
-    registrationNumber: '—',
-    maker: '',
-    model: '',
-    year: 0,
-    fuelType: '',
-    gpsTrackingConsent: false,
-    isActive: true,
-    complianceAlerts: [],
-  );
 }
 
 // ---------------------------------------------------------------------------
@@ -112,6 +104,7 @@ class _VehicleBody extends ConsumerWidget {
     if (ok != true || !context.mounted) return;
     await ref.read(customersRepositoryProvider).deactivateVehicle(vehicleUuid);
     ref.invalidate(customerVehiclesProvider(customerUuid));
+    ref.invalidate(vehicleByUuidProvider(vehicleUuid));
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Vehicle removed'), behavior: SnackBarBehavior.floating),
@@ -189,17 +182,18 @@ class _VehicleBody extends ConsumerWidget {
           icon: Icon(PhosphorIconsRegular.upload, color: AppColors.textSecondary, size: 20),
           tooltip: 'Upload document',
         ),
-        IconButton(
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            context.push(
-              '/vehicles/${vehicle.uuid}/edit',
-              extra: {'customerUuid': customerUuid},
-            );
-          },
-          icon: Icon(PhosphorIconsRegular.pencilSimple, color: AppColors.textSecondary, size: 20),
-          tooltip: 'Edit vehicle',
-        ),
+        if (customerUuid.isNotEmpty)
+          IconButton(
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              context.push(
+                '/vehicles/${vehicle.uuid}/edit',
+                extra: {'customerUuid': customerUuid},
+              );
+            },
+            icon: Icon(PhosphorIconsRegular.pencilSimple, color: AppColors.textSecondary, size: 20),
+            tooltip: 'Edit vehicle',
+          ),
         PopupMenuButton<String>(
           icon: Icon(PhosphorIconsRegular.dotsThreeVertical, color: AppColors.textSecondary, size: 20),
           onSelected: (v) {
@@ -227,7 +221,7 @@ class _VehicleBody extends ConsumerWidget {
       decoration: BoxDecoration(
         color: AppColors.statusRedBg,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.statusRed.withOpacity(0.3)),
+        border: Border.all(color: AppColors.statusRed.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -264,8 +258,7 @@ class _VehicleBody extends ConsumerWidget {
                   color: AppColors.bgElevated,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(PhosphorIconsRegular.car,
-                    color: AppColors.textMuted, size: 26),
+                child: Icon(PhosphorIconsRegular.car, color: AppColors.textMuted, size: 26),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -539,7 +532,7 @@ class _DocumentRow extends ConsumerWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.1),
+              color: statusColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(_docIcon(doc.documentType), color: statusColor, size: 18),
@@ -712,4 +705,3 @@ class _Badge extends StatelessWidget {
     );
   }
 }
-

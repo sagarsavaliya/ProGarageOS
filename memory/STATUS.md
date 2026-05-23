@@ -5,36 +5,35 @@
 ## Overall Status
 - **Project:** Pro Garage OS (ProGarageOS)
 - **Infrastructure:** ✅ Live — `https://api.progarage.cloud/api`
-- **Staff app v1:** ✅ Production build — commit `005d33b` (E2E fix batch)
-- **Test APK:** ✅ `Apps/flutter/build/app/outputs/flutter-apk/app-release.apk` (63.3MB, production API)
-- **Next:** Device E2E sign-off on phone
-- **Last Updated:** 2026-05-22 IST
+- **Staff app v1:** ⚠️ Device testing found gaps — fixes in progress (not signed off)
+- **Last APK tested:** `80d6eaa` — **do not treat as complete** until retest
+- **Last Updated:** 2026-05-23 IST
 
 ---
 
-## ✅ Staff app v1 — Pack 4 (complete)
-| Feature | Status |
-|---------|--------|
-| **Invoice PDF** | Generate + view/share from invoice detail |
-| **Fleet** | Searchable fleet list (Settings → Fleet) |
-| **Audit log** | Read-only activity on job detail (owners) |
-| **Push G10** | Payment + estimate alerts; invoice deep links |
-
-Prior packs (1–3): onboarding, insurance, appointments, payments hub, team nav — all built.
+## ⚠️ Sagar device test findings (23 May)
+| Issue | Root cause | Fix status |
+|-------|------------|------------|
+| Invoices → “failed to load” | API JSON shape / fragile parsing | ✅ Code fix ready (not deployed) |
+| Fleet tap → vehicle won’t open | Fleet didn’t pass customer UUID to vehicle screen | ✅ Code fix ready |
+| Add task money + time | Dialog exists in code; may need new APK + verify on device | 🔲 Retest after new build |
+| How tasks work | Explanation pending to Sagar | ✅ In chat (below) |
 
 ---
 
-## ⚠️ Production deploy checklist (Sagar / ops)
-1. ~~`php artisan migrate --force` on production~~ ✅ (nothing pending)
-2. ~~Redeploy API via `deploy/hostinger/scripts/redeploy.sh`~~ ✅ 2026-05-22 — commit `005d33b`
-3. Ensure `storage:link` and public disk writable (invoice PDFs)
-4. Set `FCM_SERVER_KEY` in production `.env` (optional — inbox works without)
-5. **Your turn:** Full device test on latest APK (see RUNBOOK)
-
-See `memory/RUNBOOK.md` for full ops steps.
+## 🔲 Process change (CEO approved)
+- No new APK until each reported item is **fixed + verified in code + your retest**
+- STATUS will not say “complete” until device sign-off
 
 ---
 
-## 🔲 After staff v1 sign-off
-- Customer app C0–C6 (~6–7 weeks)
-- Web owner portal W1–W6
+## ✅ Still solid from prior work
+Auth, dashboard, jobs flow, delivery, payments hub, Pack 4 features (PDF, audit, push inbox)
+
+---
+
+## 🔲 Next steps
+1. Deploy API invoice `due_date` + redeploy
+2. Build **one** new APK after Sagar approves fix list
+3. Sagar retest: invoices, fleet, add task
+4. Staff v1 sign-off → customer app C0

@@ -1,8 +1,10 @@
 # Pro Garage OS — Development Progress
 
-**Last Updated:** 2026-05-15 11:56 IST
-**Current Sprint:** S7 — (Next Sprint TBD)
-**Overall Status:** 7/10 Sprints Complete
+**Last Updated:** 2026-05-22 IST (EOD)
+**Current Phase:** Staff app v1 — awaiting device sign-off
+**Production API:** `https://api.progarage.cloud/api` · commit `80d6eaa`
+**Release APK:** `build/app/outputs/flutter-apk/app-release.apk` (63.4MB)
+**Overall Status:** Staff v1 built & deployed — gate: CEO device E2E sign-off
 
 ---
 
@@ -239,14 +241,35 @@
 
 ---
 
+---
+
+## Staff app v1 — E2E Verification Pass ✅ (2026-05-22)
+
+**Commit:** `80d6eaa` · **APK:** `app-release.apk` (63.4MB)
+
+### Fixes verified before build
+- [x] Onboarding once; logout preserves onboarding + saved phone
+- [x] Full-screen PIN lock; phone auto-fill on login; orange theme
+- [x] Dashboard quick-action pills; bay badge layout
+- [x] Settings in bottom-nav shell; tab routes for Fleet/Customers/Invoices
+- [x] Job: call dialer (detail + list + customer), pull-refresh sync, insurance grid
+- [x] Delivery: optional photos, signature scroll lock, mark-delivered prompt
+- [x] Delivered read-only (non-owners); estimate lock; add-task full form
+- [x] Invoice: payment false-failure fix, billed-job filter, rate clears 0.0
+- [x] Vehicle: doc view, replace, delete API; GPS consent from API
+- [x] Customer: scoped New job / New invoice; fleet parsing hardened
+
+### Next pickup
+> Install APK on device → E2E checklist in `memory/RUNBOOK.md` → sign off staff v1 → start Customer app C0
+
+---
+
 ## Next Session Pickup
 
-> Cursor: Start here next session.
-> Sprint: S7 — Create Job screen + Intake Inspection screen
-> Files to build from: `Briefs/Design files/05-Create-Job.html` + `Briefs/Design files/07-Intake-Inspection.html`
-> After S7: S8 Push Notifications → S9 Loyalty+Feedback → S10 GPS+Razorpay+PDF Invoice
-> React Web Dashboard: DEFERRED until after Flutter rollout
-> QA: Run QA audit after each sprint completes before moving to next.
+> **Gate:** Sagar device sign-off on staff v1 (commit `80d6eaa`)
+> **After sign-off:** Customer app C0 (auth, job tracking, estimate approval)
+> **Deferred:** React Web owner portal until after customer app v1
+> **Rule:** No new APK until every checklist item is code-verified
 
 ---
 
@@ -256,9 +279,11 @@
 |---|---|---|---|
 | S0 | ✅ Complete | 2026-05-14 | Core arch: Riverpod, GoRouter, Dio, SecureStorage, Drift, themes |
 | S1 | ✅ Complete | 2026-05-14 | Login (PIN pad), OTP, Dashboard, AppShell navigation |
-| S2 | ✅ Complete | 2026-05-14 | Laravel backend: 40 MySQL tables, 31 models, 8 API controllers, seeders |
+| S2 | ✅ Complete | 2026-05-14 | Laravel backend: 40 MySQL tables, 31 models, API controllers, seeders |
 | S3 | ✅ Complete | 2026-05-15 | Jobs module: models, repo, provider, list screen, detail screen |
 | S4 | ✅ Complete | 2026-05-15 | Customers + Vehicles (list, detail, docs, compliance) |
 | S5 | ✅ Complete | 2026-05-15 | Invoicing + Payments (invoice list, detail, record payment sheet) |
 | S6 | ✅ Complete | 2026-05-15 | Inventory + Parts Management (catalog, stock levels, adjust sheet, 5th tab) |
-| S7 | ⏳ Next | — | TBD |
+| Staff v1 | ✅ Built | 2026-05-22 | Packs 1–4 + E2E verification; production deploy; APK ready |
+| Customer C0 | 🔲 Next | — | Blocked on staff v1 sign-off |
+| Web W1 | 🔲 Planned | — | After customer app v1 |

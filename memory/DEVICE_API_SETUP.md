@@ -36,6 +36,8 @@ flutter build apk --release
 | PIN | `123456` |
 | Role | Owner (Patel Auto Works) |
 
+**Current build:** commit `80d6eaa` · APK `app-release.apk` (63.4MB)
+
 ### Android emulator (live production API)
 
 No LAN setup needed — emulator uses internet like a real phone.

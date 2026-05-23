@@ -414,7 +414,7 @@ class _DetailBody extends StatelessWidget {
             HapticFeedback.lightImpact();
             context.push(
               '/vehicles/${detail.vehicles[i].uuid}',
-              extra: {'customer': detail.uuid},
+              extra: {'customerUuid': detail.uuid, 'customer': detail.uuid},
             );
           },
         ),

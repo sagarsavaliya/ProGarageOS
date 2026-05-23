@@ -25,8 +25,8 @@ Multi-tenant from day 1 with tenant_id isolation via Laravel Global Scopes.
 ---
 
 ## Active Departments
-- [x] Technical (CTO Agent)
-- [x] Product & Design (CPO Agent) — **Mobile UX Sprint Option B (2026-05-21)**
+- [x] Technical (CTO Agent) — **Staff v1 E2E verification pass complete (2026-05-22)**
+- [x] Product & Design (CPO Agent) — Mobile UX Option B shipped; awaiting device sign-off
 - [ ] Sales (Sales Director) — activate at beta launch
 - [ ] Marketing (Marketing Director) — activate at beta launch
 - [ ] Legal (Legal Agent) — activate before commercial launch
@@ -59,15 +59,15 @@ Multi-tenant from day 1 with tenant_id isolation via Laravel Global Scopes.
 ## Key Modules / Features (Sprint Map)
 1. **S0 — Flutter Foundation** — Core arch: Riverpod, GoRouter, Dio, SecureStorage, Drift, dark theme ✅
 2. **S1 — Auth + Dashboard** — Staff PIN login, Customer OTP, Dashboard KPIs, AppShell nav ✅
-3. **S2 — Laravel Backend** — 40 MySQL tables, 31 Eloquent models, 8 API controllers, seeders ✅
-4. **S3 — Flutter Jobs Module** — Job list (filters/search/infinite scroll), Job detail screen ⏳ ACTIVE
-5. **S4 — Flutter Customers + Vehicles** — Customer list, detail, vehicle list, document tracker
-6. **S5 — Flutter Invoicing + Payments** — Invoice view, payment recording, PDF preview
-7. **S6 — Flutter Inventory** — Parts list, stock adjustment, low-stock alerts
-8. **S7 — React Web Dashboard** — Owner dashboard, job management, reports (Inertia.js)
-9. **S8 — Push Notifications** — Firebase FCM, job status push, reminder system
-10. **S9 — Loyalty + Feedback** — Points ledger, CSAT collection, referral module
-11. **S10 — Landing Page + Onboarding** — Marketing site, tenant signup flow, subscription billing
+3. **S2 — Laravel Backend** — 40 MySQL tables, 31 Eloquent models, API controllers, seeders ✅
+4. **S3 — Flutter Jobs Module** — List, detail, status, tasks, estimate, delivery ✅
+5. **S4 — Flutter Customers + Vehicles** — Customer list, detail, vehicle docs, compliance ✅
+6. **S5 — Flutter Invoicing + Payments** — Invoice view, record payment, PDF ✅
+7. **S6 — Flutter Inventory + Team** — Parts, stock, staff onboarding ✅
+8. **Staff v1 Packs 1–4** — Appointments, insurance, fleet, audit, push, production deploy ✅
+9. **S7 — React Web Dashboard** — Owner dashboard, reports (deferred post staff v1)
+10. **Customer app C0–C6** — Vehicle owner mobile app (next track after sign-off)
+11. **S10 — Landing + Billing** — Marketing site, tenant signup, Razorpay subscriptions
 
 ---
 
@@ -116,6 +116,9 @@ Multi-tenant from day 1 with tenant_id isolation via Laravel Global Scopes.
 - Typography: Sora (display), DM Sans (body), DM Mono (numbers)
 - Shared schema multi-tenancy (tenant_id scoping, not separate DBs)
 - Demo fallback data in Flutter when API is unreachable
+- Production API: `https://api.progarage.cloud/api` (Hostinger Docker)
+- **Quality gate (2026-05-22):** No release APK until full E2E checklist verified in code
+- Delivered jobs read-only for staff; owner/super-user may edit after delivery
 
 ---
-*Last updated by: CEO Agent | 2026-05-15*
+*Last updated by: CEO Agent | 2026-05-22*

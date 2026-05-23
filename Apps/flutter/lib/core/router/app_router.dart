@@ -279,7 +279,9 @@ GoRouter appRouter(Ref ref) {
         builder: (context, state) {
           final id = state.pathParameters['id'] ?? '';
           final extra = state.extra as Map<String, dynamic>?;
-          final customerUuid = extra?['customer'] as String? ?? '';
+          final customerUuid = extra?['customerUuid'] as String? ??
+              extra?['customer'] as String? ??
+              '';
           return VehicleDetailScreen(vehicleUuid: id, customerUuid: customerUuid);
         },
       ),

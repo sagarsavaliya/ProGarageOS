@@ -1,5 +1,7 @@
 // Invoice data models — aligned with GET /api/invoices and GET /api/invoices/{uuid}.
 
+import '../../../../core/utils/json_parsing.dart';
+
 // ---------------------------------------------------------------------------
 // Sub-models
 // ---------------------------------------------------------------------------
@@ -56,7 +58,7 @@ class InvoiceVehicle {
         make: json['make'] as String? ?? json['maker'] as String? ?? '',
         model: json['model'] as String? ?? '',
         registrationNumber: json['registration_number'] as String? ?? '',
-        year: (json['year'] as num?)?.toInt(),
+        year: jsonAsIntOrNull(json['year']),
       );
 }
 
@@ -274,9 +276,9 @@ class InvoiceListItem {
         dueDate: json['due_date'] != null
             ? DateTime.tryParse(json['due_date'] as String)
             : null,
-        serviceJob: InvoiceJob.fromJson(json['service_job'] as Map<String, dynamic>? ?? {}),
-        customer: InvoiceCustomer.fromJson(json['customer'] as Map<String, dynamic>? ?? {}),
-        vehicle: InvoiceVehicle.fromJson(json['vehicle'] as Map<String, dynamic>? ?? {}),
+        serviceJob: InvoiceJob.fromJson(jsonAsMap(json['service_job']) ?? {}),
+        customer: InvoiceCustomer.fromJson(jsonAsMap(json['customer']) ?? {}),
+        vehicle: InvoiceVehicle.fromJson(jsonAsMap(json['vehicle']) ?? {}),
       );
 }
 
@@ -335,48 +337,35 @@ class InvoiceDetail {
   }
 
   factory InvoiceDetail.fromJson(Map<String, dynamic> json) {
-    final data = json['data'] as Map<String, dynamic>? ?? json;
+    final data = jsonAsMap(json['data']) ?? jsonAsMap(json) ?? {};
+    final jobMap = jsonAsMap(data['service_job']) ?? jsonAsMap(data['job']);
     return InvoiceDetail(
       uuid: data['uuid'] as String? ?? '',
       invoiceNumber: data['invoice_number'] as String? ?? '',
       status: data['status'] as String? ?? 'draft',
-      issuedDate: DateTime.tryParse(data['issued_date'] as String? ?? '') ?? DateTime.now(),
+      issuedDate: DateTime.tryParse('${data['issued_date'] ?? ''}') ?? DateTime.now(),
       dueDate: data['due_date'] != null
           ? DateTime.tryParse('${data['due_date']}')
           : null,
       notes: data['notes'] as String? ?? data['customer_notes'] as String?,
-      subtotal: (data['subtotal'] as num?)?.toDouble() ?? 0,
-      taxAmount: (data['tax_total'] as num?)?.toDouble() ??
-          (data['tax_amount'] as num?)?.toDouble() ??
-          0,
-      discountAmount: (data['discount_total'] as num?)?.toDouble() ??
-          (data['discount_amount'] as num?)?.toDouble() ??
-          0,
-      totalAmount: (data['grand_total'] as num?)?.toDouble() ??
-          (data['total_amount'] as num?)?.toDouble() ??
-          0,
-      paidAmount: (data['amount_paid'] as num?)?.toDouble() ??
-          (data['paid_amount'] as num?)?.toDouble() ??
-          0,
-      balanceDue: (data['balance_due'] as num?)?.toDouble() ?? 0,
-      customerPayAmount: (data['customer_pay_amount'] as num?)?.toDouble(),
-      insuranceClaimAmount: (data['insurance_claim_amount'] as num?)?.toDouble(),
-      serviceJob: InvoiceJob.fromJson(
-        (data['service_job'] ?? data['job']) as Map<String, dynamic>? ?? {},
-      ),
-      customer: InvoiceCustomer.fromJson(data['customer'] as Map<String, dynamic>? ?? {}),
-      vehicle: InvoiceVehicle.fromJson(data['vehicle'] as Map<String, dynamic>? ?? {}),
+      subtotal: jsonAsDouble(data['subtotal']),
+      taxAmount: jsonAsDouble(data['tax_total'], fallback: jsonAsDouble(data['tax_amount'])),
+      discountAmount: jsonAsDouble(data['discount_total'], fallback: jsonAsDouble(data['discount_amount'])),
+      totalAmount: jsonAsDouble(data['grand_total'], fallback: jsonAsDouble(data['total_amount'])),
+      paidAmount: jsonAsDouble(data['amount_paid'], fallback: jsonAsDouble(data['paid_amount'])),
+      balanceDue: jsonAsDouble(data['balance_due']),
+      customerPayAmount: data['customer_pay_amount'] != null
+          ? jsonAsDouble(data['customer_pay_amount'])
+          : null,
+      insuranceClaimAmount: data['insurance_claim_amount'] != null
+          ? jsonAsDouble(data['insurance_claim_amount'])
+          : null,
+      serviceJob: InvoiceJob.fromJson(jobMap ?? {}),
+      customer: InvoiceCustomer.fromJson(jsonAsMap(data['customer']) ?? {}),
+      vehicle: InvoiceVehicle.fromJson(jsonAsMap(data['vehicle']) ?? {}),
       pdfUrl: data['pdf_url'] as String?,
-      items: (data['items'] as List<dynamic>?)
-              ?.whereType<Map<String, dynamic>>()
-              .map(InvoiceItem.fromJson)
-              .toList() ??
-          [],
-      payments: (data['payments'] as List<dynamic>?)
-              ?.whereType<Map<String, dynamic>>()
-              .map(PaymentRecord.fromJson)
-              .toList() ??
-          [],
+      items: jsonAsMapList(data['items']).map(InvoiceItem.fromJson).toList(),
+      payments: jsonAsMapList(data['payments']).map(PaymentRecord.fromJson).toList(),
     );
   }
 }

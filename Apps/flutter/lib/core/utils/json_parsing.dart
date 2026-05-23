@@ -22,3 +22,17 @@ double jsonAsDouble(dynamic value, {double fallback = 0}) {
   if (value is String) return double.tryParse(value.trim()) ?? fallback;
   return fallback;
 }
+
+Map<String, dynamic>? jsonAsMap(dynamic value) {
+  if (value is Map<String, dynamic>) return value;
+  if (value is Map) return Map<String, dynamic>.from(value);
+  return null;
+}
+
+List<Map<String, dynamic>> jsonAsMapList(dynamic value) {
+  if (value is! List) return [];
+  return value
+      .map((e) => jsonAsMap(e))
+      .whereType<Map<String, dynamic>>()
+      .toList();
+}
