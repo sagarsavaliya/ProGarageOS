@@ -347,6 +347,7 @@ class _JobListTile extends StatelessWidget {
                           icon: PhosphorIconsRegular.phone,
                           label: 'Call',
                           color: AppColors.statusGreen,
+                          verticalPadding: 5,
                           onTap: _callCustomer,
                         ),
                       if (showInspect) ...[
@@ -354,6 +355,7 @@ class _JobListTile extends StatelessWidget {
                         QuickActionChip(
                           icon: PhosphorIconsRegular.clipboardText,
                           label: 'Inspect',
+                          verticalPadding: 5,
                           onTap: () => context.push('/jobs/${job.uuid}/inspection'),
                         ),
                       ],

@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_colors.dart';
 import '../storage/secure_storage.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/auth/presentation/screens/owner_signup_screen.dart';
 import '../../features/auth/presentation/screens/otp_screen.dart';
 import '../../features/auth/presentation/screens/staff_pin_otp_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
@@ -92,6 +93,11 @@ GoRouter appRouter(Ref ref) {
         path: '/auth/login',
         name: 'login',
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/auth/signup',
+        name: 'owner-signup',
+        builder: (context, state) => const OwnerSignupScreen(),
       ),
       GoRoute(
         path: '/auth/otp',

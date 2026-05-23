@@ -270,7 +270,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               ),
                               const SizedBox(height: 8),
                               _buildForgotPin(state),
-                              const SizedBox(height: 24),
+                              const SizedBox(height: 12),
+                              TextButton(
+                                onPressed: () => context.push('/auth/signup'),
+                                child: Text(
+                                  'New garage? Create your account',
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: _skyBlue,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
                             ],
                           ),
                         ),

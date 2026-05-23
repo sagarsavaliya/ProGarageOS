@@ -10,12 +10,14 @@ class CustomerSignatureCard extends StatefulWidget {
   final bool isDelivery;
   final bool signed;
   final ValueChanged<bool> onSignedChanged;
+  final ValueChanged<bool>? onSigningActiveChanged;
 
   const CustomerSignatureCard({
     super.key,
     required this.isDelivery,
     required this.signed,
     required this.onSignedChanged,
+    this.onSigningActiveChanged,
   });
 
   @override
@@ -76,12 +78,10 @@ class _CustomerSignatureCardState extends State<CustomerSignatureCard> {
               ],
             )
           else ...[
-            NotificationListener<ScrollNotification>(
-              onNotification: (_) => true,
-              child: AppSignaturePad(
-                key: _padKey,
-                onHasSignatureChanged: (v) => setState(() => _hasInk = v),
-              ),
+            AppSignaturePad(
+              key: _padKey,
+              onHasSignatureChanged: (v) => setState(() => _hasInk = v),
+              onSigningActiveChanged: widget.onSigningActiveChanged,
             ),
             const SizedBox(height: 10),
             FilledButton.icon(

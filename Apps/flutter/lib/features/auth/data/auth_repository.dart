@@ -86,6 +86,21 @@ class AuthRepository {
       data: request.toJson(),
     );
   }
+
+  /// GET /subscription-plans — active plans for owner signup.
+  Future<List<SubscriptionPlanModel>> fetchSubscriptionPlans() async {
+    final response = await _dio.get('/subscription-plans');
+    final list = (response.data as Map<String, dynamic>)['data'] as List<dynamic>? ?? [];
+    return list
+        .map((e) => SubscriptionPlanModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// POST /auth/owner/signup
+  Future<OwnerSignupResult> ownerSignup(OwnerSignupRequest request) async {
+    final response = await _dio.post('/auth/owner/signup', data: request.toJson());
+    return OwnerSignupResult.fromJson(response.data as Map<String, dynamic>);
+  }
 }
 
 /// Riverpod provider for [AuthRepository].

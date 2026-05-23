@@ -6,8 +6,13 @@ import '../constants/app_text_styles.dart';
 /// Lightweight signature canvas — no external package required.
 class AppSignaturePad extends StatefulWidget {
   final ValueChanged<bool>? onHasSignatureChanged;
+  final ValueChanged<bool>? onSigningActiveChanged;
 
-  const AppSignaturePad({super.key, this.onHasSignatureChanged});
+  const AppSignaturePad({
+    super.key,
+    this.onHasSignatureChanged,
+    this.onSigningActiveChanged,
+  });
 
   @override
   State<AppSignaturePad> createState() => AppSignaturePadState();
@@ -54,8 +59,10 @@ class AppSignaturePadState extends State<AppSignaturePad> {
                 ),
               ),
             Listener(
+              behavior: HitTestBehavior.opaque,
               onPointerDown: (e) {
                 HapticFeedback.selectionClick();
+                widget.onSigningActiveChanged?.call(true);
                 setState(() => _currentStroke = [e.localPosition]);
               },
               onPointerMove: (e) {
@@ -63,6 +70,7 @@ class AppSignaturePadState extends State<AppSignaturePad> {
                 _notify();
               },
               onPointerUp: (_) {
+                widget.onSigningActiveChanged?.call(false);
                 if (_currentStroke.isNotEmpty) {
                   setState(() {
                     _strokes.add(_currentStroke);
@@ -71,6 +79,7 @@ class AppSignaturePadState extends State<AppSignaturePad> {
                   _notify();
                 }
               },
+              onPointerCancel: (_) => widget.onSigningActiveChanged?.call(false),
               child: CustomPaint(
                 painter: _SignaturePainter(
                   strokes: _strokes,

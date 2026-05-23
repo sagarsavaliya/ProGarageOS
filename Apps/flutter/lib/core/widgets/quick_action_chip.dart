@@ -10,6 +10,7 @@ class QuickActionChip extends StatelessWidget {
   final VoidCallback onTap;
   final Color? color;
   final bool expand;
+  final double verticalPadding;
 
   const QuickActionChip({
     super.key,
@@ -18,6 +19,7 @@ class QuickActionChip extends StatelessWidget {
     required this.onTap,
     this.color,
     this.expand = false,
+    this.verticalPadding = 10,
   });
 
   @override
@@ -32,7 +34,7 @@ class QuickActionChip extends StatelessWidget {
         },
         borderRadius: BorderRadius.circular(10),
         child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          padding: EdgeInsets.symmetric(horizontal: 10, vertical: verticalPadding),
           decoration: BoxDecoration(
             color: accent.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(10),

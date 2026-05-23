@@ -214,7 +214,7 @@ class JobDetailNotifier extends StateNotifier<AsyncValue<JobDetail>> {
       await _repo.updateStatus(_uuid, apiStatus, notes: notes);
       final detail = await _repo.fetchJob(_uuid);
       state = AsyncValue.data(detail);
-    } catch (e, st) {
+    } catch (e) {
       state = AsyncValue.data(previous);
       rethrow;
     }

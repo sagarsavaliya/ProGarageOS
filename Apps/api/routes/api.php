@@ -21,6 +21,11 @@ use App\Http\Controllers\Api\ServiceJobController;
 use App\Http\Controllers\Api\StaffController;
 use App\Http\Controllers\Api\TenantController;
 use App\Http\Controllers\Api\VehicleController;
+use App\Http\Controllers\Api\OwnerSignupController;
+use App\Http\Controllers\Api\Platform\PlatformTenantController;
+use App\Http\Controllers\Api\Platform\PlatformSubscriptionPlanController;
+use App\Http\Controllers\Api\Platform\PlatformUserController;
+use App\Http\Controllers\Api\Platform\PlatformStorageController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -38,6 +43,11 @@ Route::get('/health', fn () => response()->json([
     'version'   => config('app.version', '1.0.0'),
     'api'       => 'progarageos',
 ]));
+
+// ── Public signup ───────────────────────────────────────────────────────────
+Route::get('/subscription-plans', [OwnerSignupController::class, 'plans']);
+Route::post('/auth/owner/signup', [OwnerSignupController::class, 'register'])
+    ->middleware('throttle:5,15');
 
 // ── Authentication ─────────────────────────────────────────────────────────
 Route::prefix('auth')->group(function () {
@@ -155,3 +165,30 @@ Route::middleware(['auth:sanctum', 'throttle:300,1'])->group(function () {
     Route::put('/integrations/whatsapp', [IntegrationController::class, 'updateWhatsApp']);
     Route::post('/integrations/whatsapp/test', [IntegrationController::class, 'testWhatsApp']);
 });
+
+// ── Platform admin (super admin UI) ─────────────────────────────────────────
+Route::middleware(['auth:sanctum', 'platform.admin', 'throttle:300,1'])
+    ->prefix('platform')
+    ->group(function () {
+        Route::get('/tenants', [PlatformTenantController::class, 'index']);
+        Route::post('/tenants', [PlatformTenantController::class, 'store']);
+        Route::get('/tenants/{uuid}', [PlatformTenantController::class, 'show']);
+        Route::patch('/tenants/{uuid}', [PlatformTenantController::class, 'update']);
+        Route::delete('/tenants/{uuid}', [PlatformTenantController::class, 'destroy']);
+        Route::post('/tenants/{uuid}/reset-data', [PlatformTenantController::class, 'resetOperationalData']);
+        Route::patch('/tenants/{uuid}/subscription', [PlatformTenantController::class, 'updateSubscription']);
+
+        Route::get('/users/tenant/{tenantUuid}', [PlatformUserController::class, 'index']);
+        Route::post('/users/tenant/{tenantUuid}', [PlatformUserController::class, 'store']);
+        Route::patch('/users/tenant/{tenantUuid}/{userUuid}', [PlatformUserController::class, 'update']);
+        Route::delete('/users/tenant/{tenantUuid}/{userUuid}', [PlatformUserController::class, 'destroy']);
+
+        Route::get('/plans', [PlatformSubscriptionPlanController::class, 'index']);
+        Route::post('/plans', [PlatformSubscriptionPlanController::class, 'store']);
+        Route::patch('/plans/{uuid}', [PlatformSubscriptionPlanController::class, 'update']);
+        Route::delete('/plans/{uuid}', [PlatformSubscriptionPlanController::class, 'destroy']);
+
+        Route::get('/storage/disks', [PlatformStorageController::class, 'disks']);
+        Route::get('/storage/files', [PlatformStorageController::class, 'index']);
+        Route::delete('/storage/files', [PlatformStorageController::class, 'destroy']);
+    });

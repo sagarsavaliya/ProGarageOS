@@ -32,11 +32,21 @@ flutter build apk --release
 
 | Field | Value |
 |-------|-------|
-| Phone | `8141302341` |
+| Phone | `9876543219` |
 | PIN | `123456` |
-| Role | Owner (Patel Auto Works) |
+| Role | Owner (Patel Auto Works — demo) |
 
-**Current build:** commit `80d6eaa` · APK `app-release.apk` (63.4MB)
+Use **`8141302341`** only for **customer OTP login** (not staff).
+
+### Self-signup test (new garage)
+
+Login → **New garage? Create your account** → use a **new** 10-digit number → WhatsApp PIN setup → setup wizard.
+
+### Platform admin (web)
+
+`Apps/web-admin` — login `admin@progarage.cloud` / PIN `999999` (after `PlatformAdminSeeder` on server). See `memory/SELF_SIGNUP_AND_ADMIN.md`.
+
+**Current build:** commit `234df8c` · APK `app-release.apk` (63.3MB) — uninstall old app before installing
 
 ### Android emulator (live production API)
 

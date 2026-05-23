@@ -166,3 +166,78 @@ class OtpVerifyRequest {
         'app_version': appVersion,
       };
 }
+
+class SubscriptionPlanModel {
+  final String uuid;
+  final String name;
+  final String slug;
+  final double price;
+  final int trialDays;
+  final String billingCycle;
+
+  const SubscriptionPlanModel({
+    required this.uuid,
+    required this.name,
+    required this.slug,
+    required this.price,
+    required this.trialDays,
+    required this.billingCycle,
+  });
+
+  factory SubscriptionPlanModel.fromJson(Map<String, dynamic> json) => SubscriptionPlanModel(
+        uuid: json['uuid'] as String? ?? '',
+        name: json['name'] as String? ?? '',
+        slug: json['slug'] as String? ?? '',
+        price: (json['price'] as num?)?.toDouble() ?? 0,
+        trialDays: (json['trial_days'] as num?)?.toInt() ?? 14,
+        billingCycle: json['billing_cycle'] as String? ?? 'monthly',
+      );
+}
+
+class OwnerSignupResult {
+  final String login;
+  final String businessName;
+  final String message;
+
+  const OwnerSignupResult({
+    required this.login,
+    required this.businessName,
+    required this.message,
+  });
+
+  factory OwnerSignupResult.fromJson(Map<String, dynamic> json) {
+    final data = json['data'] as Map<String, dynamic>? ?? json;
+    return OwnerSignupResult(
+      login: data['login'] as String? ?? '',
+      businessName: data['business_name'] as String? ?? '',
+      message: data['message'] as String? ?? 'Account created.',
+    );
+  }
+}
+
+class OwnerSignupRequest {
+  final String phone;
+  final String firstName;
+  final String businessName;
+  final String? lastName;
+  final String? email;
+  final String? planSlug;
+
+  const OwnerSignupRequest({
+    required this.phone,
+    required this.firstName,
+    required this.businessName,
+    this.lastName,
+    this.email,
+    this.planSlug,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'phone': phone,
+        'first_name': firstName,
+        'business_name': businessName,
+        if (lastName != null && lastName!.isNotEmpty) 'last_name': lastName,
+        if (email != null && email!.isNotEmpty) 'email': email,
+        if (planSlug != null) 'plan_slug': planSlug,
+      };
+}

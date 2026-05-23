@@ -9,6 +9,7 @@ class AppFilterChip extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
   final Color? activeColor;
+  final bool compact;
 
   const AppFilterChip({
     super.key,
@@ -16,6 +17,7 @@ class AppFilterChip extends StatelessWidget {
     required this.isSelected,
     required this.onTap,
     this.activeColor,
+    this.compact = false,
   });
 
   @override
@@ -28,7 +30,10 @@ class AppFilterChip extends StatelessWidget {
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        padding: EdgeInsets.symmetric(
+          horizontal: compact ? 8 : 14,
+          vertical: compact ? 4 : 6,
+        ),
         decoration: BoxDecoration(
           color: isSelected ? color : AppColors.bgSurface,
           borderRadius: BorderRadius.circular(9999),
@@ -40,7 +45,7 @@ class AppFilterChip extends StatelessWidget {
         child: Text(
           label,
           style: GoogleFonts.dmSans(
-            fontSize: 12,
+            fontSize: compact ? 10 : 12,
             height: 1.2,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
             color: isSelected ? Colors.white : AppColors.textSecondary,

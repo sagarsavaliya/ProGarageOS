@@ -68,13 +68,6 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
     _initialized = true;
   }
 
-  Vehicle? _findVehicle(List<Vehicle> vehicles) {
-    for (final v in vehicles) {
-      if (v.uuid == widget.vehicleUuid) return v;
-    }
-    return vehicles.isNotEmpty ? vehicles.first : null;
-  }
-
   Future<void> _submit() async {
     final year = int.tryParse(_yearController.text.trim());
     final odo = int.tryParse(_odometerController.text.replaceAll(',', ''));
@@ -91,16 +84,17 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
         );
 
     if (vehicle != null && mounted) {
+      ref.invalidate(vehicleByUuidProvider(widget.vehicleUuid));
       context.pop();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final vehiclesState = ref.watch(customerVehiclesProvider(widget.customerUuid));
+    final vehicleState = ref.watch(vehicleByUuidProvider(widget.vehicleUuid));
     final editState = ref.watch(editVehicleProvider(_params));
 
-    return vehiclesState.when(
+    return vehicleState.when(
       loading: () => Scaffold(
         backgroundColor: AppColors.bgPrimary,
         appBar: AppBar(
@@ -116,15 +110,7 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
         appBar: AppBar(backgroundColor: AppColors.bgSurface),
         body: Center(child: Text('Could not load vehicle', style: AppTextStyles.bodyMedium)),
       ),
-      data: (vehicles) {
-        final vehicle = _findVehicle(vehicles);
-        if (vehicle == null) {
-          return Scaffold(
-            backgroundColor: AppColors.bgPrimary,
-            appBar: AppBar(backgroundColor: AppColors.bgSurface),
-            body: Center(child: Text('Vehicle not found', style: AppTextStyles.bodyMedium)),
-          );
-        }
+      data: (vehicle) {
         _bindVehicle(vehicle);
 
         return Scaffold(
@@ -201,18 +187,10 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
                       runSpacing: 6,
                       children: _fuelTypes.map((f) {
                         final selected = _fuelType == f;
-                        return ChoiceChip(
-                          label: Text(f.toUpperCase()),
+                        return _FuelTypeChip(
+                          label: f.toUpperCase(),
                           selected: selected,
-                          onSelected: (_) => setState(() => _fuelType = f),
-                          selectedColor: AppColors.primaryOrangeDim,
-                          backgroundColor: AppColors.bgSurface,
-                          side: BorderSide(
-                            color: selected ? AppColors.primaryOrange : AppColors.divider,
-                          ),
-                          labelStyle: AppTextStyles.labelSmall.copyWith(
-                            color: selected ? AppColors.primaryOrange : AppColors.textSecondary,
-                          ),
+                          onTap: () => setState(() => _fuelType = f),
                         );
                       }).toList(),
                     ),
@@ -292,6 +270,57 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: AppColors.primaryOrange),
+        ),
+      ),
+    );
+  }
+}
+
+class _FuelTypeChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _FuelTypeChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        splashColor: AppColors.primaryOrange.withValues(alpha: 0.12),
+        highlightColor: AppColors.primaryOrange.withValues(alpha: 0.08),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.primaryOrangeDim : AppColors.bgSurface,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: selected ? AppColors.primaryOrange : AppColors.divider,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (selected) ...[
+                const Icon(PhosphorIconsRegular.check, size: 14, color: AppColors.primaryOrange),
+                const SizedBox(width: 4),
+              ],
+              Text(
+                label,
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: selected ? AppColors.primaryOrange : AppColors.textSecondary,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

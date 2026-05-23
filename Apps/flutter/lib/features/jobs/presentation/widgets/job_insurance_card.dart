@@ -190,17 +190,18 @@ class _JobInsuranceCardState extends ConsumerState<JobInsuranceCard> {
           Text('Claim status', style: AppTextStyles.labelSmall),
           const SizedBox(height: 8),
           GridView.count(
-            crossAxisCount: 2,
+            crossAxisCount: 3,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 6,
-            crossAxisSpacing: 6,
-            childAspectRatio: 2.8,
+            mainAxisSpacing: 4,
+            crossAxisSpacing: 4,
+            childAspectRatio: 2.4,
             children: _statusSteps.map((step) {
               final selected = current == step.$1;
               return AppFilterChip(
                 label: step.$2,
                 isSelected: selected,
+                compact: true,
                 onTap: widget.readOnly || _isSaving ? () {} : () => _updateStatus(step.$1),
               );
             }).toList(),

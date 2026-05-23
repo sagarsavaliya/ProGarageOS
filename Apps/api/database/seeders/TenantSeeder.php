@@ -11,17 +11,18 @@ class TenantSeeder extends Seeder
 {
     public function run(): void
     {
-        $plan = SubscriptionPlan::create([
-            'name'          => 'Pro',
-            'slug'          => 'pro',
-            'price'         => 2999.00,
-            'billing_cycle' => 'monthly',
-            'trial_days'    => 14,
-            'max_locations' => 3,
-            'max_users'     => 20,
-            'status'        => 'active',
-            'features'      => ['jobs', 'invoices', 'inventory', 'loyalty', 'reports'],
-        ]);
+        $plan = SubscriptionPlan::where('slug', 'pro')->first()
+            ?? SubscriptionPlan::create([
+                'name'          => 'Pro',
+                'slug'          => 'pro',
+                'price'         => 2999.00,
+                'billing_cycle' => 'monthly',
+                'trial_days'    => 14,
+                'max_locations' => 3,
+                'max_users'     => 20,
+                'status'        => 'active',
+                'features'      => ['jobs', 'invoices', 'inventory', 'loyalty', 'reports'],
+            ]);
 
         $tenant = Tenant::create([
             'business_name' => 'Patel Auto Works',

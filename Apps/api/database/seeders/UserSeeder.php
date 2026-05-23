@@ -17,7 +17,7 @@ class UserSeeder extends Seeder
         User::create([
             'tenant_id'  => $tenant->id,
             'email'      => 'sagar@patelautworks.in',
-            'phone'      => '+918141302341',
+            'phone'      => '+919876543219',
             'pin_hash'   => Hash::make('123456'),
             'first_name' => 'Sagar',
             'last_name'  => 'Patel',

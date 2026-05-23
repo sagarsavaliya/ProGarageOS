@@ -54,7 +54,13 @@ class _VehiclesScreenState extends ConsumerState<VehiclesScreen> {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/settings');
+            }
+          },
           icon: const Icon(PhosphorIconsRegular.caretLeft, color: AppColors.textPrimary, size: 20),
         ),
         title: Text('Fleet', style: AppTextStyles.titleMedium),

@@ -57,6 +57,7 @@ class EditVehicleNotifier extends StateNotifier<EditVehicleState> {
       );
       _ref.invalidate(customerDetailProvider(_customerUuid));
       _ref.invalidate(customerVehiclesProvider(_customerUuid));
+      _ref.invalidate(vehicleByUuidProvider(_vehicleUuid));
       state = state.copyWith(isSubmitting: false);
       return vehicle;
     } catch (e) {

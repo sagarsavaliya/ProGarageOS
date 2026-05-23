@@ -334,7 +334,7 @@ class Vehicle {
         bodyType: json['body_type'] as String?,
         emissionNorms: json['emission_norms'] as String?,
         odometerReading: jsonAsIntOrNull(json['odometer_reading']),
-        gpsTrackingConsent: json['gps_tracking_consent'] as bool? ?? false,
+        gpsTrackingConsent: jsonAsBool(json['gps_tracking_consent']),
         registrationDate: json['registration_date'] as String?,
         registrationValidity: json['registration_validity'] as String?,
         insuranceExpiry: json['insurance_expiry'] as String?,

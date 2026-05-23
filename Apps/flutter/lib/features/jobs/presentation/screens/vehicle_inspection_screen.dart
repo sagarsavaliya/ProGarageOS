@@ -110,7 +110,7 @@ class _VehicleInspectionScreenState extends ConsumerState<VehicleInspectionScree
   }
 }
 
-class _InspectionBody extends StatelessWidget {
+class _InspectionBody extends StatefulWidget {
   final String jobNumber;
   final String vehicleLabel;
   final bool isDelivery;
@@ -142,10 +142,20 @@ class _InspectionBody extends StatelessWidget {
   });
 
   @override
+  State<_InspectionBody> createState() => _InspectionBodyState();
+}
+
+class _InspectionBodyState extends State<_InspectionBody> {
+  bool _scrollLocked = false;
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bgPrimary,
       body: CustomScrollView(
+      physics: _scrollLocked
+          ? const NeverScrollableScrollPhysics()
+          : const AlwaysScrollableScrollPhysics(),
       slivers: [
         SliverAppBar(
           pinned: true,
@@ -157,9 +167,12 @@ class _InspectionBody extends StatelessWidget {
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(isDelivery ? 'Delivery Inspection' : 'Intake Inspection', style: AppTextStyles.titleMedium),
-              if (vehicleLabel.isNotEmpty)
-                Text(vehicleLabel, style: AppTextStyles.bodySmall),
+              Text(
+                widget.isDelivery ? 'Delivery Inspection' : 'Intake Inspection',
+                style: AppTextStyles.titleMedium,
+              ),
+              if (widget.vehicleLabel.isNotEmpty)
+                Text(widget.vehicleLabel, style: AppTextStyles.bodySmall),
             ],
           ),
           bottom: PreferredSize(
@@ -172,7 +185,7 @@ class _InspectionBody extends StatelessWidget {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
-                        value: state.completedChecklistCount / state.totalChecklistCount,
+                        value: widget.state.completedChecklistCount / widget.state.totalChecklistCount,
                         minHeight: 4,
                         backgroundColor: AppColors.bgElevated,
                         color: AppColors.primaryOrange,
@@ -181,7 +194,7 @@ class _InspectionBody extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    '${state.completedChecklistCount}/${state.totalChecklistCount}',
+                    '${widget.state.completedChecklistCount}/${widget.state.totalChecklistCount}',
                     style: AppTextStyles.labelSmall,
                   ),
                 ],
@@ -196,37 +209,42 @@ class _InspectionBody extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _PhotosCard(
-                  photos: state.photos,
-                  onCapture: onCapturePhoto,
-                  onGallery: onPickGallery,
+                  photos: widget.state.photos,
+                  onCapture: widget.onCapturePhoto,
+                  onGallery: widget.onPickGallery,
                 ),
                 const SizedBox(height: 12),
                 _ChecklistCard(
-                  items: state.checklistItems,
-                  conditions: state.conditions,
-                  onSetCondition: onSetCondition,
+                  items: widget.state.checklistItems,
+                  conditions: widget.state.conditions,
+                  onSetCondition: widget.onSetCondition,
                 ),
                 const SizedBox(height: 12),
                 VehicleDamageMap(
-                  damageZones: state.damageZones,
-                  onZoneTap: onCycleDamage,
-                  onClearAll: state.damageZones.isEmpty ? null : onClearDamage,
+                  damageZones: widget.state.damageZones,
+                  onZoneTap: widget.onCycleDamage,
+                  onClearAll: widget.state.damageZones.isEmpty ? null : widget.onClearDamage,
                 ),
                 const SizedBox(height: 12),
                 _NotesCard(
-                  controller: notesController,
-                  onChanged: onNotesChanged,
+                  controller: widget.notesController,
+                  onChanged: widget.onNotesChanged,
                 ),
                 const SizedBox(height: 12),
                 CustomerSignatureCard(
-                  isDelivery: isDelivery,
-                  signed: state.customerAcknowledged,
-                  onSignedChanged: onAcknowledged,
+                  isDelivery: widget.isDelivery,
+                  signed: widget.state.customerAcknowledged,
+                  onSignedChanged: widget.onAcknowledged,
+                  onSigningActiveChanged: (active) {
+                    if (_scrollLocked != active) {
+                      setState(() => _scrollLocked = active);
+                    }
+                  },
                 ),
-                if (state.errorMessage != null) ...[
+                if (widget.state.errorMessage != null) ...[
                   const SizedBox(height: 12),
                   Text(
-                    state.errorMessage!,
+                    widget.state.errorMessage!,
                     style: AppTextStyles.bodySmall.copyWith(color: AppColors.statusRed),
                   ),
                 ],
@@ -240,10 +258,10 @@ class _InspectionBody extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: FilledButton(
-            onPressed: state.canSubmit
+            onPressed: widget.state.canSubmit
                 ? () {
                     HapticFeedback.mediumImpact();
-                    onSubmit();
+                    widget.onSubmit();
                   }
                 : null,
             style: FilledButton.styleFrom(
@@ -251,16 +269,16 @@ class _InspectionBody extends StatelessWidget {
               minimumSize: const Size.fromHeight(48),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: state.isSubmitting
+            child: widget.state.isSubmitting
                 ? const SizedBox(
                     width: 22,
                     height: 22,
                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
                 : Text(
-                    state.canSubmit
-                        ? (isDelivery ? 'Submit' : 'Save & send for estimate')
-                        : _submitHint(state),
+                    widget.state.canSubmit
+                        ? (widget.isDelivery ? 'Submit' : 'Save & send for estimate')
+                        : _submitHint(widget.state),
                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
                   ),
           ),
@@ -274,7 +292,7 @@ class _InspectionBody extends StatelessWidget {
     if (s.photosRequired && !s.allPhotosReady) return 'Add vehicle photos (optional at delivery)';
     if (s.completedChecklistCount < s.totalChecklistCount) return 'Complete checklist';
     if (!s.customerAcknowledged) return 'Customer signature required';
-    return isDelivery ? 'Submit delivery inspection' : 'Complete inspection';
+    return widget.isDelivery ? 'Submit delivery inspection' : 'Complete inspection';
   }
 }
 
