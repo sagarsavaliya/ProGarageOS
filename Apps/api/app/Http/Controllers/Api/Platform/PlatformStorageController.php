@@ -29,7 +29,7 @@ class PlatformStorageController extends Controller
 
         if ($tenantUuid) {
             $tenant = Tenant::where('uuid', $tenantUuid)->firstOrFail();
-            $prefix = trim("tenant_{$tenant->id}/{$prefix}", '/');
+            $prefix = trim("tenants/{$tenant->id}/{$prefix}", '/');
         }
 
         if (!in_array($disk, ['local', 'public', 's3'], true)) {

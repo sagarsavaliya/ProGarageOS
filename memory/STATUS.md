@@ -4,10 +4,13 @@
 
 ## Overall Status
 - **Project:** Pro Garage OS (ProGarageOS)
-- **Infrastructure:** ✅ Live — `https://api.progarage.cloud/api`
-- **Staff app:** 🔲 Self-signup + UI polish — **new APK required**
-- **Platform admin:** `Apps/web-admin` (React) — run locally until hosted
-- **Last Updated:** 2026-05-23 IST
+- **Infrastructure:** ✅ Live — `https://api.progarage.cloud/api` (R2 wiring in progress)
+- **File storage:** 🔲 Wiring Cloudflare R2 — `files.progarage.cloud`
+- **Self-signup API:** ✅ Deployed — plans + owner signup live on production
+- **Staff app:** ✅ APK built — `Apps/flutter/build/app/outputs/flutter-apk/app-release.apk` (63.4MB, `6b10d65`)
+- **Platform admin:** `Apps/web-admin` — login works against production API
+- **Last Updated:** 2026-05-23 IST (EOD signoff)
+- **Next APK version:** bump `pubspec.yaml` before build (currently `1.1.0+2` for next release)
 
 ---
 
@@ -21,17 +24,17 @@
 
 ## ⚠️ Install instructions (important)
 1. **Uninstall** the old Pro Garage app from your phone
-2. Install **this new APK** (commit `234df8c`) — older builds do not include these fixes
-3. Demo garage login: `9876543219` / `123456` · Your number `8141302341` → customer OTP
-4. Retest: open any invoice → Fleet → tap a vehicle
+2. Install **APK** at `Apps/flutter/build/app/outputs/flutter-apk/app-release.apk` (commit `6b10d65`)
+3. **Self-signup:** Login → *New garage? Create your account* → use `8141302341` or any new number
+4. **Demo garage:** `9876543219` / `123456`
 
 ---
 
-## ✅ Self-signup & super-admin (code ready — deploy + APK)
-- Owner signup: app + `POST /auth/owner/signup` + public plans API
-- Plans: Starter / Pro / Enterprise (seeded)
-- Platform admin UI: `Apps/web-admin` — tenants, plans, storage
-- Demo owner phone → `9876543219` (seed + production update)
+## ✅ Self-signup live on production (`6b10d65`)
+- `GET /api/subscription-plans` — Starter / Pro / Enterprise
+- `POST /api/auth/owner/signup` — new garage registration
+- Platform admin seeded: `admin@progarage.cloud` / `999999`
+- Demo garage: `9876543219` / `123456`
 - Docs: `memory/SELF_SIGNUP_AND_ADMIN.md`
 
 ## 🔲 UI polish batch (in same APK build)
@@ -43,6 +46,8 @@
 - Server: `php artisan progarage:reset-tenant-data --phone=8141302341 --reset-onboarding --force` (after deploy)
 - Storage checklist: `memory/STORAGE_SETUP.md`
 
-## 🔲 After your retest
-- Report any remaining failures (screen + action)
+## 🔲 Tomorrow / next session
+- Device retest: self-signup (`8141302341`) + demo garage (`9876543219`)
+- R2 storage: server `.env` + tenant paths deployed — verify upload from staff app
+- Rebuild APK after retest fixes — **bump `pubspec.yaml` version first**
 - Staff v1 sign-off → customer app C0

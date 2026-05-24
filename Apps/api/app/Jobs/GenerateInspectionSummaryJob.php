@@ -4,12 +4,12 @@ namespace App\Jobs;
 
 use App\Models\JobInspectionRecord;
 use App\Models\ServiceJob;
+use App\Services\TenantStorageService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Storage;
 
 class GenerateInspectionSummaryJob implements ShouldQueue
 {
@@ -38,7 +38,11 @@ class GenerateInspectionSummaryJob implements ShouldQueue
             'records' => $records,
         ])->render();
 
-        $path = "inspections/{$job->tenant_id}/{$job->uuid}-{$this->phase}.html";
-        Storage::disk('public')->put($path, $html);
+        $path = app(TenantStorageService::class)->inspectionSummaryPath(
+            $job->tenant_id,
+            $this->phase,
+            $job->uuid,
+        );
+        app(TenantStorageService::class)->put($path, $html);
     }
 }

@@ -3,12 +3,12 @@
 namespace App\Jobs;
 
 use App\Models\Invoice;
+use App\Services\TenantStorageService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Storage;
 
 class GenerateInvoicePdfJob implements ShouldQueue
 {
@@ -32,10 +32,10 @@ class GenerateInvoicePdfJob implements ShouldQueue
             'tenant'  => $invoice->tenant,
         ])->render();
 
-        $path = "invoices/{$invoice->tenant_id}/{$invoice->uuid}.html";
-        Storage::disk('public')->put($path, $html);
+        $storage = app(TenantStorageService::class);
+        $path = $storage->invoicePath($invoice->tenant_id, $invoice->uuid);
+        $storage->put($path, $html);
 
-        $relativeUrl = Storage::disk('public')->url($path);
-        $invoice->update(['pdf_url' => url($relativeUrl)]);
+        $invoice->update(['pdf_url' => $storage->publicUrl($path)]);
     }
 }

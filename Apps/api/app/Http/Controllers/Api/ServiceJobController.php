@@ -13,8 +13,8 @@ use App\Models\InspectionTemplate;
 use App\Models\JobInspectionRecord;
 use App\Jobs\GenerateInspectionSummaryJob;
 use App\Services\InspectionMediaService;
+use App\Services\TenantStorageService;
 use App\Services\PushNotificationService;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -407,15 +407,14 @@ class ServiceJobController extends Controller
 
         GenerateInspectionSummaryJob::dispatchSync($job->id, $phase);
 
-        $path = "inspections/{$job->tenant_id}/{$job->uuid}-{$phase}.html";
-        $url  = Storage::disk('public')->exists($path)
-            ? Storage::disk('public')->url($path)
-            : null;
+        $storage = app(TenantStorageService::class);
+        $path = $storage->inspectionSummaryPath($job->tenant_id, $phase, $job->uuid);
+        $url  = $storage->exists($path) ? $storage->publicUrl($path) : null;
 
         return response()->json([
             'success' => true,
             'data'    => [
-                'url'   => $url ? url($url) : null,
+                'url'   => $url,
                 'phase' => $phase,
             ],
         ]);
@@ -439,6 +438,7 @@ class ServiceJobController extends Controller
             'photo' => ['required', 'image', 'mimes:jpeg,jpg,png,webp', 'max:10240'],
             'slot'  => ['required', 'string', 'max:50'],
             'label' => ['nullable', 'string', 'max:100'],
+            'phase' => ['nullable', 'in:intake,delivery'],
         ]);
 
         $stored = $media->storePhoto(
@@ -446,9 +446,8 @@ class ServiceJobController extends Controller
             $job->uuid,
             $request->file('photo'),
             $data['slot'],
+            $data['phase'] ?? 'intake',
         );
-
-        $publicUrl = url($stored['url']);
 
         return response()->json([
             'success' => true,
@@ -456,7 +455,7 @@ class ServiceJobController extends Controller
                 'slot'  => $data['slot'],
                 'label' => $data['label'] ?? $data['slot'],
                 'path'  => $stored['path'],
-                'url'   => $publicUrl,
+                'url'   => $stored['url'],
             ],
         ], 201);
     }

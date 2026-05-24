@@ -10,9 +10,9 @@ use App\Models\InvoiceItem;
 use App\Models\ServiceJob;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use App\Services\PushNotificationService;
+use App\Services\TenantStorageService;
 
 class InvoiceController extends Controller
 {
@@ -208,15 +208,16 @@ class InvoiceController extends Controller
             ->where('tenant_id', $tenantId)
             ->firstOrFail();
 
-        $path = "invoices/{$invoice->tenant_id}/{$invoice->uuid}.html";
-        if (! $invoice->pdf_url || ! Storage::disk('public')->exists($path)) {
+        $storage = app(TenantStorageService::class);
+        $path = $storage->invoicePath($invoice->tenant_id, $invoice->uuid);
+        if (! $invoice->pdf_url || ! $storage->exists($path)) {
             GenerateInvoicePdfJob::dispatchSync($invoice->id);
             $invoice->refresh();
         }
 
         $url = $invoice->pdf_url;
-        if (! $url && Storage::disk('public')->exists($path)) {
-            $url = url(Storage::disk('public')->url($path));
+        if (! $url && $storage->exists($path)) {
+            $url = $storage->publicUrl($path);
             $invoice->update(['pdf_url' => $url]);
         }
 
