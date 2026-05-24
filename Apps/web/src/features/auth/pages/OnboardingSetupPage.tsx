@@ -38,10 +38,6 @@ export function OnboardingSetupPage() {
     if (!profile) {
       return;
     }
-    if (profile.setup_completed_at) {
-      navigate('/dashboard', { replace: true });
-      return;
-    }
     setProfileForm({
       business_name: String(profile.business_name ?? ''),
       phone: String(profile.phone ?? ''),
@@ -60,7 +56,7 @@ export function OnboardingSetupPage() {
     } else if (setupStep === 'done') {
       setStep(3);
     }
-  }, [profileQuery.data, navigate]);
+  }, [profileQuery.data]);
 
   async function syncSetup(body: JsonMap) {
     await apiRequest('/tenant/setup', { method: 'PATCH', token, body });
@@ -112,6 +108,7 @@ export function OnboardingSetupPage() {
     try {
       await syncSetup({ complete: true });
       await queryClient.invalidateQueries({ queryKey: ['auth-me'] });
+      await queryClient.refetchQueries({ queryKey: ['auth-me'] });
       navigate('/dashboard', { replace: true });
     } catch (err) {
       setError((err as Error).message);

@@ -6,12 +6,18 @@ import { ACTIVE_PORTAL, getTokenStorageKey } from '@/lib/portal';
 export type AppUser = {
   uuid?: string;
   name?: string;
+  first_name?: string;
+  last_name?: string;
   email?: string;
   phone?: string;
   role?: string;
   is_platform_admin?: boolean;
   onboarding_completed?: boolean;
   setup_completed?: boolean;
+  tenant?: {
+    setup_complete?: boolean;
+    setup_step?: string;
+  };
 };
 
 type AuthContextValue = {
@@ -33,10 +39,26 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 function extractUser(payload: unknown): AppUser {
   const data = asData<JsonMap | AppUser>(payload);
+  let user: AppUser;
   if (data && typeof data === 'object' && 'user' in (data as JsonMap)) {
-    return ((data as JsonMap).user as AppUser) ?? {};
+    user = { ...(((data as JsonMap).user as AppUser) ?? {}) };
+  } else {
+    user = { ...(data as AppUser) };
   }
-  return (data as AppUser) ?? {};
+
+  const tenant = user.tenant;
+  if (tenant?.setup_complete !== undefined && user.setup_completed === undefined) {
+    user.setup_completed = tenant.setup_complete;
+  }
+
+  if (!user.name) {
+    const fullName = `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim();
+    if (fullName) {
+      user.name = fullName;
+    }
+  }
+
+  return user;
 }
 
 function isOwner(user?: AppUser): boolean {
@@ -54,11 +76,16 @@ function hasCompletedOwnerSetup(user?: AppUser): boolean {
   if (!isOwner(user)) {
     return true;
   }
-  const setupFlags = [user.onboarding_completed, user.setup_completed];
-  if (setupFlags.some((value) => value === false)) {
+
+  if (user.tenant?.setup_complete === true || user.setup_completed === true || user.onboarding_completed === true) {
+    return true;
+  }
+
+  if (user.tenant?.setup_complete === false || user.setup_completed === false || user.onboarding_completed === false) {
     return false;
   }
-  return setupFlags.some((value) => value === true);
+
+  return false;
 }
 
 export function AuthProvider(props: { children: ReactNode }) {
@@ -75,6 +102,12 @@ export function AuthProvider(props: { children: ReactNode }) {
       return extractUser(payload);
     },
   });
+
+  const isOwnerSetupIncomplete =
+    token.length > 0 &&
+    meQuery.isSuccess &&
+    isOwner(meQuery.data) &&
+    !hasCompletedOwnerSetup(meQuery.data);
 
   useEffect(() => {
     if (!meQuery.data) {
@@ -137,9 +170,9 @@ export function AuthProvider(props: { children: ReactNode }) {
     () => ({
       token,
       user: meQuery.data,
-      isReady: !meQuery.isLoading,
+      isReady: token.length === 0 || meQuery.isFetched,
       isAuthenticated: token.length > 0,
-      isOwnerSetupIncomplete: isOwner(meQuery.data) && !hasCompletedOwnerSetup(meQuery.data),
+      isOwnerSetupIncomplete,
       login: (params) => loginMutation.mutateAsync(params),
       logout: () => logoutMutation.mutateAsync(),
       loginPending: loginMutation.isPending,
@@ -149,7 +182,8 @@ export function AuthProvider(props: { children: ReactNode }) {
     [
       token,
       meQuery.data,
-      meQuery.isLoading,
+      meQuery.isFetched,
+      isOwnerSetupIncomplete,
       loginMutation,
       logoutMutation,
       authError,
