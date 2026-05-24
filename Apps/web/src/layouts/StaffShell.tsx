@@ -26,6 +26,7 @@ const STAFF_NAV_SECTIONS = [
     items: [
       { to: '/settings', label: 'Settings' },
       { to: '/notifications', label: 'Notifications' },
+      { to: '/audit', label: 'Audit' },
     ],
   },
 ] as const;

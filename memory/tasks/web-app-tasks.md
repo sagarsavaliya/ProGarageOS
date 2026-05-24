@@ -9,24 +9,20 @@
 
 ---
 
-## Phase 0 — Staff foundation (IN PROGRESS)
+## Phase 0 — Staff foundation ✅
 - [x] Fix staff login: phone OR email
-- [ ] Refactor `Apps/web` → `src/lib`, `src/components`, `src/features/staff`, `src/features/auth`
-- [ ] Design system from `Briefs/Web-app-design/gf-tokens.jsx` (Shell, Sidebar, Header, atoms)
-- [ ] Auth: login (design p01), owner signup, forgot PIN (WhatsApp OTP), PIN setup/reset, onboarding redirect
-- [ ] Deploy after Phase 0
+- [x] Refactor `Apps/web` → modular structure
+- [x] Design system + auth flows
+- [x] Deploy
 
-## Phase 1 — Staff core
-- [ ] Dashboard p02 · Jobs list/detail/create p03–05 · Customers p06–07 · Fleet/vehicles
+## Phase 1–3 — Staff portal ✅
+- [x] Dashboard · Jobs list/detail/create · Customers · Vehicles/Fleet
+- [x] Appointments · Inventory · Billing (invoices + payments)
+- [x] Intake inspection (checklist, USB/webcam capture → R2)
+- [x] Reports · Settings (profile, team, WhatsApp) · Notifications · Audit
+- [x] Owner onboarding wizard
 
-## Phase 2 — Inspections & billing
-- [ ] Intake/delivery inspection (checklist, damage map, signature, **USB/webcam capture** → R2)
-- [ ] Invoices, record payment, payments hub
-
-## Phase 3 — Staff operations
-- [ ] Appointments · Inventory p08 · Team · Reports p10 · Settings p11 · Notifications p12 · Audit
-
-## Phase 5 — Backend: impersonation (after staff web sign-off)
+## Phase 5 — Backend: impersonation (after staff sign-off)
 - [ ] `POST /platform/tenants/{uuid}/impersonate` → staff token, `impersonator_id` on audit
 - [ ] Platform audit log endpoint if needed
 

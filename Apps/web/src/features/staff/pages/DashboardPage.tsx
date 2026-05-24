@@ -55,7 +55,7 @@ export function DashboardPage(props: {
               {activeJobs.slice(0, 8).map((job) => (
                 <TRow key={String(job.uuid ?? job.id)}>
                   <TD>
-                    <Link to="/jobs">{String(job.job_number ?? job.uuid ?? 'Job')}</Link>
+                    <Link to={`/jobs/${String(job.uuid)}`}>{String(job.job_number ?? job.uuid ?? 'Job')}</Link>
                   </TD>
                   <TD>{String(job.customer_name ?? '-')}</TD>
                   <TD>

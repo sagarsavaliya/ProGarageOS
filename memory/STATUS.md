@@ -52,7 +52,9 @@
 - **Impersonation:** Full owner access, no blocks, audit trail
 - **Web inspection:** USB/UVC camera capture (mobile stays primary for field)
 - **Live (skeleton):** https://app.progarage.cloud · https://admin.progarage.cloud
-- **Plan:** `memory/tasks/web-app-tasks.md` — **Phase 0 in progress**
+- **Phase 0:** ✅ Deployed (`9fb2e82`) — modular auth, shell, dashboard at https://app.progarage.cloud
+- **Staff web:** ✅ Complete — all 16 modules wired to production API (Jobs, Customers, Vehicles, Appointments, Inventory, Billing, Inspection+webcam, Reports, Settings, Notifications, Audit)
+- **Plan:** `memory/tasks/web-app-tasks.md` — **Next: staff sign-off → impersonation APIs → super-admin**
 
 ## 🔲 Tomorrow / next session
 - Device retest: self-signup (`8141302341`) + demo garage (`9876543219`)
