@@ -4,8 +4,8 @@
 
 ## Overall Status
 - **Project:** Pro Garage OS (ProGarageOS)
-- **Infrastructure:** ✅ Live — `https://api.progarage.cloud/api` (R2 wiring in progress)
-- **File storage:** 🔲 Wiring Cloudflare R2 — `files.progarage.cloud`
+- **Infrastructure:** ✅ Live — `https://api.progarage.cloud/api` (commit `f67bc50`)
+- **File storage:** ✅ R2 wired — uploads go to bucket `progarageos`; URLs use `https://files.progarage.cloud`
 - **Self-signup API:** ✅ Deployed — plans + owner signup live on production
 - **Staff app:** ✅ APK built — `Apps/flutter/build/app/outputs/flutter-apk/app-release.apk` (63.4MB, `6b10d65`)
 - **Platform admin:** `Apps/web-admin` — login works against production API
@@ -48,6 +48,6 @@
 
 ## 🔲 Tomorrow / next session
 - Device retest: self-signup (`8141302341`) + demo garage (`9876543219`)
-- R2 storage: server `.env` + tenant paths deployed — verify upload from staff app
+- **Verify R2 public URLs:** upload vehicle doc or inspection photo from staff app → confirm opens at `files.progarage.cloud`
 - Rebuild APK after retest fixes — **bump `pubspec.yaml` version first**
 - Staff v1 sign-off → customer app C0

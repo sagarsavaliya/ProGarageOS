@@ -144,10 +144,10 @@ Empty folders in R2 UI are optional.
 - [ ] Secure handoff of new keys + “wire server” go-ahead  
 
 **Us (Akshara)**  
-- [ ] Production `.env` on Hostinger  
-- [ ] Code: tenant-scoped paths + invoices/signatures on R2  
-- [ ] End-to-end upload test  
-- [ ] Document in STATUS  
+- [x] Production `.env` on Hostinger  
+- [x] Code: tenant-scoped paths + invoices/signatures on R2  
+- [ ] End-to-end upload test (staff app → `files.progarage.cloud`)  
+- [x] Document in STATUS  
 
 ---
 
