@@ -10,7 +10,7 @@
 - **Staff app:** ✅ APK built — `Apps/flutter/build/app/outputs/flutter-apk/app-release.apk` (63.4MB, `6b10d65`)
 - **Platform admin:** `Apps/web-admin` (legacy) — superseded by `Apps/web`
 - **Web app:** `Apps/web` — staff + super-admin portals (GarageFlow design)
-- **Last Updated:** 2026-05-23 IST (EOD signoff)
+- **Last Updated:** 2026-05-24 IST
 - **Next APK version:** bump `pubspec.yaml` before build (currently `1.1.0+2` for next release)
 
 ---
@@ -47,11 +47,11 @@
 - Server: `php artisan progarage:reset-tenant-data --phone=8141302341 --reset-onboarding --force` (after deploy)
 - Storage checklist: `memory/STORAGE_SETUP.md`
 
-## 🔲 Web app (GarageFlow design)
-- **Staff portal:** `app.progarage.cloud` — garage owners/managers
-- **Super-admin:** `admin.progarage.cloud` — platform ops (separate subdomain required)
-- Code: `Apps/web` — deploy guide: `memory/WEB_APP_DEPLOY.md`
-- DNS: add A records `app` + `admin` → VPS IP (Cloudflare grey cloud)
+## ⚠️ Web app — production rebuild in progress
+- **Live URLs:** https://app.progarage.cloud · https://admin.progarage.cloud
+- **Current state:** Skeleton only — NOT production-ready (Sagar review May 24)
+- **Task plan:** `memory/tasks/web-app-tasks.md` (phased, Flutter parity + design files)
+- **Immediate fix:** Staff login phone field (deploy pending)
 
 ## 🔲 Tomorrow / next session
 - Device retest: self-signup (`8141302341`) + demo garage (`9876543219`)

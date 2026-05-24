@@ -150,6 +150,14 @@ function extractUser(payload: unknown): AppUser {
   return (data as AppUser) ?? {};
 }
 
+function normalizeLogin(value: string): string {
+  const trimmed = value.trim();
+  if (/^\d{10}$/.test(trimmed)) {
+    return `+91${trimmed}`;
+  }
+  return trimmed;
+}
+
 function tenantLabel(tenant: JsonMap): string {
   return String(tenant.business_name ?? tenant.name ?? '-');
 }
@@ -303,10 +311,10 @@ function useAuth() {
   }, [meQuery.data]);
 
   const loginMutation = useMutation({
-    mutationFn: async (params: { email: string; pin: string }) => {
+    mutationFn: async (params: { login: string; pin: string }) => {
       const payload = await apiRequest('/auth/staff/login', {
         method: 'POST',
-        body: { login: params.email, pin: params.pin },
+        body: { login: normalizeLogin(params.login), pin: params.pin },
       });
       const loginToken = extractToken(payload);
       const user = extractUser(payload);
@@ -438,7 +446,7 @@ function RequireAuth(props: { auth: ReturnType<typeof useAuth> }) {
 
 function LoginPage(props: { auth: ReturnType<typeof useAuth> }) {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const [login, setLogin] = useState('');
   const [pin, setPin] = useState('');
   const isAdmin = ACTIVE_PORTAL === 'admin';
 
@@ -450,31 +458,33 @@ function LoginPage(props: { auth: ReturnType<typeof useAuth> }) {
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    await props.auth.loginMutation.mutateAsync({ email, pin });
+    await props.auth.loginMutation.mutateAsync({ login, pin });
     navigate('/', { replace: true });
   };
 
   return (
     <div className="auth-page">
       <Card className="auth-card">
-        <h1>{isAdmin ? 'Platform Admin Login' : 'Garage Staff Login'}</h1>
-        <p>{isAdmin ? 'Use admin account with platform access.' : 'Sign in with staff credentials and PIN.'}</p>
+        <h1>{isAdmin ? 'Platform Admin Login' : 'Staff Login'}</h1>
+        <p>{isAdmin ? 'Sign in with your platform admin email and PIN.' : 'Sign in with phone or email and your 6-digit PIN.'}</p>
         <form className="auth-form" onSubmit={onSubmit}>
-          <label htmlFor="email">Email</label>
+          <label htmlFor="login">{isAdmin ? 'Email' : 'Phone or email'}</label>
           <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="name@garage.com"
+            id="login"
+            type="text"
+            inputMode={isAdmin ? 'email' : 'tel'}
+            autoComplete="username"
+            value={login}
+            onChange={(event) => setLogin(event.target.value)}
+            placeholder={isAdmin ? 'admin@progarage.cloud' : '9876543219 or name@garage.com'}
             required
           />
-          <label htmlFor="pin">PIN</label>
+          <label htmlFor="pin">6-digit PIN</label>
           <PinInput value={pin} onChange={setPin} />
           {props.auth.loginMutation.error ? (
             <div className="error-text">{(props.auth.loginMutation.error as Error).message}</div>
           ) : null}
-          <Button type="submit" disabled={props.auth.loginMutation.isPending || pin.length < 4}>
+          <Button type="submit" disabled={props.auth.loginMutation.isPending || pin.length < 6}>
             {props.auth.loginMutation.isPending ? 'Signing in...' : 'Sign in'}
           </Button>
         </form>
