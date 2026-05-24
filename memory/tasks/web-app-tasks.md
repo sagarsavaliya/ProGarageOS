@@ -1,51 +1,36 @@
 # Web App — Production Build (GarageFlow)
 
-**Goal:** Full parity with Flutter staff app + design files (`Briefs/Web-app-design/`).  
-**Codebase:** `Apps/web` (refactor from single-file → proper modules).  
-**Portals:** `app.progarage.cloud` (staff) · `admin.progarage.cloud` (super-admin)
+**Approved May 24, 2026 — Sagar decisions:**
+1. **Order:** Staff web first → impersonation APIs → super-admin web
+2. **Impersonation:** Full owner access, **no actions blocked**; audit trail required
+3. **Inspection photos on web:** USB/UVC camera via browser capture (mobile remains primary for field inspection)
+
+**Portals:** `app.progarage.cloud` (staff) · `admin.progarage.cloud` (later)
 
 ---
 
-## Phase 0 — Foundation (current sprint)
-- [x] Fix staff login: phone OR email (no browser email validation)
-- [ ] Refactor: `src/features/`, design system from `gf-tokens.jsx`, shared Shell/Sidebar
-- [ ] Auth flows: login, owner signup, forgot PIN (WhatsApp OTP), reset PIN, post-login onboarding redirect
-- [ ] Deploy each phase to production
+## Phase 0 — Staff foundation (IN PROGRESS)
+- [x] Fix staff login: phone OR email
+- [ ] Refactor `Apps/web` → `src/lib`, `src/components`, `src/features/staff`, `src/features/auth`
+- [ ] Design system from `Briefs/Web-app-design/gf-tokens.jsx` (Shell, Sidebar, Header, atoms)
+- [ ] Auth: login (design p01), owner signup, forgot PIN (WhatsApp OTP), PIN setup/reset, onboarding redirect
+- [ ] Deploy after Phase 0
 
-## Phase 1 — Staff core operations
-- [ ] Dashboard (KPIs, bays, active jobs, appointments today) — match design p02
-- [ ] Jobs: list filters/pagination, create job wizard, detail (tabs: overview/tasks/inspection/parts/billing/timeline) — p03–05
-- [ ] Job status updates, estimate send/approve, tasks CRUD
-- [ ] Customers: list, detail (vehicles, history, loyalty), add/edit — p06–07
-- [ ] Vehicles: list (fleet), detail, add/edit, documents upload — Flutter `/vehicles`
+## Phase 1 — Staff core
+- [ ] Dashboard p02 · Jobs list/detail/create p03–05 · Customers p06–07 · Fleet/vehicles
 
 ## Phase 2 — Inspections & billing
-- [ ] Intake + delivery inspection (checklist, damage map, signature pad, **webcam photo capture**) — p07 design + Flutter parity
-- [ ] Invoices: list, create from job, detail, PDF download, split billing — p09
-- [ ] Record payment / collect payment — Flutter payments hub + invoice sheet
-- [ ] Payments outstanding hub
+- [ ] Intake/delivery inspection (checklist, damage map, signature, **USB/webcam capture** → R2)
+- [ ] Invoices, record payment, payments hub
 
-## Phase 3 — Operations & settings
-- [ ] Appointments (list, check-in)
-- [ ] Inventory (list, add part, stock adjust, low-stock alerts) — p08
-- [ ] Team/staff (list, add technician, roles)
-- [ ] Reports — p10
-- [ ] Settings: garage profile, user profile, integrations (WhatsApp), fleet — p11
-- [ ] Notifications panel — p12
-- [ ] Audit log (owner/advisor)
+## Phase 3 — Staff operations
+- [ ] Appointments · Inventory p08 · Team · Reports p10 · Settings p11 · Notifications p12 · Audit
 
-## Phase 4 — Super-admin (full design SA-01–SA-10)
-- [ ] Platform dashboard (KPIs, MRR chart, tenant events, system health)
-- [ ] Tenants: list/search/filters, create wizard, detail (profile, subscription, users, billing, feature flags, audit, support notes)
-- [ ] Plans CRUD, active subscriptions management
-- [ ] Global settings, admin users, audit log, support tools (storage browser, reset tenant)
-- [ ] **Tenant impersonation** — requires new API (see below)
+## Phase 5 — Backend: impersonation (after staff web sign-off)
+- [ ] `POST /platform/tenants/{uuid}/impersonate` → staff token, `impersonator_id` on audit
+- [ ] Platform audit log endpoint if needed
 
-## Backend gaps (before Phase 4 impersonation)
-- [ ] `POST /platform/tenants/{uuid}/impersonate` → staff token + audit `impersonator_id`
-- [ ] Platform-wide audit log endpoint (optional: extend `/audit-logs` for platform admin)
+## Phase 6 — Super-admin web (after Phase 5 APIs)
+- [ ] Full SA-01–SA-10 design + wire impersonation
 
----
-
-## Acceptance rule
-Each screen must match design layout + wire to production API. No placeholder tables or stub pages marked done.
+**Rule:** Match design files + Flutter API parity. No stub pages marked done.

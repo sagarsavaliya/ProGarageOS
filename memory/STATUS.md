@@ -47,11 +47,12 @@
 - Server: `php artisan progarage:reset-tenant-data --phone=8141302341 --reset-onboarding --force` (after deploy)
 - Storage checklist: `memory/STORAGE_SETUP.md`
 
-## ⚠️ Web app — production rebuild in progress
-- **Live URLs:** https://app.progarage.cloud · https://admin.progarage.cloud
-- **Current state:** Skeleton only — NOT production-ready (Sagar review May 24)
-- **Task plan:** `memory/tasks/web-app-tasks.md` (phased, Flutter parity + design files)
-- **Immediate fix:** Staff login phone field (deploy pending)
+## 🏗️ Web app — APPROVED rebuild (May 24)
+- **Order:** Staff web production-ready → impersonation APIs → super-admin web
+- **Impersonation:** Full owner access, no blocks, audit trail
+- **Web inspection:** USB/UVC camera capture (mobile stays primary for field)
+- **Live (skeleton):** https://app.progarage.cloud · https://admin.progarage.cloud
+- **Plan:** `memory/tasks/web-app-tasks.md` — **Phase 0 in progress**
 
 ## 🔲 Tomorrow / next session
 - Device retest: self-signup (`8141302341`) + demo garage (`9876543219`)
