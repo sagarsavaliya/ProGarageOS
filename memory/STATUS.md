@@ -8,7 +8,8 @@
 - **File storage:** ✅ R2 wired — uploads go to bucket `progarageos`; URLs use `https://files.progarage.cloud`
 - **Self-signup API:** ✅ Deployed — plans + owner signup live on production
 - **Staff app:** ✅ APK built — `Apps/flutter/build/app/outputs/flutter-apk/app-release.apk` (63.4MB, `6b10d65`)
-- **Platform admin:** `Apps/web-admin` — login works against production API
+- **Platform admin:** `Apps/web-admin` (legacy) — superseded by `Apps/web`
+- **Web app:** `Apps/web` — staff + super-admin portals (GarageFlow design)
 - **Last Updated:** 2026-05-23 IST (EOD signoff)
 - **Next APK version:** bump `pubspec.yaml` before build (currently `1.1.0+2` for next release)
 
@@ -45,6 +46,12 @@
 - Intake inspection: scroll locked while signing
 - Server: `php artisan progarage:reset-tenant-data --phone=8141302341 --reset-onboarding --force` (after deploy)
 - Storage checklist: `memory/STORAGE_SETUP.md`
+
+## 🔲 Web app (GarageFlow design)
+- **Staff portal:** `app.progarage.cloud` — garage owners/managers
+- **Super-admin:** `admin.progarage.cloud` — platform ops (separate subdomain required)
+- Code: `Apps/web` — deploy guide: `memory/WEB_APP_DEPLOY.md`
+- DNS: add A records `app` + `admin` → VPS IP (Cloudflare grey cloud)
 
 ## 🔲 Tomorrow / next session
 - Device retest: self-signup (`8141302341`) + demo garage (`9876543219`)

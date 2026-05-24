@@ -82,6 +82,16 @@ services:
       - progarage_network
       - proxy-net
 
+  web:
+    build:
+      context: ../../Apps/web
+      dockerfile: Dockerfile
+    image: progarage-web:latest
+    container_name: progarage_web
+    restart: always
+    networks:
+      - proxy-net
+
 volumes:
   progarage_db_data:
   progarage_redis_data:
