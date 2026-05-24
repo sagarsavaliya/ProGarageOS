@@ -516,6 +516,24 @@ p {
   resize: vertical;
 }
 
+.inline-field-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.inline-field-row .field-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.inline-field-row .gf-btn {
+  min-height: 42px;
+  height: 42px;
+  padding: 0 20px;
+  flex-shrink: 0;
+}
+
 .chip {
   display: inline-flex;
   align-items: center;

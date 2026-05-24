@@ -57,7 +57,7 @@ export function OnboardingSetupPage() {
       setStep(1);
     } else if (setupStep === 'bays') {
       setStep(2);
-    } else if (setupStep === 'complete') {
+    } else if (setupStep === 'done') {
       setStep(3);
     }
   }, [profileQuery.data, navigate]);
@@ -97,7 +97,7 @@ export function OnboardingSetupPage() {
     setError(undefined);
     try {
       const bays = Math.min(50, Math.max(1, Number(bayCount) || 2));
-      await syncSetup({ setup_step: 'complete', setup_bay_count: bays });
+      await syncSetup({ setup_step: 'bays', setup_bay_count: bays });
       setStep(3);
     } catch (err) {
       setError((err as Error).message);
@@ -182,14 +182,25 @@ export function OnboardingSetupPage() {
         ) : null}
 
         {step === 2 ? (
-          <form className="form-grid auth-form" onSubmit={(event) => void saveBayCount(event)}>
+          <form className="stack auth-form" onSubmit={(event) => void saveBayCount(event)}>
             <div>
-              <FieldLabel>Number of service bays</FieldLabel>
-              <TextInput value={bayCount} onChange={(event) => setBayCount(event.target.value)} />
+              <FieldLabel htmlFor="bay-count">Number of service bays</FieldLabel>
+              <div className="inline-field-row">
+                <TextInput
+                  id="bay-count"
+                  type="number"
+                  min={1}
+                  max={50}
+                  inputMode="numeric"
+                  value={bayCount}
+                  onChange={(event) => setBayCount(event.target.value)}
+                  required
+                />
+                <Button type="submit" disabled={loading}>
+                  {loading ? 'Saving...' : 'Continue'}
+                </Button>
+              </div>
             </div>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Saving...' : 'Continue'}
-            </Button>
           </form>
         ) : null}
 
