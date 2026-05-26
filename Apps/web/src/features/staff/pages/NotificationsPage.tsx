@@ -49,7 +49,7 @@ export function NotificationsPage() {
           <EmptyState title="No notifications yet" description="Alerts about jobs, billing, and inventory will show up here." />
         ) : null}
 
-        <div className="feed-list" style={{ marginTop: items.length > 0 ? 4 : 0 }}>
+        <div className={`feed-list ${items.length > 0 ? 'feed-list--compact' : ''}`}>
           {items.map((item: JsonMap) => {
             const unread = !item.read_at;
             return (

@@ -103,7 +103,7 @@ export function CustomerDetailPage() {
       <div className="detail-grid">
         <Card>
           <h3>Contact</h3>
-          <div className="stack" style={{ marginTop: 12 }}>
+          <div className="stack mt-3">
             <div className="line-item">
               <span>Phone</span>
               <span>{String(customer.phone_primary ?? customer.phone ?? '-')}</span>
@@ -129,7 +129,7 @@ export function CustomerDetailPage() {
             ) : null}
           </div>
           {vehicles.length === 0 ? <p className="muted">No vehicles registered.</p> : null}
-          <div className="stack" style={{ marginTop: 12 }}>
+          <div className="stack mt-3">
             {vehicles.map((vehicle) => (
               <Link key={String(vehicle.uuid)} to={`/vehicles/${String(vehicle.uuid)}`} className="line-item">
                 <span>{vehicleLabel(vehicle)}</span>

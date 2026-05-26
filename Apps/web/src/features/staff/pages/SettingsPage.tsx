@@ -319,7 +319,7 @@ export function SettingsPage() {
             <form className="settings-sections" onSubmit={(event) => void saveProfile(event)}>
               <PageSection title="Business identity" subtitle="Shown on invoices and customer communications">
                 <div className="form-grid">
-                  <div style={{ gridColumn: '1 / -1' }}>
+                  <div className="form-span-full">
                     <FieldLabel htmlFor="settings-business-name">Business name</FieldLabel>
                     <TextInput
                       id="settings-business-name"
@@ -350,7 +350,7 @@ export function SettingsPage() {
 
               <PageSection title="Workshop location" subtitle="Used for customer directions and tax jurisdiction">
                 <div className="form-grid">
-                  <div style={{ gridColumn: '1 / -1' }}>
+                  <div className="form-span-full">
                     <FieldLabel htmlFor="settings-address">Street address</FieldLabel>
                     <TextInput
                       id="settings-address"

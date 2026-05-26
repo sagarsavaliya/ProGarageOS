@@ -71,7 +71,7 @@ export function BillingListPage() {
           {outstandingItems.length === 0 && !outstandingQuery.isLoading ? (
             <EmptyState title="No outstanding invoices" description="All caught up — no pending balances right now." />
           ) : null}
-          <div className="stack" style={{ marginTop: 12 }}>
+          <div className="stack mt-3">
             {outstandingItems.map((item) => (
               <div key={String(item.uuid ?? item.invoice_uuid)} className="line-item">
                 <span>

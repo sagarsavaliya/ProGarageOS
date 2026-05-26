@@ -480,7 +480,7 @@ export function JobDetailPage() {
       <div className="detail-grid">
         <Card>
           <h3>Overview</h3>
-          <div className="stack" style={{ marginTop: 12 }}>
+          <div className="stack mt-3">
             <div className="line-item">
               <span>Status</span>
               <StatusBadge status={String(job.status ?? 'draft')} />
@@ -516,7 +516,7 @@ export function JobDetailPage() {
 
         <Card>
           <h3>Update status</h3>
-          <div className="form-grid" style={{ marginTop: 12 }}>
+          <div className="form-grid mt-3">
             <div>
               <FieldLabel htmlFor="job-status">New status</FieldLabel>
               <SelectInput id="job-status" value={status} onChange={(event) => setStatus(event.target.value)}>
@@ -546,7 +546,7 @@ export function JobDetailPage() {
             Edit insurance
           </Button>
         </div>
-        <div className="detail-grid" style={{ marginTop: 12 }}>
+        <div className="detail-grid mt-3">
           <div className="line-item">
             <span>Insurance job</span>
             <span>{job.is_insurance_job ? 'Yes' : 'No'}</span>
@@ -688,7 +688,7 @@ export function JobDetailPage() {
             </tbody>
           </Table>
         ) : null}
-        <div className="form-grid" style={{ marginTop: 16 }}>
+        <div className="form-grid mt-4">
           <div>
             <FieldLabel htmlFor="reject-notes">Reject notes</FieldLabel>
             <TextArea

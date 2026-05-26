@@ -223,7 +223,7 @@ export function VehicleDetailPage() {
       <div className="detail-grid">
         <Card>
           <h3>Details</h3>
-          <div className="stack" style={{ marginTop: 12 }}>
+          <div className="stack mt-3">
             <div className="line-item">
               <span>Registration</span>
               <span>{String(vehicle.registration_number ?? '-')}</span>
@@ -259,7 +259,7 @@ export function VehicleDetailPage() {
 
         <Card>
           <h3>Update odometer</h3>
-          <div className="form-grid" style={{ marginTop: 12 }}>
+          <div className="form-grid mt-3">
             <div>
               <FieldLabel htmlFor="odometer">Reading (km)</FieldLabel>
               <TextInput id="odometer" value={odometer} onChange={(event) => setOdometer(event.target.value)} />
@@ -280,7 +280,7 @@ export function VehicleDetailPage() {
         </div>
         {documentsQuery.isLoading ? <p className="muted">Loading documents...</p> : null}
         {!documentsQuery.isLoading && documents.length === 0 ? <p className="muted">No documents uploaded.</p> : null}
-        <div className="stack" style={{ marginTop: 12 }}>
+        <div className="stack mt-3">
           {documents.map((doc) => (
             <div key={String(doc.uuid)} className="line-item">
               <span>

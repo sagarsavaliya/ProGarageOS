@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, Card } from '@/components/ui';
+import { Button } from '@/components/ui';
+import { AuthShell } from '@/layouts/AuthShell';
 import { usePinOtpRequest, usePinOtpReset } from '@/lib/auth';
 
 export function ForgotPinPage() {
@@ -34,55 +35,56 @@ export function ForgotPinPage() {
   };
 
   return (
-    <div className="auth-page">
-      <Card className="auth-card">
-        <h1>Forgot PIN</h1>
-        <p>Request OTP and reset your staff PIN.</p>
+    <AuthShell
+      title="Forgot PIN"
+      subtitle="Request a one-time code and set a new staff PIN."
+      links={<Link to="/login">Back to login</Link>}
+    >
+      {!otpRequested ? (
+        <form className="auth-form" onSubmit={requestOtp}>
+          <label htmlFor="forgot-login">Phone or email</label>
+          <input
+            id="forgot-login"
+            value={login}
+            onChange={(event) => setLogin(event.target.value)}
+            placeholder="9876543219 or staff@garage.com"
+            required
+          />
+          {requestMutation.isError ? <div className="error-text">{(requestMutation.error as Error).message}</div> : null}
+          <Button type="submit" disabled={requestMutation.isPending}>
+            {requestMutation.isPending ? 'Requesting OTP...' : 'Request OTP'}
+          </Button>
+        </form>
+      ) : (
+        <form className="auth-form" onSubmit={resetPin}>
+          <label htmlFor="forgot-otp">OTP</label>
+          <input id="forgot-otp" value={otp} onChange={(event) => setOtp(event.target.value)} placeholder="Enter OTP" required />
+          <label htmlFor="forgot-pin">New PIN</label>
+          <input
+            id="forgot-pin"
+            value={pin}
+            onChange={(event) => setPin(event.target.value.replace(/\D/g, '').slice(0, 6))}
+            placeholder="6-digit PIN"
+            inputMode="numeric"
+            required
+          />
+          <label htmlFor="forgot-pin-confirm">Confirm PIN</label>
+          <input
+            id="forgot-pin-confirm"
+            value={pinConfirmation}
+            onChange={(event) => setPinConfirmation(event.target.value.replace(/\D/g, '').slice(0, 6))}
+            placeholder="Confirm PIN"
+            inputMode="numeric"
+            required
+          />
+          {resetMutation.isError ? <div className="error-text">{(resetMutation.error as Error).message}</div> : null}
+          <Button type="submit" disabled={resetMutation.isPending}>
+            {resetMutation.isPending ? 'Resetting PIN...' : 'Reset PIN'}
+          </Button>
+        </form>
+      )}
 
-        {!otpRequested ? (
-          <form className="auth-form" onSubmit={requestOtp}>
-            <label htmlFor="forgot-login">Phone or email</label>
-            <input
-              id="forgot-login"
-              value={login}
-              onChange={(event) => setLogin(event.target.value)}
-              placeholder="9876543219 or staff@garage.com"
-              required
-            />
-            {requestMutation.isError ? <div className="error-text">{(requestMutation.error as Error).message}</div> : null}
-            <Button type="submit" disabled={requestMutation.isPending}>
-              {requestMutation.isPending ? 'Requesting OTP...' : 'Request OTP'}
-            </Button>
-          </form>
-        ) : (
-          <form className="auth-form" onSubmit={resetPin}>
-            <input value={otp} onChange={(event) => setOtp(event.target.value)} placeholder="OTP" required />
-            <input
-              value={pin}
-              onChange={(event) => setPin(event.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="New PIN"
-              inputMode="numeric"
-              required
-            />
-            <input
-              value={pinConfirmation}
-              onChange={(event) => setPinConfirmation(event.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="Confirm PIN"
-              inputMode="numeric"
-              required
-            />
-            {resetMutation.isError ? <div className="error-text">{(resetMutation.error as Error).message}</div> : null}
-            <Button type="submit" disabled={resetMutation.isPending}>
-              {resetMutation.isPending ? 'Resetting PIN...' : 'Reset PIN'}
-            </Button>
-          </form>
-        )}
-
-        {message ? <p className="muted" style={{ marginTop: 12 }}>{message}</p> : null}
-        <div className="auth-links">
-          <Link to="/login">Back to login</Link>
-        </div>
-      </Card>
-    </div>
+      {message ? <p className="muted mt-3">{message}</p> : null}
+    </AuthShell>
   );
 }

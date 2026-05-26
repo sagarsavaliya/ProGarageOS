@@ -88,11 +88,11 @@ export function WebcamCapture(props: WebcamCaptureProps) {
     <div className="webcam-box">
       {error ? <p className="error-text">{error}</p> : null}
       {previewUrl ? (
-        <img src={previewUrl} alt="Captured preview" style={{ width: '100%', borderRadius: 12 }} />
+        <img src={previewUrl} alt="Captured preview" className="media-preview" />
       ) : (
-        <video ref={videoRef} autoPlay muted playsInline style={{ width: '100%', borderRadius: 12 }} />
+        <video ref={videoRef} autoPlay muted playsInline className="media-preview" />
       )}
-      <div className="toolbar" style={{ marginTop: 12 }}>
+      <div className="toolbar mt-3">
         {previewUrl ? (
           <Button type="button" variant="outline" onClick={retake} disabled={props.disabled}>
             Retake

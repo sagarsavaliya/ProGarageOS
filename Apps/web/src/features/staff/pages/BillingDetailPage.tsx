@@ -152,7 +152,7 @@ export function BillingDetailPage() {
       <div className="detail-grid">
         <Card>
           <h3>Summary</h3>
-          <div className="stack" style={{ marginTop: 12 }}>
+          <div className="stack mt-3">
             <div className="line-item">
               <span>Customer</span>
               <span>{customerName(customer)}</span>
@@ -178,7 +178,7 @@ export function BillingDetailPage() {
 
         <Card>
           <h3>Record payment</h3>
-          <form className="form-grid" style={{ marginTop: 12 }} onSubmit={(event) => void recordPayment(event)}>
+          <form className="form-grid mt-3" onSubmit={(event) => void recordPayment(event)}>
             <div>
               <FieldLabel>Payment type</FieldLabel>
               <SelectInput value={paymentType} onChange={(event) => setPaymentType(event.target.value)}>
@@ -218,10 +218,10 @@ export function BillingDetailPage() {
 
         <Card>
           <h3>Split billing</h3>
-          <p className="muted" style={{ marginTop: 8 }}>
+          <p className="muted mt-2">
             Divide invoice total between customer and insurance (must equal {money(grandTotal)}).
           </p>
-          <form className="form-grid" style={{ marginTop: 12 }} onSubmit={(event) => void saveSplitBilling(event)}>
+          <form className="form-grid mt-3" onSubmit={(event) => void saveSplitBilling(event)}>
             <div>
               <FieldLabel>Customer pays</FieldLabel>
               <TextInput
@@ -273,7 +273,7 @@ export function BillingDetailPage() {
       <Card>
         <h3>Payments</h3>
         {payments.length === 0 ? <p className="muted">No payments recorded.</p> : null}
-        <div className="stack" style={{ marginTop: 12 }}>
+        <div className="stack mt-3">
           {payments.map((payment) => (
             <div key={String(payment.uuid ?? payment.id)} className="line-item">
               <span>{String(payment.payment_method_name ?? payment.method ?? 'Payment')}</span>

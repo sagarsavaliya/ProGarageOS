@@ -75,7 +75,7 @@ export function ReportsPage() {
               </tbody>
             </Table>
           ) : null}
-          <Link to="/inventory" style={{ display: 'inline-block', marginTop: 12 }}>
+          <Link to="/inventory" className="text-link-action">
             View inventory
           </Link>
         </PageSection>

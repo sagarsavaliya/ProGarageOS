@@ -217,7 +217,7 @@ export function AppointmentsPage() {
                   onChange={(event) => setForm({ ...form, start_time: event.target.value })}
                 />
               </div>
-              <div style={{ gridColumn: '1 / -1' }}>
+              <div className="form-span-full">
                 <FieldLabel>Notes</FieldLabel>
                 <TextArea rows={3} value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} />
               </div>

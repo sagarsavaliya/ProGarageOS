@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, Card } from '@/components/ui';
+import { Button } from '@/components/ui';
+import { AuthShell } from '@/layouts/AuthShell';
 import { useAuth, usePinOtpRequest, usePinOtpReset } from '@/lib/auth';
 
 export function PinSetupPage() {
@@ -36,49 +37,61 @@ export function PinSetupPage() {
   };
 
   return (
-    <div className="auth-page">
-      <Card className="auth-card">
-        <h1>Owner PIN Setup</h1>
-        <p>Complete your first-time PIN setup for this account.</p>
-
-        {!otpRequested ? (
-          <form className="auth-form" onSubmit={requestOtp}>
-            <input value={login} onChange={(event) => setLogin(event.target.value)} placeholder="Phone or email" required />
-            {requestMutation.isError ? <div className="error-text">{(requestMutation.error as Error).message}</div> : null}
-            <Button type="submit" disabled={requestMutation.isPending}>
-              {requestMutation.isPending ? 'Requesting OTP...' : 'Request Setup OTP'}
-            </Button>
-          </form>
-        ) : (
-          <form className="auth-form" onSubmit={setupPin}>
-            <input value={otp} onChange={(event) => setOtp(event.target.value)} placeholder="OTP" required />
-            <input
-              value={pin}
-              onChange={(event) => setPin(event.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="New PIN"
-              inputMode="numeric"
-              required
-            />
-            <input
-              value={pinConfirmation}
-              onChange={(event) => setPinConfirmation(event.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="Confirm PIN"
-              inputMode="numeric"
-              required
-            />
-            {resetMutation.isError ? <div className="error-text">{(resetMutation.error as Error).message}</div> : null}
-            <Button type="submit" disabled={resetMutation.isPending}>
-              {resetMutation.isPending ? 'Saving PIN...' : 'Save PIN'}
-            </Button>
-          </form>
-        )}
-
-        {message ? <p className="muted" style={{ marginTop: 12 }}>{message}</p> : null}
-        <div className="auth-links">
+    <AuthShell
+      title="Owner PIN setup"
+      subtitle="Complete first-time PIN setup for your garage owner account."
+      links={
+        <>
           <Link to="/login">Back to login</Link>
           <Link to="/dashboard">Go to dashboard</Link>
-        </div>
-      </Card>
-    </div>
+        </>
+      }
+    >
+      {!otpRequested ? (
+        <form className="auth-form" onSubmit={requestOtp}>
+          <label htmlFor="setup-login">Phone or email</label>
+          <input
+            id="setup-login"
+            value={login}
+            onChange={(event) => setLogin(event.target.value)}
+            placeholder="Phone or email"
+            required
+          />
+          {requestMutation.isError ? <div className="error-text">{(requestMutation.error as Error).message}</div> : null}
+          <Button type="submit" disabled={requestMutation.isPending}>
+            {requestMutation.isPending ? 'Requesting OTP...' : 'Request setup OTP'}
+          </Button>
+        </form>
+      ) : (
+        <form className="auth-form" onSubmit={setupPin}>
+          <label htmlFor="setup-otp">OTP</label>
+          <input id="setup-otp" value={otp} onChange={(event) => setOtp(event.target.value)} placeholder="Enter OTP" required />
+          <label htmlFor="setup-pin">New PIN</label>
+          <input
+            id="setup-pin"
+            value={pin}
+            onChange={(event) => setPin(event.target.value.replace(/\D/g, '').slice(0, 6))}
+            placeholder="6-digit PIN"
+            inputMode="numeric"
+            required
+          />
+          <label htmlFor="setup-pin-confirm">Confirm PIN</label>
+          <input
+            id="setup-pin-confirm"
+            value={pinConfirmation}
+            onChange={(event) => setPinConfirmation(event.target.value.replace(/\D/g, '').slice(0, 6))}
+            placeholder="Confirm PIN"
+            inputMode="numeric"
+            required
+          />
+          {resetMutation.isError ? <div className="error-text">{(resetMutation.error as Error).message}</div> : null}
+          <Button type="submit" disabled={resetMutation.isPending}>
+            {resetMutation.isPending ? 'Saving PIN...' : 'Save PIN'}
+          </Button>
+        </form>
+      )}
+
+      {message ? <p className="muted mt-3">{message}</p> : null}
+    </AuthShell>
   );
 }

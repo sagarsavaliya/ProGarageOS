@@ -169,8 +169,7 @@ export function CreateJobPage() {
         <Card>
           <h3>Find customer by phone</h3>
           <form
-            className="form-grid"
-            style={{ marginTop: 12 }}
+            className="form-grid mt-3"
             onSubmit={(event) => {
               event.preventDefault();
               setSearchTerm(normalizeLogin(phoneSearch).replace('+91', '') || phoneSearch.trim());
@@ -185,19 +184,19 @@ export function CreateJobPage() {
                 onChange={(event) => setPhoneSearch(event.target.value)}
               />
             </div>
-            <div style={{ alignSelf: 'end' }}>
+            <div className="align-self-end">
               <Button type="submit">Search</Button>
             </div>
           </form>
 
-          <div className="toolbar" style={{ marginTop: 12 }}>
+          <div className="toolbar mt-3">
             <Button type="button" variant="outline" onClick={() => setShowNewCustomer((value) => !value)}>
               {showNewCustomer ? 'Cancel new customer' : 'Add new customer'}
             </Button>
           </div>
 
           {showNewCustomer ? (
-            <div className="form-grid" style={{ marginTop: 12 }}>
+            <div className="form-grid mt-3">
               <div>
                 <FieldLabel>First name</FieldLabel>
                 <TextInput
@@ -233,7 +232,7 @@ export function CreateJobPage() {
           ) : null}
 
           {customersQuery.isLoading ? <p className="muted">Searching...</p> : null}
-          <div className="stack" style={{ marginTop: 12 }}>
+          <div className="stack mt-3">
             {customers.map((customer) => (
               <button
                 key={String(customer.uuid)}
@@ -255,7 +254,7 @@ export function CreateJobPage() {
       {step === 1 ? (
         <Card>
           <h3>Select vehicle for {customerName(selectedCustomer ?? {})}</h3>
-          <div className="toolbar" style={{ marginTop: 12 }}>
+          <div className="toolbar mt-3">
             <Button type="button" variant="outline" onClick={() => setStep(0)}>
               Back
             </Button>
@@ -265,7 +264,7 @@ export function CreateJobPage() {
           </div>
 
           {showNewVehicle ? (
-            <div className="form-grid" style={{ marginTop: 12 }}>
+            <div className="form-grid mt-3">
               <div>
                 <FieldLabel>Registration</FieldLabel>
                 <TextInput
@@ -313,7 +312,7 @@ export function CreateJobPage() {
             </div>
           ) : null}
 
-          <div className="stack" style={{ marginTop: 12 }}>
+          <div className="stack mt-3">
             {vehicles.map((vehicle) => (
               <button
                 key={String(vehicle.uuid)}
@@ -334,7 +333,7 @@ export function CreateJobPage() {
       {step === 2 ? (
         <Card>
           <h3>Job details</h3>
-          <div className="form-grid" style={{ marginTop: 12 }}>
+          <div className="form-grid mt-3">
             <div>
               <FieldLabel>Priority</FieldLabel>
               <SelectInput value={priority} onChange={(event) => setPriority(event.target.value)}>
@@ -344,11 +343,11 @@ export function CreateJobPage() {
                 <option value="critical">Critical</option>
               </SelectInput>
             </div>
-            <div style={{ gridColumn: '1 / -1' }}>
+            <div className="form-span-full">
               <FieldLabel>Customer complaint</FieldLabel>
               <TextArea rows={4} value={complaint} onChange={(event) => setComplaint(event.target.value)} />
             </div>
-            <div style={{ gridColumn: '1 / -1' }}>
+            <div className="form-span-full">
               <FieldLabel>Service categories</FieldLabel>
               <div className="stack">
                 {categories.map((category) => (
@@ -365,7 +364,7 @@ export function CreateJobPage() {
             </div>
           </div>
 
-          <div className="toolbar" style={{ marginTop: 16 }}>
+          <div className="toolbar mt-4">
             <Button type="button" variant="outline" onClick={() => setStep(1)}>
               Back
             </Button>

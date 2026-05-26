@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Card } from '@/components/ui';
+import { Button } from '@/components/ui';
 import { FieldLabel, TextInput } from '@/components/ui/FormField';
+import { AuthShell } from '@/layouts/AuthShell';
 import { apiRequest, asData, type JsonMap } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 
@@ -118,98 +119,95 @@ export function OnboardingSetupPage() {
   }
 
   return (
-    <div className="auth-page login-theme">
-      <Card className="auth-card auth-card-elevated">
-        <h1 className="auth-title">Garage setup</h1>
-        <p className="muted">Complete your owner onboarding to unlock the staff portal.</p>
+    <AuthShell title="Garage setup" subtitle="Complete owner onboarding to unlock the staff portal." wide>
+      <div className="stepper mt-4">
+        {['Welcome', 'Business', 'Bays', 'Finish'].map((label, index) => (
+          <span key={label} className={`chip ${step === index ? 'active' : ''}`}>
+            {index + 1}. {label}
+          </span>
+        ))}
+      </div>
 
-        <div className="stepper" style={{ marginTop: 16 }}>
-          {['Welcome', 'Business', 'Bays', 'Finish'].map((label, index) => (
-            <span key={label} className={`chip ${step === index ? 'active' : ''}`}>
-              {index + 1}. {label}
-            </span>
-          ))}
+      {profileQuery.isLoading ? <p className="muted mt-3">Loading setup...</p> : null}
+      {error ? <p className="error-text mt-3">{error}</p> : null}
+
+      {step === 0 ? (
+        <div className="stack mt-4">
+          <p>Set up your garage profile, service bays, and go live with GarageFlow.</p>
+          <Button type="button" onClick={() => void syncSetup({ setup_step: 'details' }).then(() => setStep(1))}>
+            Get started
+          </Button>
         </div>
+      ) : null}
 
-        {profileQuery.isLoading ? <p className="muted">Loading setup...</p> : null}
-        {error ? <p className="error-text">{error}</p> : null}
-
-        {step === 0 ? (
-          <div className="stack" style={{ marginTop: 16 }}>
-            <p>Set up your garage profile, service bays, and go live with GarageFlow.</p>
-            <Button type="button" onClick={() => void syncSetup({ setup_step: 'details' }).then(() => setStep(1))}>
-              Get started
-            </Button>
+      {step === 1 ? (
+        <form className="form-grid auth-form mt-4" onSubmit={(event) => void saveBusinessDetails(event)}>
+          <div>
+            <FieldLabel>Business name</FieldLabel>
+            <TextInput
+              required
+              value={profileForm.business_name}
+              onChange={(event) => setProfileForm({ ...profileForm, business_name: event.target.value })}
+            />
           </div>
-        ) : null}
-
-        {step === 1 ? (
-          <form className="form-grid auth-form" onSubmit={(event) => void saveBusinessDetails(event)}>
-            <div>
-              <FieldLabel>Business name</FieldLabel>
-              <TextInput
-                required
-                value={profileForm.business_name}
-                onChange={(event) => setProfileForm({ ...profileForm, business_name: event.target.value })}
-              />
-            </div>
-            <div>
-              <FieldLabel>Phone</FieldLabel>
-              <TextInput value={profileForm.phone} onChange={(event) => setProfileForm({ ...profileForm, phone: event.target.value })} />
-            </div>
-            <div>
-              <FieldLabel>Email</FieldLabel>
-              <TextInput value={profileForm.email} onChange={(event) => setProfileForm({ ...profileForm, email: event.target.value })} />
-            </div>
-            <div>
-              <FieldLabel>Address</FieldLabel>
-              <TextInput value={profileForm.address} onChange={(event) => setProfileForm({ ...profileForm, address: event.target.value })} />
-            </div>
-            <div>
-              <FieldLabel>GST number</FieldLabel>
-              <TextInput
-                value={profileForm.gst_number}
-                onChange={(event) => setProfileForm({ ...profileForm, gst_number: event.target.value })}
-              />
-            </div>
+          <div>
+            <FieldLabel>Phone</FieldLabel>
+            <TextInput value={profileForm.phone} onChange={(event) => setProfileForm({ ...profileForm, phone: event.target.value })} />
+          </div>
+          <div>
+            <FieldLabel>Email</FieldLabel>
+            <TextInput value={profileForm.email} onChange={(event) => setProfileForm({ ...profileForm, email: event.target.value })} />
+          </div>
+          <div>
+            <FieldLabel>Address</FieldLabel>
+            <TextInput value={profileForm.address} onChange={(event) => setProfileForm({ ...profileForm, address: event.target.value })} />
+          </div>
+          <div className="form-span-full">
+            <FieldLabel>GST number</FieldLabel>
+            <TextInput
+              value={profileForm.gst_number}
+              onChange={(event) => setProfileForm({ ...profileForm, gst_number: event.target.value })}
+            />
+          </div>
+          <div className="form-span-full">
             <Button type="submit" disabled={loading}>
               {loading ? 'Saving...' : 'Continue'}
             </Button>
-          </form>
-        ) : null}
-
-        {step === 2 ? (
-          <form className="stack auth-form" onSubmit={(event) => void saveBayCount(event)}>
-            <div>
-              <FieldLabel htmlFor="bay-count">Number of service bays</FieldLabel>
-              <div className="inline-field-row">
-                <TextInput
-                  id="bay-count"
-                  type="number"
-                  min={1}
-                  max={50}
-                  inputMode="numeric"
-                  value={bayCount}
-                  onChange={(event) => setBayCount(event.target.value)}
-                  required
-                />
-                <Button type="submit" disabled={loading}>
-                  {loading ? 'Saving...' : 'Continue'}
-                </Button>
-              </div>
-            </div>
-          </form>
-        ) : null}
-
-        {step === 3 ? (
-          <div className="stack auth-form">
-            <p>Your garage is ready. Complete setup to enter the dashboard.</p>
-            <Button type="button" onClick={() => void completeSetup()} disabled={loading}>
-              {loading ? 'Finishing...' : 'Complete setup'}
-            </Button>
           </div>
-        ) : null}
-      </Card>
-    </div>
+        </form>
+      ) : null}
+
+      {step === 2 ? (
+        <form className="stack auth-form mt-4" onSubmit={(event) => void saveBayCount(event)}>
+          <div>
+            <FieldLabel htmlFor="bay-count">Number of service bays</FieldLabel>
+            <div className="inline-field-row">
+              <TextInput
+                id="bay-count"
+                type="number"
+                min={1}
+                max={50}
+                inputMode="numeric"
+                value={bayCount}
+                onChange={(event) => setBayCount(event.target.value)}
+                required
+              />
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Saving...' : 'Continue'}
+              </Button>
+            </div>
+          </div>
+        </form>
+      ) : null}
+
+      {step === 3 ? (
+        <div className="stack auth-form mt-4">
+          <p>Your garage is ready. Complete setup to enter the dashboard.</p>
+          <Button type="button" onClick={() => void completeSetup()} disabled={loading}>
+            {loading ? 'Finishing...' : 'Complete setup'}
+          </Button>
+        </div>
+      ) : null}
+    </AuthShell>
   );
 }

@@ -104,8 +104,7 @@ export function InventoryPage() {
     <StaffPage title="Inventory" subtitle="Parts stock and adjustments">
       <div className="toolbar">
         <form
-          className="form-grid"
-          style={{ flex: 1, gridTemplateColumns: '1fr auto' }}
+          className="toolbar-form toolbar-form--search"
           onSubmit={(event) => {
             event.preventDefault();
             setSearch(searchInput.trim());
@@ -121,7 +120,7 @@ export function InventoryPage() {
               onChange={(event) => setSearchInput(event.target.value)}
             />
           </div>
-          <div style={{ alignSelf: 'end' }}>
+          <div className="align-self-end">
             <Button type="submit">Search</Button>
           </div>
         </form>
@@ -150,7 +149,7 @@ export function InventoryPage() {
                   <TD>{String(item.sku ?? '-')}</TD>
                   <TD>
                     {String(item.name ?? '-')}
-                    {isLowStock(item) ? <span className="chip active" style={{ marginLeft: 8 }}>Low stock</span> : null}
+                    {isLowStock(item) ? <span className="chip active chip-inline">Low stock</span> : null}
                   </TD>
                   <TD>{String(item.stock_on_hand ?? 0)}</TD>
                   <TD>{String(item.low_stock_threshold ?? '-')}</TD>

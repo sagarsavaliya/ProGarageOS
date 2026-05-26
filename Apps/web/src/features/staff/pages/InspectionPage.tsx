@@ -171,7 +171,7 @@ export function InspectionPage() {
       <div className="detail-grid">
         <Card>
           <h3>Checklist</h3>
-          <div className="stack" style={{ marginTop: 12 }}>
+          <div className="stack mt-3">
             {checklist.map((item) => (
               <div key={item.id} className="line-item">
                 <span>
@@ -195,7 +195,7 @@ export function InspectionPage() {
 
         <Card>
           <h3>Notes & acknowledgement</h3>
-          <div className="form-grid" style={{ marginTop: 12 }}>
+          <div className="form-grid mt-3">
             <div>
               <FieldLabel>Notes</FieldLabel>
               <TextArea rows={4} value={notes} onChange={(event) => setNotes(event.target.value)} />
@@ -210,7 +210,7 @@ export function InspectionPage() {
 
       <Card>
         <h3>Vehicle photos</h3>
-        <div className="detail-grid" style={{ marginTop: 12 }}>
+        <div className="detail-grid mt-3">
           {PHOTO_SLOTS.map((slot) => (
             <div key={slot.slot}>
               <h4>{slot.label}</h4>

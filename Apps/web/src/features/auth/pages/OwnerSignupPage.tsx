@@ -1,6 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button, Card } from '@/components/ui';
+import { Button } from '@/components/ui';
+import { AuthShell } from '@/layouts/AuthShell';
 import { useOwnerSignup, useSubscriptionPlans } from '@/lib/auth';
 import type { JsonMap } from '@/lib/api';
 
@@ -38,80 +39,109 @@ export function OwnerSignupPage() {
   };
 
   return (
-    <div className="auth-page">
-      <Card className="auth-card">
-        <h1>Owner Signup</h1>
-        <p>Create a new garage account on GarageFlow.</p>
+    <AuthShell
+      title="Create your garage"
+      subtitle="Register a new GarageFlow account and choose your plan."
+      wide
+      links={<Link to="/login">Back to login</Link>}
+    >
+      <form className="auth-form" onSubmit={onSubmit}>
+        <label htmlFor="business-name">Business name</label>
+        <input
+          id="business-name"
+          placeholder="Auto Car Care"
+          value={form.business_name}
+          onChange={(event) => setForm((prev) => ({ ...prev, business_name: event.target.value }))}
+          required
+        />
 
-        <form className="auth-form" onSubmit={onSubmit}>
-          <input
-            placeholder="Business name"
-            value={form.business_name}
-            onChange={(event) => setForm((prev) => ({ ...prev, business_name: event.target.value }))}
-            required
-          />
-          <input
-            placeholder="First name"
-            value={form.first_name}
-            onChange={(event) => setForm((prev) => ({ ...prev, first_name: event.target.value }))}
-            required
-          />
-          <input
-            placeholder="Last name"
-            value={form.last_name}
-            onChange={(event) => setForm((prev) => ({ ...prev, last_name: event.target.value }))}
-          />
-          <input
-            placeholder="Email (optional)"
-            value={form.email}
-            onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
-            type="email"
-          />
-          <input
-            placeholder="Phone"
-            value={form.phone}
-            onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))}
-            required
-          />
-          <select
-            value={form.plan_slug}
-            onChange={(event) => setForm((prev) => ({ ...prev, plan_slug: event.target.value }))}
-          >
-            {plans.length === 0 ? <option value="starter">Starter</option> : null}
-            {plans.map((plan) => (
-              <option key={String(plan.slug ?? plan.uuid ?? plan.name)} value={String(plan.slug ?? 'starter')}>
-                {String(plan.name ?? plan.slug ?? 'Plan')}
-              </option>
-            ))}
-          </select>
-          <input
-            placeholder="6-digit PIN"
-            value={form.pin}
-            onChange={(event) => setForm((prev) => ({ ...prev, pin: event.target.value.replace(/\D/g, '').slice(0, 6) }))}
-            inputMode="numeric"
-            required
-          />
-          <input
-            placeholder="Confirm PIN"
-            value={form.pin_confirmation}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, pin_confirmation: event.target.value.replace(/\D/g, '').slice(0, 6) }))
-            }
-            inputMode="numeric"
-            required
-          />
-
-          {signupMutation.isError ? <div className="error-text">{(signupMutation.error as Error).message}</div> : null}
-
-          <Button type="submit" disabled={signupMutation.isPending}>
-            {signupMutation.isPending ? 'Creating account...' : 'Create account'}
-          </Button>
-        </form>
-
-        <div className="auth-links">
-          <Link to="/login">Back to login</Link>
+        <div className="form-grid auth-form-grid">
+          <div>
+            <label htmlFor="first-name">First name</label>
+            <input
+              id="first-name"
+              placeholder="First name"
+              value={form.first_name}
+              onChange={(event) => setForm((prev) => ({ ...prev, first_name: event.target.value }))}
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="last-name">Last name</label>
+            <input
+              id="last-name"
+              placeholder="Last name"
+              value={form.last_name}
+              onChange={(event) => setForm((prev) => ({ ...prev, last_name: event.target.value }))}
+            />
+          </div>
         </div>
-      </Card>
-    </div>
+
+        <label htmlFor="signup-email">Email (optional)</label>
+        <input
+          id="signup-email"
+          placeholder="owner@garage.com"
+          value={form.email}
+          onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
+          type="email"
+        />
+
+        <label htmlFor="signup-phone">Phone</label>
+        <input
+          id="signup-phone"
+          placeholder="9876543219"
+          value={form.phone}
+          onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))}
+          required
+        />
+
+        <label htmlFor="plan-slug">Plan</label>
+        <select
+          id="plan-slug"
+          value={form.plan_slug}
+          onChange={(event) => setForm((prev) => ({ ...prev, plan_slug: event.target.value }))}
+        >
+          {plans.length === 0 ? <option value="starter">Starter</option> : null}
+          {plans.map((plan) => (
+            <option key={String(plan.slug ?? plan.uuid ?? plan.name)} value={String(plan.slug ?? 'starter')}>
+              {String(plan.name ?? plan.slug ?? 'Plan')}
+            </option>
+          ))}
+        </select>
+
+        <div className="form-grid auth-form-grid">
+          <div>
+            <label htmlFor="signup-pin">6-digit PIN</label>
+            <input
+              id="signup-pin"
+              placeholder="••••••"
+              value={form.pin}
+              onChange={(event) => setForm((prev) => ({ ...prev, pin: event.target.value.replace(/\D/g, '').slice(0, 6) }))}
+              inputMode="numeric"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="signup-pin-confirm">Confirm PIN</label>
+            <input
+              id="signup-pin-confirm"
+              placeholder="••••••"
+              value={form.pin_confirmation}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, pin_confirmation: event.target.value.replace(/\D/g, '').slice(0, 6) }))
+              }
+              inputMode="numeric"
+              required
+            />
+          </div>
+        </div>
+
+        {signupMutation.isError ? <div className="error-text">{(signupMutation.error as Error).message}</div> : null}
+
+        <Button type="submit" disabled={signupMutation.isPending}>
+          {signupMutation.isPending ? 'Creating account...' : 'Create account'}
+        </Button>
+      </form>
+    </AuthShell>
   );
 }
