@@ -5,7 +5,7 @@ import { Button, Card } from '@/components/ui';
 import { FieldLabel, SelectInput, TextArea } from '@/components/ui/FormField';
 import { WebcamCapture } from '@/features/staff/components/WebcamCapture';
 import { StaffPage, useStaffToken } from '@/features/staff/components/StaffPage';
-import { apiRequest, asData, type JsonMap } from '@/lib/api';
+import { API_BASE_URL, apiRequest, asData, type JsonMap } from '@/lib/api';
 import { uploadMultipart } from '@/lib/upload';
 
 type ChecklistItem = {
@@ -32,6 +32,7 @@ export function InspectionPage() {
   const [uploadedPhotos, setUploadedPhotos] = useState<Record<string, string>>({});
   const [uploadingSlot, setUploadingSlot] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const [error, setError] = useState<string>();
   const [message, setMessage] = useState<string>();
 
@@ -129,6 +130,24 @@ export function InspectionPage() {
     }
   }
 
+  async function openInspectionPdf() {
+    setPdfLoading(true);
+    setError(undefined);
+    try {
+      const payload = await apiRequest(`/jobs/${uuid}/inspections/pdf`, { token, query: { phase } });
+      const data = asData<JsonMap>(payload);
+      const url = String(data.pdf_url ?? data.url ?? '');
+      if (!url) {
+        throw new Error('Inspection PDF not available yet.');
+      }
+      window.open(url.startsWith('http') ? url : `${API_BASE_URL.replace('/api', '')}${url}`, '_blank');
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setPdfLoading(false);
+    }
+  }
+
   return (
     <StaffPage title="Intake inspection" subtitle="Checklist, photos, and customer acknowledgement">
       <div className="toolbar">
@@ -137,6 +156,9 @@ export function InspectionPage() {
             Back to job
           </Button>
         </Link>
+        <Button type="button" variant="outline" onClick={() => void openInspectionPdf()} disabled={pdfLoading}>
+          {pdfLoading ? 'Loading PDF...' : 'Download PDF'}
+        </Button>
         <Button type="button" onClick={() => void saveInspection()} disabled={saving}>
           {saving ? 'Saving...' : 'Save inspection'}
         </Button>

@@ -63,6 +63,37 @@ export async function apiRequest<T = unknown>(
   return payload as T;
 }
 
+export async function apiFormRequest<T = unknown>(
+  path: string,
+  options: {
+    method?: 'POST' | 'PUT' | 'PATCH';
+    token?: string | null;
+    formData: FormData;
+  },
+): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: options.method ?? 'POST',
+    headers: {
+      ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
+    },
+    body: options.formData,
+  });
+
+  const text = await response.text();
+  const payload = text ? (JSON.parse(text) as JsonMap) : {};
+
+  if (!response.ok) {
+    const nestedError = payload.error as JsonMap | undefined;
+    const message =
+      (nestedError?.message as string | undefined) ??
+      (payload.message as string | undefined) ??
+      `Request failed with status ${response.status}`;
+    throw new ApiError(message, response.status);
+  }
+
+  return payload as T;
+}
+
 export function asData<T>(payload: unknown): T {
   if (payload && typeof payload === 'object' && 'data' in (payload as JsonMap)) {
     return (payload as { data: T }).data;

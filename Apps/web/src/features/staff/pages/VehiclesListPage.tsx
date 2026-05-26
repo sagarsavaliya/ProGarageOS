@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button, Card, Table, THead, TRow, TH, TD, EmptyState, LoadingState, ListPager } from '@/components/ui';
 import { FieldLabel, TextInput } from '@/components/ui/FormField';
+import { AddVehicleModal } from '@/features/staff/components/AddVehicleModal';
 import { StaffPage, useStaffToken } from '@/features/staff/components/StaffPage';
 import { usePaginatedList } from '@/lib/hooks';
 import { customerName, vehicleLabel } from '@/lib/format';
@@ -9,9 +10,11 @@ import type { JsonMap } from '@/lib/api';
 
 export function VehiclesListPage() {
   const token = useStaffToken();
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
+  const [showAddVehicle, setShowAddVehicle] = useState(false);
 
   const listQuery = usePaginatedList('/vehicles', token, {
     page,
@@ -47,6 +50,9 @@ export function VehiclesListPage() {
             <Button type="submit">Search</Button>
           </div>
         </form>
+        <Button type="button" onClick={() => setShowAddVehicle(true)}>
+          Add vehicle
+        </Button>
       </div>
 
       <Card>
@@ -76,12 +82,30 @@ export function VehiclesListPage() {
           </Table>
         ) : (
           !listQuery.isLoading && (
-            <EmptyState title="No vehicles found" description="Vehicles appear here when linked to customers or fleet records." />
+            <EmptyState
+              title="No vehicles found"
+              description="Register a customer vehicle to start jobs, appointments, and service history."
+              action={
+                <Button type="button" onClick={() => setShowAddVehicle(true)}>
+                  Add vehicle
+                </Button>
+              }
+            />
           )
         )}
 
         <ListPager page={page} lastPage={lastPage} onPrevious={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
       </Card>
+
+      <AddVehicleModal
+        open={showAddVehicle}
+        token={token}
+        onClose={() => setShowAddVehicle(false)}
+        onCreated={(vehicle) => {
+          void listQuery.refetch();
+          navigate(`/vehicles/${String(vehicle.uuid)}`);
+        }}
+      />
     </StaffPage>
   );
 }

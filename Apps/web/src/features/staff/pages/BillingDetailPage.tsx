@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Card, StatusBadge, Table, THead, TRow, TH, TD } from '@/components/ui';
+import { Button, Card, StatusBadge, Table, THead, TRow, TH, TD, Alert } from '@/components/ui';
 import { FieldLabel, SelectInput, TextArea, TextInput } from '@/components/ui/FormField';
 import { StaffPage, useStaffToken } from '@/features/staff/components/StaffPage';
 import { API_BASE_URL, apiRequest, asData, type JsonMap } from '@/lib/api';
@@ -26,16 +26,36 @@ export function BillingDetailPage() {
 
   const [amount, setAmount] = useState('');
   const [methodId, setMethodId] = useState('');
+  const [paymentType, setPaymentType] = useState('customer_pay');
   const [reference, setReference] = useState('');
   const [notes, setNotes] = useState('');
+  const [customerPayAmount, setCustomerPayAmount] = useState('');
+  const [insurancePayAmount, setInsurancePayAmount] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>();
+  const [message, setMessage] = useState<string>();
   const [pdfLoading, setPdfLoading] = useState(false);
 
   const items = (invoice.items as JsonMap[] | undefined) ?? [];
   const payments = (invoice.payments as JsonMap[] | undefined) ?? [];
   const customer = (invoice.customer as JsonMap | undefined) ?? {};
   const job = (invoice.job as JsonMap | undefined) ?? {};
+  const grandTotal = Number(invoice.grand_total ?? invoice.total_amount ?? 0);
+
+  useEffect(() => {
+    if (!uuid || detailQuery.isLoading) {
+      return;
+    }
+    const customerSplit = Number(invoice.customer_pay_amount ?? invoice.customer_portion ?? grandTotal);
+    const insuranceSplit = Number(invoice.insurance_claim_amount ?? invoice.insurance_portion ?? 0);
+    if (customerSplit || insuranceSplit) {
+      setCustomerPayAmount(String(customerSplit));
+      setInsurancePayAmount(String(insuranceSplit));
+    } else if (grandTotal > 0) {
+      setCustomerPayAmount(String(grandTotal));
+      setInsurancePayAmount('0');
+    }
+  }, [uuid, detailQuery.isLoading, grandTotal, invoice.customer_pay_amount, invoice.insurance_claim_amount, invoice.customer_portion, invoice.insurance_portion]);
 
   async function recordPayment(event: React.FormEvent) {
     event.preventDefault();
@@ -48,7 +68,7 @@ export function BillingDetailPage() {
         body: {
           amount: Number(amount),
           payment_method_id: Number(methodId),
-          payment_type: 'customer_pay',
+          payment_type: paymentType,
           ...(reference.trim() ? { reference_number: reference.trim() } : {}),
           ...(notes.trim() ? { notes: notes.trim() } : {}),
         },
@@ -57,6 +77,7 @@ export function BillingDetailPage() {
       setAmount('');
       setReference('');
       setNotes('');
+      setMessage('Payment recorded.');
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -82,6 +103,28 @@ export function BillingDetailPage() {
     }
   }
 
+  async function saveSplitBilling(event: React.FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    setError(undefined);
+    try {
+      await apiRequest(`/invoices/${uuid}/split-billing`, {
+        method: 'PATCH',
+        token,
+        body: {
+          customer_pay_amount: Number(customerPayAmount),
+          insurance_claim_amount: Number(insurancePayAmount),
+        },
+      });
+      await queryClient.invalidateQueries({ queryKey: ['detail', `/invoices/${uuid}`] });
+      setMessage('Split billing saved.');
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <StaffPage title={`Invoice ${String(invoice.invoice_number ?? uuid)}`} subtitle="Invoice detail and payments">
       <div className="toolbar">
@@ -103,6 +146,8 @@ export function BillingDetailPage() {
       </div>
 
       {detailQuery.isLoading ? <p className="muted">Loading invoice...</p> : null}
+      {message ? <Alert variant="success">{message}</Alert> : null}
+      {error ? <Alert variant="error">{error}</Alert> : null}
 
       <div className="detail-grid">
         <Card>
@@ -135,6 +180,14 @@ export function BillingDetailPage() {
           <h3>Record payment</h3>
           <form className="form-grid" style={{ marginTop: 12 }} onSubmit={(event) => void recordPayment(event)}>
             <div>
+              <FieldLabel>Payment type</FieldLabel>
+              <SelectInput value={paymentType} onChange={(event) => setPaymentType(event.target.value)}>
+                <option value="customer_pay">Customer payment</option>
+                <option value="insurance_claim">Insurance claim</option>
+                <option value="advance">Advance</option>
+              </SelectInput>
+            </div>
+            <div>
               <FieldLabel>Amount</FieldLabel>
               <TextInput required value={amount} onChange={(event) => setAmount(event.target.value)} />
             </div>
@@ -157,9 +210,36 @@ export function BillingDetailPage() {
               <FieldLabel>Notes</FieldLabel>
               <TextArea rows={2} value={notes} onChange={(event) => setNotes(event.target.value)} />
             </div>
-            {error ? <p className="error-text">{error}</p> : null}
             <Button type="submit" disabled={saving}>
               {saving ? 'Recording...' : 'Record payment'}
+            </Button>
+          </form>
+        </Card>
+
+        <Card>
+          <h3>Split billing</h3>
+          <p className="muted" style={{ marginTop: 8 }}>
+            Divide invoice total between customer and insurance (must equal {money(grandTotal)}).
+          </p>
+          <form className="form-grid" style={{ marginTop: 12 }} onSubmit={(event) => void saveSplitBilling(event)}>
+            <div>
+              <FieldLabel>Customer pays</FieldLabel>
+              <TextInput
+                required
+                value={customerPayAmount}
+                onChange={(event) => setCustomerPayAmount(event.target.value)}
+              />
+            </div>
+            <div>
+              <FieldLabel>Insurance pays</FieldLabel>
+              <TextInput
+                required
+                value={insurancePayAmount}
+                onChange={(event) => setInsurancePayAmount(event.target.value)}
+              />
+            </div>
+            <Button type="submit" disabled={saving}>
+              {saving ? 'Saving...' : 'Save split'}
             </Button>
           </form>
         </Card>

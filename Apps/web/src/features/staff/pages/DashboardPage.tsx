@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { KPICard, Card, StatusBadge, Table, THead, TRow, TH, TD, EmptyState, LoadingState, PageSection } from '@/components/ui';
 import { ServiceBayBoard } from '@/features/staff/components/ServiceBayBoard';
@@ -10,6 +10,7 @@ export function DashboardPage(props: {
   userName?: string;
   onLogout: () => void;
 }) {
+  const queryClient = useQueryClient();
   const summaryQuery = useQuery({
     queryKey: ['staff-dashboard-summary', props.token],
     queryFn: () => apiRequest('/dashboard/summary', { token: props.token }),
@@ -19,6 +20,15 @@ export function DashboardPage(props: {
   const kpis = (summary.kpis as JsonMap | undefined) ?? {};
   const activeJobs = (summary.active_jobs as JsonMap[] | undefined) ?? [];
   const bays = (summary.service_bays as JsonMap[] | undefined) ?? [];
+
+  async function updateBayStatus(bayUuid: string, status: string) {
+    await apiRequest(`/service-bays/${bayUuid}/status`, {
+      method: 'PATCH',
+      token: props.token,
+      body: { status },
+    });
+    await queryClient.invalidateQueries({ queryKey: ['staff-dashboard-summary', props.token] });
+  }
 
   return (
     <StaffShell title="Dashboard" subtitle="Today's overview" userName={props.userName} onLogout={props.onLogout}>
@@ -38,7 +48,7 @@ export function DashboardPage(props: {
             <p className="muted section-subtitle">Live occupancy — vehicle, job, and technician at a glance</p>
           </div>
         </div>
-        <ServiceBayBoard bays={bays} />
+        <ServiceBayBoard bays={bays} onStatusChange={updateBayStatus} />
       </Card>
 
       <PageSection title="Active Jobs" subtitle="Open work across your garage floor">

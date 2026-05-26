@@ -16,6 +16,8 @@ export function CreateJobPage() {
   const [selectedCustomer, setSelectedCustomer] = useState<JsonMap | null>(null);
   const [selectedVehicle, setSelectedVehicle] = useState<JsonMap | null>(null);
   const [showNewVehicle, setShowNewVehicle] = useState(false);
+  const [showNewCustomer, setShowNewCustomer] = useState(false);
+  const [customerForm, setCustomerForm] = useState({ first_name: '', last_name: '', phone_primary: '', email: '' });
   const [complaint, setComplaint] = useState('');
   const [priority, setPriority] = useState('normal');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -64,6 +66,33 @@ export function CreateJobPage() {
     setSelectedCategories((current) =>
       current.includes(uuid) ? current.filter((id) => id !== uuid) : [...current, uuid],
     );
+  }
+
+  async function createCustomer() {
+    setSubmitting(true);
+    setError(undefined);
+    try {
+      const payload = await apiRequest('/customers', {
+        method: 'POST',
+        token,
+        body: {
+          first_name: customerForm.first_name.trim(),
+          last_name: customerForm.last_name.trim(),
+          phone_primary: normalizeLogin(customerForm.phone_primary),
+          ...(customerForm.email.trim() ? { email: customerForm.email.trim() } : {}),
+        },
+      });
+      const created = asData<JsonMap>(payload);
+      setSelectedCustomer(created);
+      setShowNewCustomer(false);
+      setStep(1);
+      return created;
+    } catch (err) {
+      setError((err as Error).message);
+      return null;
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   async function createVehicle() {
@@ -161,6 +190,48 @@ export function CreateJobPage() {
             </div>
           </form>
 
+          <div className="toolbar" style={{ marginTop: 12 }}>
+            <Button type="button" variant="outline" onClick={() => setShowNewCustomer((value) => !value)}>
+              {showNewCustomer ? 'Cancel new customer' : 'Add new customer'}
+            </Button>
+          </div>
+
+          {showNewCustomer ? (
+            <div className="form-grid" style={{ marginTop: 12 }}>
+              <div>
+                <FieldLabel>First name</FieldLabel>
+                <TextInput
+                  value={customerForm.first_name}
+                  onChange={(event) => setCustomerForm({ ...customerForm, first_name: event.target.value })}
+                />
+              </div>
+              <div>
+                <FieldLabel>Last name</FieldLabel>
+                <TextInput
+                  value={customerForm.last_name}
+                  onChange={(event) => setCustomerForm({ ...customerForm, last_name: event.target.value })}
+                />
+              </div>
+              <div>
+                <FieldLabel>Phone</FieldLabel>
+                <TextInput
+                  value={customerForm.phone_primary}
+                  onChange={(event) => setCustomerForm({ ...customerForm, phone_primary: event.target.value })}
+                />
+              </div>
+              <div>
+                <FieldLabel>Email</FieldLabel>
+                <TextInput
+                  value={customerForm.email}
+                  onChange={(event) => setCustomerForm({ ...customerForm, email: event.target.value })}
+                />
+              </div>
+              <Button type="button" onClick={() => void createCustomer()} disabled={submitting}>
+                Save customer
+              </Button>
+            </div>
+          ) : null}
+
           {customersQuery.isLoading ? <p className="muted">Searching...</p> : null}
           <div className="stack" style={{ marginTop: 12 }}>
             {customers.map((customer) => (
@@ -232,7 +303,8 @@ export function CreateJobPage() {
                   <option value="petrol">Petrol</option>
                   <option value="diesel">Diesel</option>
                   <option value="cng">CNG</option>
-                  <option value="ev">EV</option>
+                  <option value="electric">Electric</option>
+                  <option value="hybrid">Hybrid</option>
                 </SelectInput>
               </div>
               <Button type="button" onClick={() => void createVehicle()} disabled={submitting}>
@@ -268,8 +340,8 @@ export function CreateJobPage() {
               <SelectInput value={priority} onChange={(event) => setPriority(event.target.value)}>
                 <option value="low">Low</option>
                 <option value="normal">Normal</option>
-                <option value="high">High</option>
                 <option value="urgent">Urgent</option>
+                <option value="critical">Critical</option>
               </SelectInput>
             </div>
             <div style={{ gridColumn: '1 / -1' }}>

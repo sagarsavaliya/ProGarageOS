@@ -690,6 +690,22 @@ p {
   color: var(--gf-text-muted);
 }
 
+.bay-card-actions {
+  margin-top: 12px;
+}
+
+.bay-card-actions select {
+  width: 100%;
+  font-size: 12px;
+}
+
+.inline-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .bay-card--available {
   background: linear-gradient(180deg, #fff 0%, #f6fff8 100%);
 }

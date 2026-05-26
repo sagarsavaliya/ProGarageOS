@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { SelectInput } from '@/components/ui';
 import { StatusBadge } from '@/components/ui';
 import type { JsonMap } from '@/lib/api';
 
@@ -10,6 +12,8 @@ const BAY_TYPE_LABELS: Record<string, string> = {
   diagnostic: 'Diagnostic',
   waiting_area: 'Waiting area',
 };
+
+const BAY_STATUS_OPTIONS = ['available', 'maintenance', 'reserved'];
 
 function bayTypeLabel(type?: string): string {
   if (!type) {
@@ -34,13 +38,32 @@ function bayCardState(bay: JsonMap): 'available' | 'occupied' | 'maintenance' | 
   return 'available';
 }
 
-function BayCard(props: { bay: JsonMap }) {
+function BayCard(props: {
+  bay: JsonMap;
+  onStatusChange?: (bayUuid: string, status: string) => Promise<void>;
+}) {
   const state = bayCardState(props.bay);
   const job = bayJob(props.bay);
   const jobUuid = job ? String(job.uuid ?? '') : '';
   const jobNumber = job ? String(job.job_number ?? 'View job') : '';
   const vehicle = job ? String(job.vehicle ?? '') : '';
   const technician = job ? String(job.technician ?? '') : '';
+  const bayUuid = String(props.bay.uuid ?? '');
+  const [status, setStatus] = useState(String(props.bay.status ?? 'available'));
+  const [saving, setSaving] = useState(false);
+
+  async function applyStatus(nextStatus: string) {
+    setStatus(nextStatus);
+    if (!props.onStatusChange || !bayUuid) {
+      return;
+    }
+    setSaving(true);
+    try {
+      await props.onStatusChange(bayUuid, nextStatus);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   const card = (
     <article className={`bay-card bay-card--${state}`}>
@@ -93,6 +116,23 @@ function BayCard(props: { bay: JsonMap }) {
             <p className="bay-card-hint">Held for a scheduled arrival or booking.</p>
           </>
         ) : null}
+
+        {props.onStatusChange && state !== 'occupied' ? (
+          <div className="bay-card-actions">
+            <SelectInput
+              value={status}
+              disabled={saving}
+              onChange={(event) => void applyStatus(event.target.value)}
+              aria-label={`Set status for ${String(props.bay.name ?? 'bay')}`}
+            >
+              {BAY_STATUS_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option.replace(/_/g, ' ')}
+                </option>
+              ))}
+            </SelectInput>
+          </div>
+        ) : null}
       </div>
     </article>
   );
@@ -108,7 +148,10 @@ function BayCard(props: { bay: JsonMap }) {
   return card;
 }
 
-export function ServiceBayBoard(props: { bays: JsonMap[] }) {
+export function ServiceBayBoard(props: {
+  bays: JsonMap[];
+  onStatusChange?: (bayUuid: string, status: string) => Promise<void>;
+}) {
   if (props.bays.length === 0) {
     return <p className="muted">No service bays configured yet. Add bays during setup or in Settings.</p>;
   }
@@ -131,7 +174,11 @@ export function ServiceBayBoard(props: { bays: JsonMap[] }) {
       </div>
       <div className="bay-grid">
         {props.bays.map((bay) => (
-          <BayCard key={String(bay.uuid ?? bay.code ?? bay.name)} bay={bay} />
+          <BayCard
+            key={String(bay.uuid ?? bay.code ?? bay.name)}
+            bay={bay}
+            onStatusChange={props.onStatusChange}
+          />
         ))}
       </div>
     </div>

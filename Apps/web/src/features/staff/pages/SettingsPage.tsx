@@ -71,6 +71,8 @@ export function SettingsPage() {
   const [error, setError] = useState<string>();
   const [message, setMessage] = useState<string>();
   const [showAddStaff, setShowAddStaff] = useState(false);
+  const [showEditStaff, setShowEditStaff] = useState(false);
+  const [editingStaffUuid, setEditingStaffUuid] = useState('');
 
   const profileQuery = useQuery({
     queryKey: ['tenant-profile', token],
@@ -195,6 +197,46 @@ export function SettingsPage() {
       setStaffForm({ first_name: '', last_name: '', phone: '', email: '', role: 'technician', pin: '' });
       setShowAddStaff(false);
       setMessage('Team member added.');
+      await staffQuery.refetch();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function openEditStaff(member: JsonMap) {
+    setEditingStaffUuid(String(member.uuid));
+    setStaffForm({
+      first_name: String(member.first_name ?? ''),
+      last_name: String(member.last_name ?? ''),
+      phone: String(member.phone ?? ''),
+      email: String(member.email ?? ''),
+      role: String(member.role ?? 'technician'),
+      pin: '',
+    });
+    setShowEditStaff(true);
+  }
+
+  async function updateStaff(event: React.FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    setError(undefined);
+    setMessage(undefined);
+    try {
+      await apiRequest(`/staff/${editingStaffUuid}`, {
+        method: 'PATCH',
+        token,
+        body: {
+          first_name: staffForm.first_name.trim(),
+          last_name: staffForm.last_name.trim(),
+          phone: staffForm.phone.trim(),
+          role: staffForm.role,
+          ...(staffForm.email.trim() ? { email: staffForm.email.trim() } : {}),
+        },
+      });
+      setShowEditStaff(false);
+      setMessage('Team member updated.');
       await staffQuery.refetch();
     } catch (err) {
       setError((err as Error).message);
@@ -395,6 +437,7 @@ export function SettingsPage() {
                         <TH>Member</TH>
                         <TH>Phone</TH>
                         <TH>Role</TH>
+                        <TH>Actions</TH>
                       </TRow>
                     </THead>
                     <tbody>
@@ -409,6 +452,11 @@ export function SettingsPage() {
                             <TD>{String(member.phone ?? '-')}</TD>
                             <TD>
                               <span className="chip">{roleLabel(String(member.role ?? 'staff'))}</span>
+                            </TD>
+                            <TD>
+                              <Button type="button" variant="ghost" onClick={() => openEditStaff(member)}>
+                                Edit
+                              </Button>
                             </TD>
                           </TRow>
                         );
@@ -569,6 +617,75 @@ export function SettingsPage() {
               onChange={(event) => setStaffForm({ ...staffForm, pin: event.target.value.replace(/\D/g, '').slice(0, 6) })}
             />
             <p className="form-hint">Share this PIN securely — staff use it to log into GarageFlow.</p>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        open={showEditStaff}
+        onClose={() => setShowEditStaff(false)}
+        title="Edit team member"
+        subtitle="Update contact details and role"
+        footer={
+          <>
+            <Button type="button" variant="outline" onClick={() => setShowEditStaff(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="edit-staff-form" disabled={saving}>
+              {saving ? 'Saving...' : 'Save changes'}
+            </Button>
+          </>
+        }
+      >
+        <form id="edit-staff-form" className="form-grid form-grid--stack" onSubmit={(event) => void updateStaff(event)}>
+          <div>
+            <FieldLabel htmlFor="edit-staff-first">First name</FieldLabel>
+            <TextInput
+              id="edit-staff-first"
+              required
+              value={staffForm.first_name}
+              onChange={(event) => setStaffForm({ ...staffForm, first_name: event.target.value })}
+            />
+          </div>
+          <div>
+            <FieldLabel htmlFor="edit-staff-last">Last name</FieldLabel>
+            <TextInput
+              id="edit-staff-last"
+              value={staffForm.last_name}
+              onChange={(event) => setStaffForm({ ...staffForm, last_name: event.target.value })}
+            />
+          </div>
+          <div>
+            <FieldLabel htmlFor="edit-staff-phone">Phone</FieldLabel>
+            <TextInput
+              id="edit-staff-phone"
+              required
+              value={staffForm.phone}
+              onChange={(event) => setStaffForm({ ...staffForm, phone: event.target.value })}
+            />
+          </div>
+          <div>
+            <FieldLabel htmlFor="edit-staff-email">Email</FieldLabel>
+            <TextInput
+              id="edit-staff-email"
+              type="email"
+              value={staffForm.email}
+              onChange={(event) => setStaffForm({ ...staffForm, email: event.target.value })}
+            />
+          </div>
+          <div>
+            <FieldLabel htmlFor="edit-staff-role">Role</FieldLabel>
+            <SelectInput
+              id="edit-staff-role"
+              value={staffForm.role}
+              onChange={(event) => setStaffForm({ ...staffForm, role: event.target.value })}
+            >
+              {STAFF_ROLES.map((role) => (
+                <option key={role.value} value={role.value}>
+                  {role.label}
+                </option>
+              ))}
+            </SelectInput>
           </div>
         </form>
       </Modal>
