@@ -169,7 +169,7 @@ export function InventoryPage() {
 
         <div className="pager">
           <span className="muted">Page {page} of {lastPage}</span>
-          <div className="toolbar">
+          <div className="toolbar-actions">
             <Button type="button" variant="outline" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
               Previous
             </Button>

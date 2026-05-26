@@ -27,8 +27,7 @@ export function VehiclesListPage() {
     <StaffPage title="Vehicles" subtitle="Fleet and customer vehicles">
       <div className="toolbar">
         <form
-          className="form-grid"
-          style={{ flex: 1, gridTemplateColumns: '1fr auto' }}
+          className="toolbar-form toolbar-form--search"
           onSubmit={(event) => {
             event.preventDefault();
             setSearch(searchInput.trim());
@@ -44,7 +43,7 @@ export function VehiclesListPage() {
               onChange={(event) => setSearchInput(event.target.value)}
             />
           </div>
-          <div style={{ alignSelf: 'end' }}>
+          <div>
             <Button type="submit">Search</Button>
           </div>
         </form>
@@ -81,7 +80,7 @@ export function VehiclesListPage() {
 
         <div className="pager">
           <span className="muted">Page {page} of {lastPage}</span>
-          <div className="toolbar">
+          <div className="toolbar-actions">
             <Button type="button" variant="outline" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
               Previous
             </Button>

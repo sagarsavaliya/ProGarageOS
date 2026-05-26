@@ -39,8 +39,7 @@ export function JobsListPage() {
     <StaffPage title="Jobs" subtitle="Search, filter, and manage service jobs">
       <div className="toolbar">
         <form
-          className="form-grid"
-          style={{ flex: 1, gridTemplateColumns: '1fr 180px auto' }}
+          className="toolbar-form toolbar-form--filters"
           onSubmit={(event) => {
             event.preventDefault();
             setSearch(searchInput.trim());
@@ -73,7 +72,7 @@ export function JobsListPage() {
               ))}
             </SelectInput>
           </div>
-          <div style={{ alignSelf: 'end' }}>
+          <div>
             <Button type="submit">Search</Button>
           </div>
         </form>
@@ -85,7 +84,7 @@ export function JobsListPage() {
       <Card>
         {listQuery.isLoading ? <p className="muted">Loading jobs...</p> : null}
         {listQuery.isError ? <p className="error-text">Could not load jobs.</p> : null}
-        {!listQuery.isLoading && items.length === 0 ? <p className="muted">No jobs found.</p> : null}
+        {!listQuery.isLoading && items.length === 0 ? <p className="muted empty-state">No jobs found.</p> : null}
 
         {items.length > 0 ? (
           <Table>
@@ -120,7 +119,7 @@ export function JobsListPage() {
           <span className="muted">
             Page {page} of {lastPage} · {total} total
           </span>
-          <div className="toolbar">
+          <div className="toolbar-actions">
             <Button type="button" variant="outline" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
               Previous
             </Button>

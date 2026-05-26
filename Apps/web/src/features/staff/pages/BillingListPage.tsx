@@ -39,8 +39,7 @@ export function BillingListPage() {
     <StaffPage title="Billing" subtitle="Invoices and outstanding payments">
       <div className="toolbar">
         <form
-          className="form-grid"
-          style={{ flex: 1, gridTemplateColumns: '1fr auto' }}
+          className="toolbar-form toolbar-form--search"
           onSubmit={(event) => {
             event.preventDefault();
             setSearch(searchInput.trim());
@@ -56,7 +55,7 @@ export function BillingListPage() {
               onChange={(event) => setSearchInput(event.target.value)}
             />
           </div>
-          <div style={{ alignSelf: 'end' }}>
+          <div>
             <Button type="submit">Search</Button>
           </div>
         </form>
@@ -120,7 +119,7 @@ export function BillingListPage() {
 
         <div className="pager">
           <span className="muted">Page {page} of {lastPage}</span>
-          <div className="toolbar">
+          <div className="toolbar-actions">
             <Button type="button" variant="outline" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
               Previous
             </Button>

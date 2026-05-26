@@ -19,7 +19,7 @@ export function DashboardPage(props: {
   const bays = (summary.service_bays as JsonMap[] | undefined) ?? [];
 
   return (
-    <StaffShell title="Dashboard" userName={props.userName} onLogout={props.onLogout}>
+    <StaffShell title="Dashboard" subtitle="Today's overview" userName={props.userName} onLogout={props.onLogout}>
       <div className="kpi-grid">
         <KPICard label="Open Jobs" value={String(summary.open_jobs ?? 0)} />
         <KPICard label="Revenue Today" value={`₹${summary.revenue_today ?? 0}`} />
