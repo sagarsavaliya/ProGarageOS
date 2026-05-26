@@ -16,7 +16,7 @@ export function Modal(props: {
   return (
     <div className="modal-overlay" onClick={props.onClose} role="presentation">
       <div
-        className={`modal-card gf-card ${props.wide ? 'modal-card--wide' : ''}`.trim()}
+        className={`modal-card ${props.wide ? 'modal-card--wide' : ''}`.trim()}
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"

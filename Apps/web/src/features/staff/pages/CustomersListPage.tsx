@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, Card, Table, THead, TRow, TH, TD, EmptyState, LoadingState, ListPager, Modal, ModalActions, Alert } from '@/components/ui';
+import { Button, Card, Table, THead, TRow, TH, TD, EmptyState, LoadingState, ListPager, Modal, Alert } from '@/components/ui';
 import { FieldLabel, TextInput } from '@/components/ui/FormField';
 import { StaffPage, useStaffToken } from '@/features/staff/components/StaffPage';
 import { apiRequest } from '@/lib/api';
@@ -137,17 +137,17 @@ export function CustomersListPage() {
         title="Add customer"
         subtitle="Create a new customer record for your garage"
         footer={
-          <ModalActions>
+          <>
             <Button type="button" variant="outline" onClick={() => setShowModal(false)}>
               Cancel
             </Button>
             <Button type="submit" form="add-customer-form" disabled={saving}>
               {saving ? 'Saving...' : 'Create'}
             </Button>
-          </ModalActions>
+          </>
         }
       >
-        <form id="add-customer-form" className="form-grid" onSubmit={(event) => void createCustomer(event)}>
+        <form id="add-customer-form" className="form-grid form-grid--stack" onSubmit={(event) => void createCustomer(event)}>
           <div>
             <FieldLabel>First name</FieldLabel>
             <TextInput

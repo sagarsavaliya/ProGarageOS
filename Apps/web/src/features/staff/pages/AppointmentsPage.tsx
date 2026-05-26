@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Card, StatusBadge, Table, THead, TRow, TH, TD, EmptyState, LoadingState, ListPager, Modal, ModalActions, Alert } from '@/components/ui';
+import { Button, Card, StatusBadge, Table, THead, TRow, TH, TD, EmptyState, LoadingState, ListPager, Modal, Alert } from '@/components/ui';
 import { FieldLabel, SelectInput, TextArea, TextInput } from '@/components/ui/FormField';
 import { StaffPage, useStaffToken } from '@/features/staff/components/StaffPage';
 import { apiRequest, asData, type JsonMap } from '@/lib/api';
@@ -158,17 +158,17 @@ export function AppointmentsPage() {
         title="Book appointment"
         subtitle="Schedule a customer visit for your service bay"
         footer={
-          <ModalActions>
+          <>
             <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
               Cancel
             </Button>
             <Button type="submit" form="book-appointment-form" disabled={saving}>
-              {saving ? 'Saving...' : 'Book'}
+              {saving ? 'Saving...' : 'Book appointment'}
             </Button>
-          </ModalActions>
+          </>
         }
       >
-        <form id="book-appointment-form" className="form-grid" onSubmit={(event) => void createAppointment(event)}>
+        <form id="book-appointment-form" className="form-grid form-grid--stack" onSubmit={(event) => void createAppointment(event)}>
               <div>
                 <FieldLabel>Customer</FieldLabel>
                 <SelectInput

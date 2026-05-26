@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Button, Card, Table, THead, TRow, TH, TD, EmptyState, LoadingState, ListPager, Modal, ModalActions, Alert } from '@/components/ui';
-import { FieldLabel, TextInput } from '@/components/ui/FormField';
+import { Button, Card, Table, THead, TRow, TH, TD, EmptyState, LoadingState, ListPager, Modal, Alert } from '@/components/ui';
+import { FieldLabel, SelectInput, TextInput } from '@/components/ui/FormField';
 import { StaffPage, useStaffToken } from '@/features/staff/components/StaffPage';
 import { apiRequest } from '@/lib/api';
 import { usePaginatedList } from '@/lib/hooks';
@@ -37,6 +37,7 @@ export function InventoryPage() {
   const items = listQuery.data?.items ?? [];
   const meta = listQuery.data?.meta ?? {};
   const lastPage = Number(meta.last_page ?? 1);
+  const adjustingPart = items.find((item) => String(item.uuid) === adjustUuid);
 
   function isLowStock(item: JsonMap): boolean {
     const stock = Number(item.stock_on_hand ?? 0);
@@ -179,17 +180,17 @@ export function InventoryPage() {
         subtitle="Register a new part in your inventory catalog"
         wide
         footer={
-          <ModalActions>
+          <>
             <Button type="button" variant="outline" onClick={() => setShowAdd(false)}>
               Cancel
             </Button>
             <Button type="submit" form="add-part-form" disabled={saving}>
               {saving ? 'Saving...' : 'Add part'}
             </Button>
-          </ModalActions>
+          </>
         }
       >
-        <form id="add-part-form" className="form-grid" onSubmit={(event) => void addPart(event)}>
+        <form id="add-part-form" className="form-grid form-grid--stack" onSubmit={(event) => void addPart(event)}>
           <div>
             <FieldLabel>SKU</FieldLabel>
             <TextInput required value={form.sku} onChange={(event) => setForm({ ...form, sku: event.target.value })} />
@@ -227,28 +228,53 @@ export function InventoryPage() {
 
       <Modal
         open={Boolean(adjustUuid)}
-        onClose={() => setAdjustUuid(null)}
+        onClose={() => {
+          setAdjustUuid(null);
+          setError(undefined);
+        }}
         title="Adjust stock"
-        subtitle="Increase or decrease on-hand quantity"
+        subtitle={
+          adjustingPart
+            ? `${String(adjustingPart.name ?? 'Part')} · current stock ${String(adjustingPart.stock_on_hand ?? 0)}`
+            : 'Increase or decrease on-hand quantity'
+        }
         footer={
-          <ModalActions>
+          <>
             <Button type="button" variant="outline" onClick={() => setAdjustUuid(null)}>
               Cancel
             </Button>
             <Button type="button" onClick={() => void adjustStock()} disabled={saving}>
-              {saving ? 'Saving...' : 'Apply'}
+              {saving ? 'Saving...' : 'Apply adjustment'}
             </Button>
-          </ModalActions>
+          </>
         }
       >
-        <div className="form-grid">
+        <div className="form-grid form-grid--stack">
           <div>
-            <FieldLabel>Adjustment (+/-)</FieldLabel>
-            <TextInput value={adjustQty} onChange={(event) => setAdjustQty(event.target.value)} />
+            <FieldLabel htmlFor="stock-adjust-qty">Adjustment quantity</FieldLabel>
+            <TextInput
+              id="stock-adjust-qty"
+              type="number"
+              inputMode="decimal"
+              placeholder="e.g. 5 or -2"
+              value={adjustQty}
+              onChange={(event) => setAdjustQty(event.target.value)}
+            />
+            <p className="form-hint">Use positive numbers to add stock and negative numbers to remove stock.</p>
           </div>
           <div>
-            <FieldLabel>Reason</FieldLabel>
-            <TextInput value={adjustReason} onChange={(event) => setAdjustReason(event.target.value)} />
+            <FieldLabel htmlFor="stock-adjust-reason">Reason</FieldLabel>
+            <SelectInput
+              id="stock-adjust-reason"
+              value={adjustReason}
+              onChange={(event) => setAdjustReason(event.target.value)}
+            >
+              <option value="restock">Restock</option>
+              <option value="sale">Used on job / sale</option>
+              <option value="damage">Damaged / write-off</option>
+              <option value="correction">Inventory correction</option>
+              <option value="return">Supplier return</option>
+            </SelectInput>
           </div>
           {error ? <Alert variant="error">{error}</Alert> : null}
         </div>
