@@ -25,6 +25,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen>
     with TickerProviderStateMixin {
   final _emailController = TextEditingController();
+  final _keyboardFocus = FocusNode();
   bool _usePhone = true;
   String _phoneDigits = '';
 
@@ -61,9 +62,39 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   @override
   void dispose() {
     _emailController.dispose();
+    _keyboardFocus.dispose();
     _shakeController.dispose();
     _fadeController.dispose();
     super.dispose();
+  }
+
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) {
+      return KeyEventResult.ignored;
+    }
+
+    final loginState = ref.read(staffLoginProvider);
+    if (loginState.isLocked || loginState.isLoading) {
+      return KeyEventResult.ignored;
+    }
+
+    if (event.logicalKey == LogicalKeyboardKey.backspace) {
+      _onPadDelete();
+      return KeyEventResult.handled;
+    }
+
+    if (event.logicalKey == LogicalKeyboardKey.delete) {
+      _onPadClear();
+      return KeyEventResult.handled;
+    }
+
+    final label = event.character ?? event.logicalKey.keyLabel;
+    if (label.length == 1 && RegExp(r'^\d$').hasMatch(label)) {
+      _onPadDigit(label);
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
   }
 
   bool get _phoneComplete => _phoneDigits.length == 10;
@@ -182,7 +213,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       }
     });
 
-    return AnnotatedRegion<SystemUiOverlayStyle>(
+    return Focus(
+      focusNode: _keyboardFocus,
+      autofocus: true,
+      onKeyEvent: _handleKeyEvent,
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.light,
@@ -297,6 +332,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               ),
           ],
         ),
+      ),
       ),
     );
   }
