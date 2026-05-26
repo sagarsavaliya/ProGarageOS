@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, Card, Table, THead, TRow, TH, TD } from '@/components/ui';
+import { Button, Card, Table, THead, TRow, TH, TD, EmptyState, LoadingState, ListPager, Modal, ModalActions, Alert } from '@/components/ui';
 import { FieldLabel, TextInput } from '@/components/ui/FormField';
 import { StaffPage, useStaffToken } from '@/features/staff/components/StaffPage';
 import { apiRequest } from '@/lib/api';
@@ -79,7 +79,7 @@ export function CustomersListPage() {
       </div>
 
       <Card>
-        {listQuery.isLoading ? <p className="muted">Loading customers...</p> : null}
+        {listQuery.isLoading ? <LoadingState label="Loading customers..." /> : null}
         {items.length > 0 ? (
           <Table>
             <THead>
@@ -97,7 +97,8 @@ export function CustomersListPage() {
                   <TRow key={String(customer.uuid)}>
                     <TD>
                       <Link to={`/customers/${String(customer.uuid)}`}>
-                        <span className="chip">{initials(name)}</span> {name}
+                        <span className="avatar-chip">{initials(name)}</span>
+                        {name}
                       </Link>
                     </TD>
                     <TD>{String(customer.phone_primary ?? customer.phone ?? '-')}</TD>
@@ -109,71 +110,78 @@ export function CustomersListPage() {
             </tbody>
           </Table>
         ) : (
-          !listQuery.isLoading && <p className="muted">No customers found.</p>
+          !listQuery.isLoading && (
+            <EmptyState
+              title="No customers found"
+              description="Add your first customer or adjust your search."
+              action={
+                <Button type="button" onClick={() => setShowModal(true)}>
+                  Add customer
+                </Button>
+              }
+            />
+          )
         )}
 
-        <div className="pager">
-          <span className="muted">Page {page} of {lastPage}</span>
-          <div className="toolbar-actions">
-            <Button type="button" variant="outline" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-              Previous
-            </Button>
-            <Button type="button" variant="outline" disabled={page >= lastPage} onClick={() => setPage((p) => p + 1)}>
-              Next
-            </Button>
-          </div>
-        </div>
+        <ListPager
+          page={page}
+          lastPage={lastPage}
+          onPrevious={() => setPage((p) => p - 1)}
+          onNext={() => setPage((p) => p + 1)}
+        />
       </Card>
 
-      {showModal ? (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-card gf-card" onClick={(event) => event.stopPropagation()}>
-            <h3>Add customer</h3>
-            <form className="form-grid" style={{ marginTop: 12 }} onSubmit={(event) => void createCustomer(event)}>
-              <div>
-                <FieldLabel>First name</FieldLabel>
-                <TextInput
-                  required
-                  value={form.first_name}
-                  onChange={(event) => setForm({ ...form, first_name: event.target.value })}
-                />
-              </div>
-              <div>
-                <FieldLabel>Last name</FieldLabel>
-                <TextInput
-                  value={form.last_name}
-                  onChange={(event) => setForm({ ...form, last_name: event.target.value })}
-                />
-              </div>
-              <div>
-                <FieldLabel>Phone</FieldLabel>
-                <TextInput
-                  required
-                  value={form.phone_primary}
-                  onChange={(event) => setForm({ ...form, phone_primary: event.target.value })}
-                />
-              </div>
-              <div>
-                <FieldLabel>Email</FieldLabel>
-                <TextInput
-                  type="email"
-                  value={form.email}
-                  onChange={(event) => setForm({ ...form, email: event.target.value })}
-                />
-              </div>
-              {error ? <p className="error-text">{error}</p> : null}
-              <div className="toolbar">
-                <Button type="button" variant="outline" onClick={() => setShowModal(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={saving}>
-                  {saving ? 'Saving...' : 'Create'}
-                </Button>
-              </div>
-            </form>
+      <Modal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        title="Add customer"
+        subtitle="Create a new customer record for your garage"
+        footer={
+          <ModalActions>
+            <Button type="button" variant="outline" onClick={() => setShowModal(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="add-customer-form" disabled={saving}>
+              {saving ? 'Saving...' : 'Create'}
+            </Button>
+          </ModalActions>
+        }
+      >
+        <form id="add-customer-form" className="form-grid" onSubmit={(event) => void createCustomer(event)}>
+          <div>
+            <FieldLabel>First name</FieldLabel>
+            <TextInput
+              required
+              value={form.first_name}
+              onChange={(event) => setForm({ ...form, first_name: event.target.value })}
+            />
           </div>
-        </div>
-      ) : null}
+          <div>
+            <FieldLabel>Last name</FieldLabel>
+            <TextInput
+              value={form.last_name}
+              onChange={(event) => setForm({ ...form, last_name: event.target.value })}
+            />
+          </div>
+          <div>
+            <FieldLabel>Phone</FieldLabel>
+            <TextInput
+              required
+              value={form.phone_primary}
+              onChange={(event) => setForm({ ...form, phone_primary: event.target.value })}
+            />
+          </div>
+          <div>
+            <FieldLabel>Email</FieldLabel>
+            <TextInput
+              type="email"
+              value={form.email}
+              onChange={(event) => setForm({ ...form, email: event.target.value })}
+            />
+          </div>
+          {error ? <Alert variant="error">{error}</Alert> : null}
+        </form>
+      </Modal>
     </StaffPage>
   );
 }

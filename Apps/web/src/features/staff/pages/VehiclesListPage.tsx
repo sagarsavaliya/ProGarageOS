@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, Card, Table, THead, TRow, TH, TD } from '@/components/ui';
+import { Button, Card, Table, THead, TRow, TH, TD, EmptyState, LoadingState, ListPager } from '@/components/ui';
 import { FieldLabel, TextInput } from '@/components/ui/FormField';
 import { StaffPage, useStaffToken } from '@/features/staff/components/StaffPage';
 import { usePaginatedList } from '@/lib/hooks';
@@ -50,7 +50,7 @@ export function VehiclesListPage() {
       </div>
 
       <Card>
-        {listQuery.isLoading ? <p className="muted">Loading vehicles...</p> : null}
+        {listQuery.isLoading ? <LoadingState label="Loading vehicles..." /> : null}
         {items.length > 0 ? (
           <Table>
             <THead>
@@ -75,20 +75,12 @@ export function VehiclesListPage() {
             </tbody>
           </Table>
         ) : (
-          !listQuery.isLoading && <p className="muted">No vehicles found.</p>
+          !listQuery.isLoading && (
+            <EmptyState title="No vehicles found" description="Vehicles appear here when linked to customers or fleet records." />
+          )
         )}
 
-        <div className="pager">
-          <span className="muted">Page {page} of {lastPage}</span>
-          <div className="toolbar-actions">
-            <Button type="button" variant="outline" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-              Previous
-            </Button>
-            <Button type="button" variant="outline" disabled={page >= lastPage} onClick={() => setPage((p) => p + 1)}>
-              Next
-            </Button>
-          </div>
-        </div>
+        <ListPager page={page} lastPage={lastPage} onPrevious={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
       </Card>
     </StaffPage>
   );

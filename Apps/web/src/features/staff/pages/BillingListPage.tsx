@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Card, StatusBadge, Table, THead, TRow, TH, TD } from '@/components/ui';
+import { Button, Card, StatusBadge, Table, THead, TRow, TH, TD, EmptyState, LoadingState, ListPager } from '@/components/ui';
 import { FieldLabel, TextInput } from '@/components/ui/FormField';
 import { StaffPage, useStaffToken } from '@/features/staff/components/StaffPage';
 import { apiRequest, asData, type JsonMap } from '@/lib/api';
@@ -67,9 +67,9 @@ export function BillingListPage() {
       {showOutstanding ? (
         <Card>
           <h3>Outstanding payments</h3>
-          {outstandingQuery.isLoading ? <p className="muted">Loading outstanding...</p> : null}
+          {outstandingQuery.isLoading ? <LoadingState label="Loading outstanding..." /> : null}
           {outstandingItems.length === 0 && !outstandingQuery.isLoading ? (
-            <p className="muted">No outstanding invoices.</p>
+            <EmptyState title="No outstanding invoices" description="All caught up — no pending balances right now." />
           ) : null}
           <div className="stack" style={{ marginTop: 12 }}>
             {outstandingItems.map((item) => (
@@ -85,7 +85,7 @@ export function BillingListPage() {
       ) : null}
 
       <Card>
-        {listQuery.isLoading ? <p className="muted">Loading invoices...</p> : null}
+        {listQuery.isLoading ? <LoadingState label="Loading invoices..." /> : null}
         {items.length > 0 ? (
           <Table>
             <THead>
@@ -114,20 +114,10 @@ export function BillingListPage() {
             </tbody>
           </Table>
         ) : (
-          !listQuery.isLoading && <p className="muted">No invoices found.</p>
+          !listQuery.isLoading && <EmptyState title="No invoices found" description="Invoices will appear here once jobs are billed." />
         )}
 
-        <div className="pager">
-          <span className="muted">Page {page} of {lastPage}</span>
-          <div className="toolbar-actions">
-            <Button type="button" variant="outline" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-              Previous
-            </Button>
-            <Button type="button" variant="outline" disabled={page >= lastPage} onClick={() => setPage((p) => p + 1)}>
-              Next
-            </Button>
-          </div>
-        </div>
+        <ListPager page={page} lastPage={lastPage} onPrevious={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
       </Card>
     </StaffPage>
   );

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Card, StatusBadge } from '@/components/ui';
+import { Button, Card, StatusBadge, Alert, LoadingState } from '@/components/ui';
 import { FieldLabel, SelectInput, TextArea } from '@/components/ui/FormField';
 import { StaffPage, useStaffToken } from '@/features/staff/components/StaffPage';
 import { apiRequest, asData, type JsonMap } from '@/lib/api';
@@ -71,8 +71,8 @@ export function JobDetailPage() {
 
   return (
     <StaffPage title={`Job ${String(job.job_number ?? uuid)}`} subtitle="Job detail and actions">
-      {detailQuery.isLoading ? <p className="muted">Loading job...</p> : null}
-      {detailQuery.isError ? <p className="error-text">Could not load job.</p> : null}
+      {detailQuery.isLoading ? <LoadingState label="Loading job..." /> : null}
+      {detailQuery.isError ? <Alert variant="error">Could not load job.</Alert> : null}
 
       <div className="toolbar">
         <Link to="/jobs">
@@ -139,7 +139,7 @@ export function JobDetailPage() {
               <FieldLabel htmlFor="status-notes">Notes</FieldLabel>
               <TextArea id="status-notes" rows={3} value={notes} onChange={(event) => setNotes(event.target.value)} />
             </div>
-            {error ? <p className="error-text">{error}</p> : null}
+            {error ? <Alert variant="error">{error}</Alert> : null}
             <Button type="button" onClick={() => void updateStatus()} disabled={saving || !status}>
               {saving ? 'Saving...' : 'Update status'}
             </Button>
@@ -175,7 +175,7 @@ export function JobDetailPage() {
 
       <Card>
         <h3>Tasks</h3>
-        {tasksQuery.isLoading ? <p className="muted">Loading tasks...</p> : null}
+        {tasksQuery.isLoading ? <LoadingState label="Loading tasks..." /> : null}
         {!tasksQuery.isLoading && tasks.length === 0 ? <p className="muted">No tasks yet.</p> : null}
         <div className="stack" style={{ marginTop: 12 }}>
           {tasks.map((task) => (

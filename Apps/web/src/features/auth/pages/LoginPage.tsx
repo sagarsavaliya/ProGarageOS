@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button, Card, PinInput } from '@/components/ui';
+import { Button, Card, PinInput, Alert } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 
 export function LoginPage() {
@@ -43,7 +43,7 @@ export function LoginPage() {
           <label htmlFor="pin-0">6-digit PIN</label>
           <PinInput value={pin} onChange={setPin} idPrefix="pin" />
 
-          {auth.authError ? <div className="error-text">{auth.authError}</div> : null}
+          {auth.authError ? <Alert variant="error">{auth.authError}</Alert> : null}
 
           <Button type="submit" disabled={auth.loginPending || pin.length < 6}>
             {auth.loginPending ? 'Signing in...' : 'Sign in'}

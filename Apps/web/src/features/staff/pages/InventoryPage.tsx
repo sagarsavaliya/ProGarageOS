@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Card, Table, THead, TRow, TH, TD } from '@/components/ui';
+import { Button, Card, Table, THead, TRow, TH, TD, EmptyState, LoadingState, ListPager, Modal, ModalActions, Alert } from '@/components/ui';
 import { FieldLabel, TextInput } from '@/components/ui/FormField';
 import { StaffPage, useStaffToken } from '@/features/staff/components/StaffPage';
 import { apiRequest } from '@/lib/api';
@@ -130,7 +130,7 @@ export function InventoryPage() {
       </div>
 
       <Card>
-        {listQuery.isLoading ? <p className="muted">Loading inventory...</p> : null}
+        {listQuery.isLoading ? <LoadingState label="Loading inventory..." /> : null}
         {items.length > 0 ? (
           <Table>
             <THead>
@@ -164,98 +164,95 @@ export function InventoryPage() {
             </tbody>
           </Table>
         ) : (
-          !listQuery.isLoading && <p className="muted">No inventory items found.</p>
+          !listQuery.isLoading && (
+            <EmptyState title="No inventory items found" description="Add parts to track stock and low-stock alerts." />
+          )
         )}
 
-        <div className="pager">
-          <span className="muted">Page {page} of {lastPage}</span>
-          <div className="toolbar-actions">
-            <Button type="button" variant="outline" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-              Previous
-            </Button>
-            <Button type="button" variant="outline" disabled={page >= lastPage} onClick={() => setPage((p) => p + 1)}>
-              Next
-            </Button>
-          </div>
-        </div>
+        <ListPager page={page} lastPage={lastPage} onPrevious={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
       </Card>
 
-      {showAdd ? (
-        <div className="modal-overlay" onClick={() => setShowAdd(false)}>
-          <div className="modal-card gf-card" onClick={(event) => event.stopPropagation()}>
-            <h3>Add part</h3>
-            <form className="form-grid" style={{ marginTop: 12 }} onSubmit={(event) => void addPart(event)}>
-              <div>
-                <FieldLabel>SKU</FieldLabel>
-                <TextInput required value={form.sku} onChange={(event) => setForm({ ...form, sku: event.target.value })} />
-              </div>
-              <div>
-                <FieldLabel>Name</FieldLabel>
-                <TextInput required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
-              </div>
-              <div>
-                <FieldLabel>Unit</FieldLabel>
-                <TextInput value={form.unit_of_measure} onChange={(event) => setForm({ ...form, unit_of_measure: event.target.value })} />
-              </div>
-              <div>
-                <FieldLabel>Cost price</FieldLabel>
-                <TextInput value={form.cost_price} onChange={(event) => setForm({ ...form, cost_price: event.target.value })} />
-              </div>
-              <div>
-                <FieldLabel>Selling price</FieldLabel>
-                <TextInput value={form.selling_price} onChange={(event) => setForm({ ...form, selling_price: event.target.value })} />
-              </div>
-              <div>
-                <FieldLabel>Stock on hand</FieldLabel>
-                <TextInput value={form.stock_on_hand} onChange={(event) => setForm({ ...form, stock_on_hand: event.target.value })} />
-              </div>
-              <div>
-                <FieldLabel>Low stock threshold</FieldLabel>
-                <TextInput
-                  value={form.low_stock_threshold}
-                  onChange={(event) => setForm({ ...form, low_stock_threshold: event.target.value })}
-                />
-              </div>
-              {error ? <p className="error-text">{error}</p> : null}
-              <div className="toolbar">
-                <Button type="button" variant="outline" onClick={() => setShowAdd(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={saving}>
-                  {saving ? 'Saving...' : 'Add part'}
-                </Button>
-              </div>
-            </form>
+      <Modal
+        open={showAdd}
+        onClose={() => setShowAdd(false)}
+        title="Add part"
+        subtitle="Register a new part in your inventory catalog"
+        wide
+        footer={
+          <ModalActions>
+            <Button type="button" variant="outline" onClick={() => setShowAdd(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="add-part-form" disabled={saving}>
+              {saving ? 'Saving...' : 'Add part'}
+            </Button>
+          </ModalActions>
+        }
+      >
+        <form id="add-part-form" className="form-grid" onSubmit={(event) => void addPart(event)}>
+          <div>
+            <FieldLabel>SKU</FieldLabel>
+            <TextInput required value={form.sku} onChange={(event) => setForm({ ...form, sku: event.target.value })} />
           </div>
-        </div>
-      ) : null}
+          <div>
+            <FieldLabel>Name</FieldLabel>
+            <TextInput required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
+          </div>
+          <div>
+            <FieldLabel>Unit</FieldLabel>
+            <TextInput value={form.unit_of_measure} onChange={(event) => setForm({ ...form, unit_of_measure: event.target.value })} />
+          </div>
+          <div>
+            <FieldLabel>Cost price</FieldLabel>
+            <TextInput value={form.cost_price} onChange={(event) => setForm({ ...form, cost_price: event.target.value })} />
+          </div>
+          <div>
+            <FieldLabel>Selling price</FieldLabel>
+            <TextInput value={form.selling_price} onChange={(event) => setForm({ ...form, selling_price: event.target.value })} />
+          </div>
+          <div>
+            <FieldLabel>Stock on hand</FieldLabel>
+            <TextInput value={form.stock_on_hand} onChange={(event) => setForm({ ...form, stock_on_hand: event.target.value })} />
+          </div>
+          <div>
+            <FieldLabel>Low stock threshold</FieldLabel>
+            <TextInput
+              value={form.low_stock_threshold}
+              onChange={(event) => setForm({ ...form, low_stock_threshold: event.target.value })}
+            />
+          </div>
+          {error ? <Alert variant="error">{error}</Alert> : null}
+        </form>
+      </Modal>
 
-      {adjustUuid ? (
-        <div className="modal-overlay" onClick={() => setAdjustUuid(null)}>
-          <div className="modal-card gf-card" onClick={(event) => event.stopPropagation()}>
-            <h3>Adjust stock</h3>
-            <div className="form-grid" style={{ marginTop: 12 }}>
-              <div>
-                <FieldLabel>Adjustment (+/-)</FieldLabel>
-                <TextInput value={adjustQty} onChange={(event) => setAdjustQty(event.target.value)} />
-              </div>
-              <div>
-                <FieldLabel>Reason</FieldLabel>
-                <TextInput value={adjustReason} onChange={(event) => setAdjustReason(event.target.value)} />
-              </div>
-              {error ? <p className="error-text">{error}</p> : null}
-              <div className="toolbar">
-                <Button type="button" variant="outline" onClick={() => setAdjustUuid(null)}>
-                  Cancel
-                </Button>
-                <Button type="button" onClick={() => void adjustStock()} disabled={saving}>
-                  {saving ? 'Saving...' : 'Apply'}
-                </Button>
-              </div>
-            </div>
+      <Modal
+        open={Boolean(adjustUuid)}
+        onClose={() => setAdjustUuid(null)}
+        title="Adjust stock"
+        subtitle="Increase or decrease on-hand quantity"
+        footer={
+          <ModalActions>
+            <Button type="button" variant="outline" onClick={() => setAdjustUuid(null)}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={() => void adjustStock()} disabled={saving}>
+              {saving ? 'Saving...' : 'Apply'}
+            </Button>
+          </ModalActions>
+        }
+      >
+        <div className="form-grid">
+          <div>
+            <FieldLabel>Adjustment (+/-)</FieldLabel>
+            <TextInput value={adjustQty} onChange={(event) => setAdjustQty(event.target.value)} />
           </div>
+          <div>
+            <FieldLabel>Reason</FieldLabel>
+            <TextInput value={adjustReason} onChange={(event) => setAdjustReason(event.target.value)} />
+          </div>
+          {error ? <Alert variant="error">{error}</Alert> : null}
         </div>
-      ) : null}
+      </Modal>
     </StaffPage>
   );
 }

@@ -1,7 +1,11 @@
 import type { ReactNode } from 'react';
 
 export function Table(props: { children: ReactNode; className?: string }) {
-  return <table className={`gf-table ${props.className ?? ''}`.trim()}>{props.children}</table>;
+  return (
+    <div className="table-shell">
+      <table className={`gf-table ${props.className ?? ''}`.trim()}>{props.children}</table>
+    </div>
+  );
 }
 
 export function THead(props: { children: ReactNode }) {

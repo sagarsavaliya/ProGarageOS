@@ -22,13 +22,18 @@ import { SettingsPage } from '@/features/staff/pages/SettingsPage';
 import { NotificationsPage } from '@/features/staff/pages/NotificationsPage';
 import { AuditPage } from '@/features/staff/pages/AuditPage';
 import { useAuth } from '@/lib/auth';
+import { LoadingState } from '@/components/ui';
 
 function RequireAuth() {
   const auth = useAuth();
   const location = useLocation();
 
   if (!auth.isReady) {
-    return <div className="center-state">Checking session...</div>;
+    return (
+      <div className="center-state">
+        <LoadingState label="Checking session..." />
+      </div>
+    );
   }
   if (!auth.isAuthenticated) {
     return <Navigate to="/login" replace />;

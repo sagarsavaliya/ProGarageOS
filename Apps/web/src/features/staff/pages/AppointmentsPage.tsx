@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Card, StatusBadge, Table, THead, TRow, TH, TD } from '@/components/ui';
+import { Button, Card, StatusBadge, Table, THead, TRow, TH, TD, EmptyState, LoadingState, ListPager, Modal, ModalActions, Alert } from '@/components/ui';
 import { FieldLabel, SelectInput, TextArea, TextInput } from '@/components/ui/FormField';
 import { StaffPage, useStaffToken } from '@/features/staff/components/StaffPage';
 import { apiRequest, asData, type JsonMap } from '@/lib/api';
@@ -106,8 +106,10 @@ export function AppointmentsPage() {
         </Button>
       </div>
 
+      {error ? <Alert variant="error">{error}</Alert> : null}
+
       <Card>
-        {listQuery.isLoading ? <p className="muted">Loading appointments...</p> : null}
+        {listQuery.isLoading ? <LoadingState label="Loading appointments..." /> : null}
         {items.length > 0 ? (
           <Table>
             <THead>
@@ -142,27 +144,31 @@ export function AppointmentsPage() {
             </tbody>
           </Table>
         ) : (
-          !listQuery.isLoading && <p className="muted">No appointments for this date.</p>
+          !listQuery.isLoading && (
+            <EmptyState title="No appointments for this date" description="Pick another date or book a new appointment." />
+          )
         )}
 
-        <div className="pager">
-          <span className="muted">Page {page} of {lastPage}</span>
-          <div className="toolbar-actions">
-            <Button type="button" variant="outline" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-              Previous
-            </Button>
-            <Button type="button" variant="outline" disabled={page >= lastPage} onClick={() => setPage((p) => p + 1)}>
-              Next
-            </Button>
-          </div>
-        </div>
+        <ListPager page={page} lastPage={lastPage} onPrevious={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
       </Card>
 
-      {showForm ? (
-        <div className="modal-overlay" onClick={() => setShowForm(false)}>
-          <div className="modal-card gf-card" onClick={(event) => event.stopPropagation()}>
-            <h3>Book appointment</h3>
-            <form className="form-grid" style={{ marginTop: 12 }} onSubmit={(event) => void createAppointment(event)}>
+      <Modal
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        title="Book appointment"
+        subtitle="Schedule a customer visit for your service bay"
+        footer={
+          <ModalActions>
+            <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="book-appointment-form" disabled={saving}>
+              {saving ? 'Saving...' : 'Book'}
+            </Button>
+          </ModalActions>
+        }
+      >
+        <form id="book-appointment-form" className="form-grid" onSubmit={(event) => void createAppointment(event)}>
               <div>
                 <FieldLabel>Customer</FieldLabel>
                 <SelectInput
@@ -215,19 +221,9 @@ export function AppointmentsPage() {
                 <FieldLabel>Notes</FieldLabel>
                 <TextArea rows={3} value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} />
               </div>
-              {error ? <p className="error-text">{error}</p> : null}
-              <div className="toolbar">
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={saving}>
-                  {saving ? 'Saving...' : 'Book'}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      ) : null}
+          {error ? <Alert variant="error">{error}</Alert> : null}
+        </form>
+      </Modal>
     </StaffPage>
   );
 }

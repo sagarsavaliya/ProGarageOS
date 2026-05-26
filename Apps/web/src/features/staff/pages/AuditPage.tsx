@@ -1,4 +1,4 @@
-import { Card, Table, THead, TRow, TH, TD } from '@/components/ui';
+import { Card, Table, THead, TRow, TH, TD, EmptyState, LoadingState, Alert } from '@/components/ui';
 import { StaffPage, useStaffToken } from '@/features/staff/components/StaffPage';
 import { ApiError, apiRequest, asData, type JsonMap } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
@@ -29,12 +29,14 @@ export function AuditPage() {
   return (
     <StaffPage title="Audit log" subtitle="Track important account and job actions">
       <Card>
-        {auditQuery.isLoading ? <p className="muted">Loading audit log...</p> : null}
+        {auditQuery.isLoading ? <LoadingState label="Loading audit log..." /> : null}
         {forbidden ? (
-          <p className="muted">Audit log access is restricted for your role. Contact the garage owner if you need access.</p>
+          <Alert variant="info">Audit log access is restricted for your role. Contact the garage owner if you need access.</Alert>
         ) : null}
-        {auditQuery.isError && !forbidden ? <p className="error-text">Could not load audit log.</p> : null}
-        {!auditQuery.isLoading && !forbidden && items.length === 0 ? <p className="muted">No audit entries yet.</p> : null}
+        {auditQuery.isError && !forbidden ? <Alert variant="error">Could not load audit log.</Alert> : null}
+        {!auditQuery.isLoading && !forbidden && items.length === 0 ? (
+          <EmptyState title="No audit entries yet" description="Important account and job actions will be recorded here." />
+        ) : null}
 
         {items.length > 0 ? (
           <Table>

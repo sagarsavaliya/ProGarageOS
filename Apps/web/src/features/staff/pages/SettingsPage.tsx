@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Card, Table, THead, TRow, TH, TD } from '@/components/ui';
+import { Button, Card, Table, THead, TRow, TH, TD, Alert } from '@/components/ui';
 import { FieldLabel, TextInput } from '@/components/ui/FormField';
 import { StaffPage, useStaffToken } from '@/features/staff/components/StaffPage';
 import { apiRequest, asData, type JsonMap } from '@/lib/api';
@@ -185,8 +185,8 @@ export function SettingsPage() {
         ))}
       </div>
 
-      {message ? <p className="muted">{message}</p> : null}
-      {error ? <p className="error-text">{error}</p> : null}
+      {message ? <Alert variant="success">{message}</Alert> : null}
+      {error ? <Alert variant="error">{error}</Alert> : null}
 
       {tab === 'profile' ? (
         <Card>

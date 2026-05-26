@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Card, KPICard, Table, THead, TRow, TH, TD } from '@/components/ui';
+import { KPICard, Table, THead, TRow, TH, TD, EmptyState, LoadingState, PageSection } from '@/components/ui';
 import { StaffPage, useStaffToken } from '@/features/staff/components/StaffPage';
 import { apiRequest, asData, asList, type JsonMap } from '@/lib/api';
 import { money } from '@/lib/format';
@@ -36,23 +36,25 @@ export function ReportsPage() {
   });
 
   const summary = summaryQuery.data ?? {};
-  const totalJobs = Number(jobsQuery.data?.meta?.total ?? summary.open_jobs ?? 0);
+  const kpis = (summary.kpis as JsonMap | undefined) ?? {};
+  const totalJobs = Number(jobsQuery.data?.meta?.total ?? kpis.active_jobs ?? 0);
   const lowStock = lowStockQuery.data ?? [];
 
   return (
     <StaffPage title="Reports" subtitle="Operational KPIs and inventory alerts">
       <div className="kpi-grid">
-        <KPICard label="Open jobs" value={String(summary.open_jobs ?? 0)} />
-        <KPICard label="Revenue today" value={money(summary.revenue_today)} />
-        <KPICard label="Pending invoices" value={String(summary.pending_invoices ?? 0)} />
+        <KPICard label="Open jobs" value={String(kpis.active_jobs ?? 0)} />
+        <KPICard label="Revenue today" value={money(kpis.revenue)} />
+        <KPICard label="Pending amount" value={money(kpis.pending_amount)} />
         <KPICard label="Total jobs" value={String(totalJobs)} />
       </div>
 
       <div className="detail-grid">
-        <Card>
-          <h3>Low stock items</h3>
-          {lowStockQuery.isLoading ? <p className="muted">Loading inventory alerts...</p> : null}
-          {!lowStockQuery.isLoading && lowStock.length === 0 ? <p className="muted">No low stock alerts.</p> : null}
+        <PageSection title="Low stock items" subtitle="Parts that need reorder attention">
+          {lowStockQuery.isLoading ? <LoadingState label="Loading inventory alerts..." /> : null}
+          {!lowStockQuery.isLoading && lowStock.length === 0 ? (
+            <EmptyState title="No low stock alerts" description="Inventory levels are healthy across tracked parts." />
+          ) : null}
           {lowStock.length > 0 ? (
             <Table className="table-spaced">
               <THead>
@@ -76,17 +78,16 @@ export function ReportsPage() {
           <Link to="/inventory" style={{ display: 'inline-block', marginTop: 12 }}>
             View inventory
           </Link>
-        </Card>
+        </PageSection>
 
-        <Card>
-          <h3>Quick links</h3>
-          <div className="stack" style={{ marginTop: 12 }}>
+        <PageSection title="Quick links" subtitle="Jump to operational modules">
+          <div className="stack quick-links">
             <Link to="/jobs">Jobs list</Link>
             <Link to="/billing">Billing</Link>
             <Link to="/appointments">Appointments</Link>
             <Link to="/audit">Audit log</Link>
           </div>
-        </Card>
+        </PageSection>
       </div>
     </StaffPage>
   );

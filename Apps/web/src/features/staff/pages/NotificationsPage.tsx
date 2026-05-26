@@ -1,4 +1,4 @@
-import { Button, Card } from '@/components/ui';
+import { Button, Card, EmptyState, LoadingState } from '@/components/ui';
 import { StaffPage, useStaffToken } from '@/features/staff/components/StaffPage';
 import { apiRequest, asData, type JsonMap } from '@/lib/api';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -35,32 +35,40 @@ export function NotificationsPage() {
   return (
     <StaffPage title="Notifications" subtitle="Staff inbox and alerts">
       <div className="toolbar">
-        <span className="muted">{unreadCount} unread</span>
+        <span className="pager-meta">
+          <strong>{unreadCount}</strong> unread
+        </span>
         <Button type="button" variant="outline" onClick={() => void markAllRead()} disabled={unreadCount === 0}>
           Mark all read
         </Button>
       </div>
 
       <Card>
-        {notificationsQuery.isLoading ? <p className="muted">Loading notifications...</p> : null}
-        {!notificationsQuery.isLoading && items.length === 0 ? <p className="muted">No notifications yet.</p> : null}
-        <div className="stack" style={{ marginTop: 12 }}>
-          {items.map((item) => (
-            <div key={String(item.uuid)} className="line-item">
-              <div>
-                <strong>{String(item.title ?? 'Notification')}</strong>
-                <p className="muted">{String(item.body ?? item.message ?? '')}</p>
-                <small className="muted">{String(item.created_at ?? '')}</small>
+        {notificationsQuery.isLoading ? <LoadingState label="Loading notifications..." /> : null}
+        {!notificationsQuery.isLoading && items.length === 0 ? (
+          <EmptyState title="No notifications yet" description="Alerts about jobs, billing, and inventory will show up here." />
+        ) : null}
+
+        <div className="feed-list" style={{ marginTop: items.length > 0 ? 4 : 0 }}>
+          {items.map((item: JsonMap) => {
+            const unread = !item.read_at;
+            return (
+              <div key={String(item.uuid)} className={`feed-item ${unread ? 'feed-item--unread' : ''}`.trim()}>
+                <div>
+                  <div className="feed-item-title">{String(item.title ?? 'Notification')}</div>
+                  <p className="feed-item-body muted">{String(item.body ?? item.message ?? '')}</p>
+                  <div className="feed-item-time">{String(item.created_at ?? '')}</div>
+                </div>
+                {unread ? (
+                  <Button type="button" variant="outline" onClick={() => void markRead(String(item.uuid))}>
+                    Mark read
+                  </Button>
+                ) : (
+                  <span className="chip">Read</span>
+                )}
               </div>
-              {!item.read_at ? (
-                <Button type="button" variant="outline" onClick={() => void markRead(String(item.uuid))}>
-                  Mark read
-                </Button>
-              ) : (
-                <span className="chip">Read</span>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </Card>
     </StaffPage>

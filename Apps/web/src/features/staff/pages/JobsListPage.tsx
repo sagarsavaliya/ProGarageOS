@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, Card, StatusBadge, Table, THead, TRow, TH, TD } from '@/components/ui';
+import { Button, Card, StatusBadge, Table, THead, TRow, TH, TD, EmptyState, LoadingState, ListPager, Alert } from '@/components/ui';
 import { FieldLabel, SelectInput, TextInput } from '@/components/ui/FormField';
 import { StaffPage, useStaffToken } from '@/features/staff/components/StaffPage';
 import { usePaginatedList } from '@/lib/hooks';
@@ -82,9 +82,11 @@ export function JobsListPage() {
       </div>
 
       <Card>
-        {listQuery.isLoading ? <p className="muted">Loading jobs...</p> : null}
-        {listQuery.isError ? <p className="error-text">Could not load jobs.</p> : null}
-        {!listQuery.isLoading && items.length === 0 ? <p className="muted empty-state">No jobs found.</p> : null}
+        {listQuery.isLoading ? <LoadingState label="Loading jobs..." /> : null}
+        {listQuery.isError ? <Alert variant="error">Could not load jobs.</Alert> : null}
+        {!listQuery.isLoading && !listQuery.isError && items.length === 0 ? (
+          <EmptyState title="No jobs found" description="Try a different search or create a new service job." />
+        ) : null}
 
         {items.length > 0 ? (
           <Table>
@@ -115,19 +117,13 @@ export function JobsListPage() {
           </Table>
         ) : null}
 
-        <div className="pager">
-          <span className="muted">
-            Page {page} of {lastPage} · {total} total
-          </span>
-          <div className="toolbar-actions">
-            <Button type="button" variant="outline" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-              Previous
-            </Button>
-            <Button type="button" variant="outline" disabled={page >= lastPage} onClick={() => setPage((p) => p + 1)}>
-              Next
-            </Button>
-          </div>
-        </div>
+        <ListPager
+          page={page}
+          lastPage={lastPage}
+          total={total}
+          onPrevious={() => setPage((p) => p - 1)}
+          onNext={() => setPage((p) => p + 1)}
+        />
       </Card>
     </StaffPage>
   );

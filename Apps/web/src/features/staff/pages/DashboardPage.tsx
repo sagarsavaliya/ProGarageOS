@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { KPICard, Card, StatusBadge, Table, THead, TRow, TH, TD } from '@/components/ui';
+import { KPICard, Card, StatusBadge, Table, THead, TRow, TH, TD, EmptyState, LoadingState, PageSection } from '@/components/ui';
 import { ServiceBayBoard } from '@/features/staff/components/ServiceBayBoard';
 import { StaffShell } from '@/layouts/StaffShell';
 import { apiRequest, asData, type JsonMap } from '@/lib/api';
@@ -22,6 +22,8 @@ export function DashboardPage(props: {
 
   return (
     <StaffShell title="Dashboard" subtitle="Today's overview" userName={props.userName} onLogout={props.onLogout}>
+      {summaryQuery.isLoading ? <LoadingState label="Loading dashboard..." /> : null}
+
       <div className="kpi-grid">
         <KPICard label="Open Jobs" value={String(kpis.active_jobs ?? 0)} />
         <KPICard label="Revenue Today" value={`₹${kpis.revenue ?? 0}`} />
@@ -39,10 +41,11 @@ export function DashboardPage(props: {
         <ServiceBayBoard bays={bays} />
       </Card>
 
-      <Card>
-        <h3>Active Jobs</h3>
-        {activeJobs.length === 0 ? <p className="muted">No active jobs right now.</p> : null}
-        <Table className="table-spaced">
+      <PageSection title="Active Jobs" subtitle="Open work across your garage floor">
+        {activeJobs.length === 0 ? (
+          <EmptyState title="No active jobs right now" description="New jobs will appear here once intake or appointments begin." />
+        ) : (
+          <Table className="table-spaced">
           <THead>
             <TRow>
               <TH>Job</TH>
@@ -72,7 +75,8 @@ export function DashboardPage(props: {
             })}
           </tbody>
         </Table>
-      </Card>
+        )}
+      </PageSection>
     </StaffShell>
   );
 }
