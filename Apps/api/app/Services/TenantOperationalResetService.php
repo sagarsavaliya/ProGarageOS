@@ -10,6 +10,7 @@ use App\Models\Invoice;
 use App\Models\JobInspectionRecord;
 use App\Models\LoyaltyTransaction;
 use App\Models\Payment;
+use App\Models\ServiceBay;
 use App\Models\ServiceJob;
 use App\Models\StaffNotification;
 use App\Models\Tenant;
@@ -75,6 +76,8 @@ class TenantOperationalResetService
                     'setup_bay_count'    => null,
                 ]);
             }
+
+            ServiceBay::where('tenant_id', $tenantId)->update(['status' => 'available']);
         });
     }
 }

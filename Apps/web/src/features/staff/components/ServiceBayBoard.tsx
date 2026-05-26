@@ -28,12 +28,12 @@ function bayJob(bay: JsonMap): JsonMap | null {
 }
 
 function bayCardState(bay: JsonMap): 'available' | 'occupied' | 'maintenance' | 'reserved' {
+  if (bayJob(bay)) {
+    return 'occupied';
+  }
   const status = String(bay.status ?? 'available');
   if (status === 'maintenance' || status === 'reserved') {
     return status;
-  }
-  if (status === 'occupied' || bayJob(bay)) {
-    return 'occupied';
   }
   return 'available';
 }
