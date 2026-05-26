@@ -79,7 +79,10 @@ class DashboardController extends Controller
         // Service bays
         $bays = ServiceBay::where('tenant_id', $tenantId)
             ->where('is_active', true)
-            ->with(['currentJobs' => fn ($q) => $q->with('vehicle:id,maker,model,registration_number')])
+            ->with(['currentJobs' => fn ($q) => $q->with(
+                'vehicle:id,maker,model,registration_number',
+                'primaryTechnician:id,first_name,last_name',
+            )])
             ->orderBy('sort_order')
             ->get()
             ->map(fn ($bay) => [
@@ -93,6 +96,7 @@ class DashboardController extends Controller
                     'job_number' => $bay->currentJobs->first()->job_number,
                     'status'     => $bay->currentJobs->first()->status,
                     'vehicle'    => $bay->currentJobs->first()->vehicle?->display_name,
+                    'technician' => $bay->currentJobs->first()->primaryTechnician?->full_name,
                 ] : null,
             ]);
 

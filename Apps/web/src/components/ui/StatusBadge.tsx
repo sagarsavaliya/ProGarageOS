@@ -13,6 +13,13 @@ const STATUS_PALETTE: Record<string, string> = {
   trial: 'status-estimate',
   suspended: 'status-cancelled',
   churned: 'status-draft',
+  available: 'status-available',
+  occupied: 'status-occupied',
+  maintenance: 'status-maintenance',
+  reserved: 'status-reserved',
+  booked: 'status-estimate',
+  confirmed: 'status-approved',
+  checked_in: 'status-progress',
 };
 
 function normalizeStatus(value: string | undefined): string {
