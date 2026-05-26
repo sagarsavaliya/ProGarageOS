@@ -2,6 +2,18 @@ import type { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 
+function userInitials(name?: string): string {
+  if (!name) {
+    return 'ST';
+  }
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
+}
+
 const STAFF_NAV_SECTIONS = [
   {
     section: 'MAIN',
@@ -42,8 +54,13 @@ export function StaffShell(props: {
     <div className="app-shell">
       <aside className="sidebar">
         <div className="sidebar-brand">
-          <h1>GarageFlow</h1>
-          <p>Garage Operations</p>
+          <div className="sidebar-brand-mark" aria-hidden>
+            GF
+          </div>
+          <div>
+            <h1>GarageFlow</h1>
+            <p>Garage Operations</p>
+          </div>
         </div>
 
         <nav className="sidebar-nav-grouped">
@@ -76,7 +93,10 @@ export function StaffShell(props: {
             <h2>{props.title}</h2>
             <p>{props.subtitle ?? 'Garage operations workspace'}</p>
           </div>
-          <div className="header-user">{props.userName ?? 'Staff User'}</div>
+          <div className="header-user">
+            <span className="header-user-avatar">{userInitials(props.userName)}</span>
+            <span>{props.userName ?? 'Staff User'}</span>
+          </div>
         </header>
         <section className="page-content">{props.children}</section>
       </main>
