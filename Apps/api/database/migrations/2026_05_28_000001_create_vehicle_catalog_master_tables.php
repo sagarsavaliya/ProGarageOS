@@ -56,8 +56,8 @@ return new class extends Migration
             $table->softDeletes();
 
             $table->unique(['vehicle_model_id', 'slug', 'year_from']);
-            $table->index(['vehicle_model_id', 'year_from', 'year_to', 'is_active']);
-            $table->index(['vehicle_model_id', 'is_active', 'name']);
+            $table->index(['vehicle_model_id', 'year_from', 'year_to', 'is_active'], 'veh_variants_year_filter_idx');
+            $table->index(['vehicle_model_id', 'is_active', 'name'], 'veh_variants_model_name_idx');
         });
 
         Schema::create('vehicle_colors', function (Blueprint $table) {
