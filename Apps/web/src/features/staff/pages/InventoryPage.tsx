@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { Button, Card, Table, THead, TRow, TH, TD, EmptyState, LoadingState, ListPager, Modal, Alert } from '@/components/ui';
 import { FieldLabel, SelectInput, TextInput } from '@/components/ui/FormField';
@@ -148,7 +149,9 @@ export function InventoryPage() {
                 <TRow key={String(item.uuid)}>
                   <TD>{String(item.sku ?? '-')}</TD>
                   <TD>
-                    {String(item.name ?? '-')}
+                    <Link to={`/inventory/${String(item.uuid)}`}>
+                      {String(item.name ?? '-')}
+                    </Link>
                     {isLowStock(item) ? <span className="chip active chip-inline">Low stock</span> : null}
                   </TD>
                   <TD>{String(item.stock_on_hand ?? 0)}</TD>

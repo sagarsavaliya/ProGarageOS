@@ -219,6 +219,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onTap: () => context.go('/inventory'),
             ),
             _SettingsTile(
+              icon: PhosphorIconsRegular.chartBar,
+              title: 'Reports',
+              subtitle: 'KPIs and low stock alerts',
+              onTap: () => context.push('/reports'),
+            ),
+            _SettingsTile(
+              icon: PhosphorIconsRegular.scroll,
+              title: 'Audit log',
+              subtitle: 'Track important account and job actions',
+              onTap: () => context.push('/audit'),
+            ),
+            _SettingsTile(
               icon: PhosphorIconsRegular.plugsConnected,
               title: 'Integrations',
               subtitle: 'WhatsApp and connected services',

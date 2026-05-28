@@ -1,11 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Alert, Button, Card, Modal } from '@/components/ui';
+import { CatalogCombobox } from '@/components/ui/CatalogCombobox';
 import { FieldLabel, SelectInput, TextInput } from '@/components/ui/FormField';
 import { StaffPage, useStaffToken } from '@/features/staff/components/StaffPage';
 import { apiFormRequest, apiRequest, asData, type JsonMap } from '@/lib/api';
 import { useDetail } from '@/lib/hooks';
+import {
+  searchCatalogColors,
+  searchCatalogMakes,
+  searchCatalogModels,
+  searchCatalogVariants,
+  type CatalogOption,
+} from '@/lib/vehicle-catalog';
 import { customerName, vehicleLabel } from '@/lib/format';
 
 const FUEL_TYPES = [
@@ -51,9 +59,16 @@ export function VehicleDetailPage() {
   const [editForm, setEditForm] = useState({
     maker: '',
     model: '',
+    variant: '',
     year: '',
     color: '',
     fuel_type: 'petrol',
+  });
+  const [catalogIds, setCatalogIds] = useState({
+    makeUuid: '',
+    modelUuid: '',
+    variantUuid: '',
+    colorUuid: '',
   });
   const [docForm, setDocForm] = useState({
     document_type: 'rc',
@@ -64,6 +79,30 @@ export function VehicleDetailPage() {
   const documents = documentsQuery.data ?? [];
   const customer = (vehicle.customer as JsonMap | undefined) ?? {};
 
+  const yearFilter = useMemo(() => {
+    const year = Number(editForm.year);
+    return Number.isFinite(year) && year >= 1900 ? year : undefined;
+  }, [editForm.year]);
+
+  const searchMakes = useCallback(
+    (query: string) => searchCatalogMakes(token, query, yearFilter),
+    [token, yearFilter],
+  );
+  const searchModels = useCallback(
+    (query: string) =>
+      catalogIds.makeUuid ? searchCatalogModels(token, catalogIds.makeUuid, query, yearFilter) : Promise.resolve([]),
+    [catalogIds.makeUuid, token, yearFilter],
+  );
+  const searchVariants = useCallback(
+    (query: string) =>
+      catalogIds.modelUuid ? searchCatalogVariants(token, catalogIds.modelUuid, query, yearFilter) : Promise.resolve([]),
+    [catalogIds.modelUuid, token, yearFilter],
+  );
+  const searchColors = useCallback(
+    (query: string) => searchCatalogColors(token, query, catalogIds.variantUuid || undefined),
+    [catalogIds.variantUuid, token],
+  );
+
   useEffect(() => {
     if (!vehicle.uuid) {
       return;
@@ -71,9 +110,16 @@ export function VehicleDetailPage() {
     setEditForm({
       maker: String(vehicle.maker ?? ''),
       model: String(vehicle.model ?? ''),
+      variant: String(vehicle.variant ?? ''),
       year: String(vehicle.year ?? ''),
       color: String(vehicle.color ?? ''),
       fuel_type: String(vehicle.fuel_type ?? 'petrol'),
+    });
+    setCatalogIds({
+      makeUuid: String((vehicle.vehicle_make as JsonMap | undefined)?.uuid ?? vehicle.vehicle_make_uuid ?? ''),
+      modelUuid: String((vehicle.vehicle_model as JsonMap | undefined)?.uuid ?? vehicle.vehicle_model_uuid ?? ''),
+      variantUuid: String((vehicle.vehicle_variant as JsonMap | undefined)?.uuid ?? vehicle.vehicle_variant_uuid ?? ''),
+      colorUuid: String((vehicle.vehicle_color as JsonMap | undefined)?.uuid ?? vehicle.vehicle_color_uuid ?? ''),
     });
   }, [vehicle]);
 
@@ -118,8 +164,13 @@ export function VehicleDetailPage() {
           maker: editForm.maker.trim(),
           model: editForm.model.trim(),
           fuel_type: editForm.fuel_type,
+          ...(editForm.variant.trim() ? { variant: editForm.variant.trim() } : {}),
           ...(editForm.year.trim() ? { year: Number(editForm.year) } : {}),
           ...(editForm.color.trim() ? { color: editForm.color.trim() } : {}),
+          ...(catalogIds.makeUuid ? { vehicle_make_uuid: catalogIds.makeUuid } : {}),
+          ...(catalogIds.modelUuid ? { vehicle_model_uuid: catalogIds.modelUuid } : {}),
+          ...(catalogIds.variantUuid ? { vehicle_variant_uuid: catalogIds.variantUuid } : {}),
+          ...(catalogIds.colorUuid ? { vehicle_color_uuid: catalogIds.colorUuid } : {}),
         },
       });
       await refreshVehicle();
@@ -319,31 +370,15 @@ export function VehicleDetailPage() {
         <form id="edit-vehicle-form" className="form-grid form-grid--stack" onSubmit={(event) => void saveVehicleEdit(event)}>
           <div className="form-grid">
             <div>
-              <FieldLabel htmlFor="edit-maker">Make</FieldLabel>
-              <TextInput
-                id="edit-maker"
-                required
-                value={editForm.maker}
-                onChange={(event) => setEditForm({ ...editForm, maker: event.target.value })}
-              />
-            </div>
-            <div>
-              <FieldLabel htmlFor="edit-model">Model</FieldLabel>
-              <TextInput
-                id="edit-model"
-                required
-                value={editForm.model}
-                onChange={(event) => setEditForm({ ...editForm, model: event.target.value })}
-              />
-            </div>
-          </div>
-          <div className="form-grid">
-            <div>
               <FieldLabel htmlFor="edit-year">Year</FieldLabel>
               <TextInput
                 id="edit-year"
                 value={editForm.year}
-                onChange={(event) => setEditForm({ ...editForm, year: event.target.value.replace(/\D/g, '').slice(0, 4) })}
+                onChange={(event) => {
+                  const year = event.target.value.replace(/\D/g, '').slice(0, 4);
+                  setEditForm({ ...editForm, year });
+                  setCatalogIds({ makeUuid: '', modelUuid: '', variantUuid: '', colorUuid: '' });
+                }}
               />
             </div>
             <div>
@@ -361,12 +396,75 @@ export function VehicleDetailPage() {
               </SelectInput>
             </div>
           </div>
-          <div>
-            <FieldLabel htmlFor="edit-color">Color</FieldLabel>
-            <TextInput
-              id="edit-color"
+          <div className="form-grid">
+            <CatalogCombobox
+              label="Make"
+              placeholder="Start typing make…"
+              value={editForm.maker}
+              onValueChange={(maker) => setEditForm({ ...editForm, maker })}
+              onSearch={searchMakes}
+              onOptionSelect={(option: CatalogOption | null) => {
+                setCatalogIds({
+                  makeUuid: option?.uuid ?? '',
+                  modelUuid: '',
+                  variantUuid: '',
+                  colorUuid: '',
+                });
+                if (option) setEditForm((current) => ({ ...current, maker: option.name, model: '', variant: '', color: '' }));
+              }}
+            />
+            <CatalogCombobox
+              label="Model"
+              placeholder={catalogIds.makeUuid ? 'Start typing model…' : 'Select make first'}
+              value={editForm.model}
+              disabled={!catalogIds.makeUuid}
+              onValueChange={(model) => setEditForm({ ...editForm, model })}
+              onSearch={searchModels}
+              onOptionSelect={(option: CatalogOption | null) => {
+                setCatalogIds((current) => ({
+                  ...current,
+                  modelUuid: option?.uuid ?? '',
+                  variantUuid: '',
+                  colorUuid: '',
+                }));
+                if (option) setEditForm((current) => ({ ...current, model: option.name, variant: '', color: '' }));
+              }}
+            />
+          </div>
+          <div className="form-grid">
+            <CatalogCombobox
+              label="Variant (optional)"
+              placeholder={catalogIds.modelUuid ? 'Start typing variant…' : 'Select model first'}
+              value={editForm.variant}
+              disabled={!catalogIds.modelUuid}
+              onValueChange={(variant) => setEditForm({ ...editForm, variant })}
+              onSearch={searchVariants}
+              onOptionSelect={(option: CatalogOption | null) => {
+                setCatalogIds((current) => ({
+                  ...current,
+                  variantUuid: option?.uuid ?? '',
+                  colorUuid: '',
+                }));
+                if (option) {
+                  setEditForm((current) => ({
+                    ...current,
+                    variant: option.name,
+                    color: '',
+                    ...(option.fuel_type ? { fuel_type: option.fuel_type } : {}),
+                  }));
+                }
+              }}
+            />
+            <CatalogCombobox
+              label="Color (optional)"
+              placeholder="Start typing color…"
               value={editForm.color}
-              onChange={(event) => setEditForm({ ...editForm, color: event.target.value })}
+              onValueChange={(color) => setEditForm({ ...editForm, color })}
+              onSearch={searchColors}
+              onOptionSelect={(option: CatalogOption | null) => {
+                setCatalogIds((current) => ({ ...current, colorUuid: option?.uuid ?? '' }));
+                if (option) setEditForm((current) => ({ ...current, color: option.name }));
+              }}
             />
           </div>
         </form>

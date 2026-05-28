@@ -16,6 +16,8 @@ import { AppointmentsPage } from '@/features/staff/pages/AppointmentsPage';
 import { InventoryPage } from '@/features/staff/pages/InventoryPage';
 import { BillingListPage } from '@/features/staff/pages/BillingListPage';
 import { BillingDetailPage } from '@/features/staff/pages/BillingDetailPage';
+import { CreateInvoicePage } from '@/features/staff/pages/CreateInvoicePage';
+import { InventoryDetailPage } from '@/features/staff/pages/InventoryDetailPage';
 import { InspectionPage } from '@/features/staff/pages/InspectionPage';
 import { ReportsPage } from '@/features/staff/pages/ReportsPage';
 import { SettingsPage } from '@/features/staff/pages/SettingsPage';
@@ -72,6 +74,7 @@ export function StaffRoutes() {
         <Route path="/pin-setup" element={<PinSetupPage />} />
         <Route path="/jobs" element={<JobsListPage />} />
         <Route path="/jobs/new" element={<CreateJobPage />} />
+        <Route path="/jobs/:uuid/inspection/delivery" element={<InspectionPage />} />
         <Route path="/jobs/:uuid/inspection" element={<InspectionPage />} />
         <Route path="/jobs/:uuid" element={<JobDetailPage />} />
         <Route path="/customers" element={<CustomersListPage />} />
@@ -80,7 +83,9 @@ export function StaffRoutes() {
         <Route path="/vehicles/:uuid" element={<VehicleDetailPage />} />
         <Route path="/appointments" element={<AppointmentsPage />} />
         <Route path="/inventory" element={<InventoryPage />} />
+        <Route path="/inventory/:uuid" element={<InventoryDetailPage />} />
         <Route path="/billing" element={<BillingListPage />} />
+        <Route path="/billing/new" element={<CreateInvoicePage />} />
         <Route path="/billing/:uuid" element={<BillingDetailPage />} />
         <Route path="/reports" element={<ReportsPage />} />
         <Route path="/settings" element={<SettingsPage />} />

@@ -1819,3 +1819,59 @@ p {
     padding: 16px;
   }
 }
+
+.damage-map__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.damage-map__canvas {
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+.damage-map__canvas svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.damage-map__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+  font-size: 0.85rem;
+}
+
+.damage-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.damage-dot--minor {
+  background: #f97316;
+}
+
+.damage-dot--major {
+  background: #ef4444;
+}
+
+.damage-map__list {
+  margin: 12px 0 0;
+  padding-left: 18px;
+}
+
+.damage-map__list .damage-minor {
+  color: #f97316;
+}
+
+.damage-map__list .damage-major {
+  color: #ef4444;
+}

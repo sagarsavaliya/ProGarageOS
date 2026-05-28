@@ -1,10 +1,18 @@
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Card } from '@/components/ui';
+import { CatalogCombobox } from '@/components/ui/CatalogCombobox';
 import { FieldLabel, SelectInput, TextArea, TextInput } from '@/components/ui/FormField';
 import { StaffPage, useStaffToken } from '@/features/staff/components/StaffPage';
 import { apiRequest, asData, normalizeLogin, type JsonMap } from '@/lib/api';
+import {
+  searchCatalogColors,
+  searchCatalogMakes,
+  searchCatalogModels,
+  searchCatalogVariants,
+  type CatalogOption,
+} from '@/lib/vehicle-catalog';
 import { customerName, vehicleLabel } from '@/lib/format';
 
 export function CreateJobPage() {
@@ -21,15 +29,50 @@ export function CreateJobPage() {
   const [complaint, setComplaint] = useState('');
   const [priority, setPriority] = useState('normal');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [isInsuranceJob, setIsInsuranceJob] = useState(false);
+  const [insuranceCompany, setInsuranceCompany] = useState('');
+  const [claimNumber, setClaimNumber] = useState('');
   const [vehicleForm, setVehicleForm] = useState({
     registration_number: '',
     maker: '',
     model: '',
+    variant: '',
     year: '',
+    color: '',
     fuel_type: 'petrol',
+  });
+  const [catalogIds, setCatalogIds] = useState({
+    makeUuid: '',
+    modelUuid: '',
+    variantUuid: '',
+    colorUuid: '',
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string>();
+
+  const yearFilter = useMemo(() => {
+    const year = Number(vehicleForm.year);
+    return Number.isFinite(year) && year >= 1900 ? year : undefined;
+  }, [vehicleForm.year]);
+
+  const searchMakes = useCallback(
+    (query: string) => searchCatalogMakes(token, query, yearFilter),
+    [token, yearFilter],
+  );
+  const searchModels = useCallback(
+    (query: string) =>
+      catalogIds.makeUuid ? searchCatalogModels(token, catalogIds.makeUuid, query, yearFilter) : Promise.resolve([]),
+    [catalogIds.makeUuid, token, yearFilter],
+  );
+  const searchVariants = useCallback(
+    (query: string) =>
+      catalogIds.modelUuid ? searchCatalogVariants(token, catalogIds.modelUuid, query, yearFilter) : Promise.resolve([]),
+    [catalogIds.modelUuid, token, yearFilter],
+  );
+  const searchColors = useCallback(
+    (query: string) => searchCatalogColors(token, query, catalogIds.variantUuid || undefined),
+    [catalogIds.variantUuid, token],
+  );
 
   const customersQuery = useQuery({
     queryKey: ['create-job-customers', searchTerm, token],
@@ -111,7 +154,13 @@ export function CreateJobPage() {
           maker: vehicleForm.maker,
           model: vehicleForm.model,
           fuel_type: vehicleForm.fuel_type,
+          ...(vehicleForm.variant.trim() ? { variant: vehicleForm.variant.trim() } : {}),
           ...(vehicleForm.year ? { year: Number(vehicleForm.year) } : {}),
+          ...(vehicleForm.color.trim() ? { color: vehicleForm.color.trim() } : {}),
+          ...(catalogIds.makeUuid ? { vehicle_make_uuid: catalogIds.makeUuid } : {}),
+          ...(catalogIds.modelUuid ? { vehicle_model_uuid: catalogIds.modelUuid } : {}),
+          ...(catalogIds.variantUuid ? { vehicle_variant_uuid: catalogIds.variantUuid } : {}),
+          ...(catalogIds.colorUuid ? { vehicle_color_uuid: catalogIds.colorUuid } : {}),
         },
       });
       const created = asData<JsonMap>(payload);
@@ -143,6 +192,13 @@ export function CreateJobPage() {
           priority,
           ...(complaint.trim() ? { customer_complaint: complaint.trim() } : {}),
           ...(selectedCategories.length ? { service_category_uuids: selectedCategories } : {}),
+          ...(isInsuranceJob
+            ? {
+                is_insurance_job: true,
+                ...(insuranceCompany.trim() ? { insurance_company: insuranceCompany.trim() } : {}),
+                ...(claimNumber.trim() ? { claim_number: claimNumber.trim() } : {}),
+              }
+            : {}),
           delivery_method: 'pickup',
         },
       });
@@ -264,33 +320,95 @@ export function CreateJobPage() {
           </div>
 
           {showNewVehicle ? (
-            <div className="form-grid mt-3">
-              <div>
-                <FieldLabel>Registration</FieldLabel>
-                <TextInput
-                  value={vehicleForm.registration_number}
-                  onChange={(event) => setVehicleForm({ ...vehicleForm, registration_number: event.target.value })}
-                />
+            <div className="form-grid form-grid--stack mt-3">
+              <div className="form-grid">
+                <div>
+                  <FieldLabel>Registration</FieldLabel>
+                  <TextInput
+                    value={vehicleForm.registration_number}
+                    onChange={(event) =>
+                      setVehicleForm({ ...vehicleForm, registration_number: event.target.value.toUpperCase() })
+                    }
+                  />
+                </div>
+                <div>
+                  <FieldLabel>Year</FieldLabel>
+                  <TextInput
+                    value={vehicleForm.year}
+                    onChange={(event) => {
+                      const year = event.target.value.replace(/\D/g, '').slice(0, 4);
+                      setVehicleForm({ ...vehicleForm, year });
+                      setCatalogIds({ makeUuid: '', modelUuid: '', variantUuid: '', colorUuid: '' });
+                    }}
+                  />
+                </div>
               </div>
-              <div>
-                <FieldLabel>Maker</FieldLabel>
-                <TextInput
+              <div className="form-grid">
+                <CatalogCombobox
+                  label="Make"
+                  placeholder="Start typing make…"
                   value={vehicleForm.maker}
-                  onChange={(event) => setVehicleForm({ ...vehicleForm, maker: event.target.value })}
+                  onValueChange={(maker) => setVehicleForm({ ...vehicleForm, maker })}
+                  onSearch={searchMakes}
+                  onOptionSelect={(option: CatalogOption | null) => {
+                    setCatalogIds({ makeUuid: option?.uuid ?? '', modelUuid: '', variantUuid: '', colorUuid: '' });
+                    if (option) {
+                      setVehicleForm((current) => ({ ...current, maker: option.name, model: '', variant: '', color: '' }));
+                    }
+                  }}
                 />
-              </div>
-              <div>
-                <FieldLabel>Model</FieldLabel>
-                <TextInput
+                <CatalogCombobox
+                  label="Model"
+                  placeholder={catalogIds.makeUuid ? 'Start typing model…' : 'Select make first'}
                   value={vehicleForm.model}
-                  onChange={(event) => setVehicleForm({ ...vehicleForm, model: event.target.value })}
+                  disabled={!catalogIds.makeUuid}
+                  onValueChange={(model) => setVehicleForm({ ...vehicleForm, model })}
+                  onSearch={searchModels}
+                  onOptionSelect={(option: CatalogOption | null) => {
+                    setCatalogIds((current) => ({
+                      ...current,
+                      modelUuid: option?.uuid ?? '',
+                      variantUuid: '',
+                      colorUuid: '',
+                    }));
+                    if (option) setVehicleForm((current) => ({ ...current, model: option.name, variant: '', color: '' }));
+                  }}
                 />
               </div>
-              <div>
-                <FieldLabel>Year</FieldLabel>
-                <TextInput
-                  value={vehicleForm.year}
-                  onChange={(event) => setVehicleForm({ ...vehicleForm, year: event.target.value })}
+              <div className="form-grid">
+                <CatalogCombobox
+                  label="Variant (optional)"
+                  placeholder={catalogIds.modelUuid ? 'Start typing variant…' : 'Select model first'}
+                  value={vehicleForm.variant}
+                  disabled={!catalogIds.modelUuid}
+                  onValueChange={(variant) => setVehicleForm({ ...vehicleForm, variant })}
+                  onSearch={searchVariants}
+                  onOptionSelect={(option: CatalogOption | null) => {
+                    setCatalogIds((current) => ({
+                      ...current,
+                      variantUuid: option?.uuid ?? '',
+                      colorUuid: '',
+                    }));
+                    if (option) {
+                      setVehicleForm((current) => ({
+                        ...current,
+                        variant: option.name,
+                        color: '',
+                        ...(option.fuel_type ? { fuel_type: option.fuel_type } : {}),
+                      }));
+                    }
+                  }}
+                />
+                <CatalogCombobox
+                  label="Color (optional)"
+                  placeholder="Start typing color…"
+                  value={vehicleForm.color}
+                  onValueChange={(color) => setVehicleForm({ ...vehicleForm, color })}
+                  onSearch={searchColors}
+                  onOptionSelect={(option: CatalogOption | null) => {
+                    setCatalogIds((current) => ({ ...current, colorUuid: option?.uuid ?? '' }));
+                    if (option) setVehicleForm((current) => ({ ...current, color: option.name }));
+                  }}
                 />
               </div>
               <div>
@@ -347,6 +465,28 @@ export function CreateJobPage() {
               <FieldLabel>Customer complaint</FieldLabel>
               <TextArea rows={4} value={complaint} onChange={(event) => setComplaint(event.target.value)} />
             </div>
+            <div className="form-span-full">
+              <label className="line-item">
+                <span>Insurance job</span>
+                <input
+                  type="checkbox"
+                  checked={isInsuranceJob}
+                  onChange={(event) => setIsInsuranceJob(event.target.checked)}
+                />
+              </label>
+            </div>
+            {isInsuranceJob ? (
+              <>
+                <div>
+                  <FieldLabel>Insurance company</FieldLabel>
+                  <TextInput value={insuranceCompany} onChange={(event) => setInsuranceCompany(event.target.value)} />
+                </div>
+                <div>
+                  <FieldLabel>Claim number</FieldLabel>
+                  <TextInput value={claimNumber} onChange={(event) => setClaimNumber(event.target.value)} />
+                </div>
+              </>
+            ) : null}
             <div className="form-span-full">
               <FieldLabel>Service categories</FieldLabel>
               <div className="stack">

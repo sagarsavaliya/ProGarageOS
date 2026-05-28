@@ -11,3 +11,11 @@ final jobAuditProvider = FutureProvider.autoDispose
     throw failureMessage(e);
   }
 });
+
+final globalAuditProvider = FutureProvider.autoDispose<List<AuditLogEntry>>((ref) async {
+  try {
+    return ref.watch(auditRepositoryProvider).fetchGlobalAudit();
+  } catch (e) {
+    throw failureMessage(e);
+  }
+});

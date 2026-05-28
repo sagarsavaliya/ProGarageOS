@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Card, StatusBadge, Table, THead, TRow, TH, TD, EmptyState, LoadingState, ListPager } from '@/components/ui';
 import { FieldLabel, TextInput } from '@/components/ui/FormField';
@@ -10,6 +10,7 @@ import { customerName, money } from '@/lib/format';
 
 export function BillingListPage() {
   const token = useStaffToken();
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
@@ -59,6 +60,9 @@ export function BillingListPage() {
             <Button type="submit">Search</Button>
           </div>
         </form>
+        <Button type="button" onClick={() => navigate('/billing/new')}>
+          New invoice
+        </Button>
         <Button type="button" variant="outline" onClick={() => setShowOutstanding((value) => !value)}>
           {showOutstanding ? 'Hide outstanding' : 'Outstanding payments'}
         </Button>

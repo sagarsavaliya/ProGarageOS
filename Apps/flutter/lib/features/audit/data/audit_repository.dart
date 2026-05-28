@@ -18,6 +18,14 @@ class AuditRepository {
     );
     return PaginatedAuditLogs.fromJson(response.data as Map<String, dynamic>).data;
   }
+
+  Future<List<AuditLogEntry>> fetchGlobalAudit() async {
+    final response = await _dio.get(
+      '/audit-logs',
+      queryParameters: {'per_page': 50},
+    );
+    return PaginatedAuditLogs.fromJson(response.data as Map<String, dynamic>).data;
+  }
 }
 
 final auditRepositoryProvider = Provider<AuditRepository>((ref) {

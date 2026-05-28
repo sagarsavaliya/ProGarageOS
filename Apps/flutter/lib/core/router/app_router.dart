@@ -44,6 +44,8 @@ import '../../features/settings/presentation/screens/integrations_screen.dart';
 import '../../features/settings/presentation/screens/notifications_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/settings/presentation/screens/user_profile_screen.dart';
+import '../../features/reports/presentation/screens/reports_screen.dart';
+import '../../features/audit/presentation/screens/audit_log_screen.dart';
 import '../../features/splash/presentation/splash_screen.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -348,6 +350,18 @@ GoRouter appRouter(Ref ref) {
         name: 'team',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const TechniciansScreen(),
+      ),
+      GoRoute(
+        path: '/reports',
+        name: 'reports',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const ReportsScreen(),
+      ),
+      GoRoute(
+        path: '/audit',
+        name: 'audit-log',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const AuditLogScreen(),
       ),
       GoRoute(
         path: '/settings/garage-profile',

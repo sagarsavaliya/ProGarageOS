@@ -1,8 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Card } from '@/components/ui';
 import { FieldLabel, SelectInput, TextArea } from '@/components/ui/FormField';
+import {
+  VehicleDamageMap,
+  cycleDamage,
+  severityFromApi,
+  severityToApi,
+  type DamageSeverity,
+} from '@/features/staff/components/VehicleDamageMap';
 import { WebcamCapture } from '@/features/staff/components/WebcamCapture';
 import { StaffPage, useStaffToken } from '@/features/staff/components/StaffPage';
 import { API_BASE_URL, apiRequest, asData, type JsonMap } from '@/lib/api';
@@ -23,10 +30,13 @@ const PHOTO_SLOTS = [
 
 export function InspectionPage() {
   const { uuid = '' } = useParams();
+  const location = useLocation();
   const token = useStaffToken();
-  const phase = 'intake';
+  const phase = location.pathname.endsWith('/delivery') ? 'delivery' : 'intake';
+  const isDelivery = phase === 'delivery';
 
   const [conditions, setConditions] = useState<Record<string, string>>({});
+  const [damageZones, setDamageZones] = useState<Record<string, DamageSeverity>>({});
   const [notes, setNotes] = useState('');
   const [acknowledged, setAcknowledged] = useState(false);
   const [uploadedPhotos, setUploadedPhotos] = useState<Record<string, string>>({});
@@ -77,9 +87,30 @@ export function InspectionPage() {
       nextPhotos[String(photo.slot)] = String(photo.url ?? photo.file_url ?? 'uploaded');
     }
     setUploadedPhotos(nextPhotos);
+    const nextDamage: Record<string, DamageSeverity> = {};
+    for (const zone of (data.damage_zones as JsonMap[] | undefined) ?? []) {
+      const name = String(zone.zone ?? zone.name ?? '');
+      if (name) {
+        nextDamage[name] = severityFromApi(String(zone.severity ?? ''));
+      }
+    }
+    setDamageZones(nextDamage);
   }, [inspectionQuery.data]);
 
   const checklist = templateQuery.data ?? [];
+
+  function handleZoneTap(zone: string) {
+    setDamageZones((current) => {
+      const next = { ...current };
+      const severity = cycleDamage(current[zone] ?? 'none');
+      if (severity === 'none') {
+        delete next[zone];
+      } else {
+        next[zone] = severity;
+      }
+      return next;
+    });
+  }
 
   async function uploadPhoto(slot: string, label: string, file: File) {
     setUploadingSlot(slot);
@@ -118,11 +149,13 @@ export function InspectionPage() {
             condition_status: conditions[item.id] ?? 'na',
             severity: conditions[item.id] === 'damaged' ? 'moderate' : 'none',
           })),
-          damage_zones: [],
+          damage_zones: Object.entries(damageZones)
+            .filter(([, severity]) => severity !== 'none')
+            .map(([zone, severity]) => ({ zone, severity: severityToApi(severity) })),
           photos: Object.entries(uploadedPhotos).map(([slot, label]) => ({ slot, label })),
         },
       });
-      setMessage('Inspection saved.');
+      setMessage(isDelivery ? 'Delivery inspection saved.' : 'Intake inspection saved.');
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -149,18 +182,34 @@ export function InspectionPage() {
   }
 
   return (
-    <StaffPage title="Intake inspection" subtitle="Checklist, photos, and customer acknowledgement">
+    <StaffPage
+      title={isDelivery ? 'Delivery inspection' : 'Intake inspection'}
+      subtitle={isDelivery ? 'Final QC checklist before handover' : 'Checklist, damage map, photos, and acknowledgement'}
+    >
       <div className="toolbar">
         <Link to={`/jobs/${uuid}`}>
           <Button type="button" variant="outline">
             Back to job
           </Button>
         </Link>
+        {!isDelivery ? (
+          <Link to={`/jobs/${uuid}/inspection/delivery`}>
+            <Button type="button" variant="outline">
+              Delivery inspection
+            </Button>
+          </Link>
+        ) : (
+          <Link to={`/jobs/${uuid}/inspection`}>
+            <Button type="button" variant="outline">
+              Intake inspection
+            </Button>
+          </Link>
+        )}
         <Button type="button" variant="outline" onClick={() => void openInspectionPdf()} disabled={pdfLoading}>
           {pdfLoading ? 'Loading PDF...' : 'Download PDF'}
         </Button>
         <Button type="button" onClick={() => void saveInspection()} disabled={saving}>
-          {saving ? 'Saving...' : 'Save inspection'}
+          {saving ? 'Saving...' : isDelivery ? 'Save delivery inspection' : 'Save inspection'}
         </Button>
       </div>
 
@@ -208,8 +257,18 @@ export function InspectionPage() {
         </Card>
       </div>
 
+      {!isDelivery ? (
+        <Card>
+          <VehicleDamageMap
+            damageZones={damageZones}
+            onZoneTap={handleZoneTap}
+            onClearAll={() => setDamageZones({})}
+          />
+        </Card>
+      ) : null}
+
       <Card>
-        <h3>Vehicle photos</h3>
+        <h3>Vehicle photos{isDelivery ? ' (optional)' : ''}</h3>
         <div className="detail-grid mt-3">
           {PHOTO_SLOTS.map((slot) => (
             <div key={slot.slot}>

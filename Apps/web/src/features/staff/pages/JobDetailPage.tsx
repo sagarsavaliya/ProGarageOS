@@ -459,7 +459,12 @@ export function JobDetailPage() {
           </Button>
         </Link>
         <Link to={`/jobs/${uuid}/inspection`}>
-          <Button type="button">Inspection</Button>
+          <Button type="button">Intake inspection</Button>
+        </Link>
+        <Link to={`/jobs/${uuid}/inspection/delivery`}>
+          <Button type="button" variant="outline">
+            Delivery inspection
+          </Button>
         </Link>
         <Button type="button" variant="outline" onClick={() => setShowEditJob(true)}>
           Edit job
