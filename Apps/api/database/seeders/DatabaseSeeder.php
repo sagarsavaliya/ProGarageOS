@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             ServiceBaySeeder::class,
             TaxRateSeeder::class,
             PaymentMethodSeeder::class,
+            VehicleColorSeeder::class,
             CustomerSeeder::class,
             VehicleSeeder::class,
             ServiceJobSeeder::class,

@@ -214,11 +214,9 @@ class AuthController extends Controller
             ], 422);
         }
 
+        // Incomplete signups use the same WhatsApp OTP flow as first-time setup.
         if ($purpose === 'reset' && $user->requires_pin_setup) {
-            return response()->json([
-                'success' => false,
-                'error'   => ['code' => 'PIN_SETUP_REQUIRED', 'message' => 'Complete first-time PIN setup instead.'],
-            ], 422);
+            $purpose = 'setup';
         }
 
         if (!WhatsAppConfigResolver::isConfigured($user->tenant_id)) {

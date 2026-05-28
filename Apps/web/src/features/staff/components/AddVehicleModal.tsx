@@ -1,9 +1,17 @@
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Alert, Button, Modal } from '@/components/ui';
+import { CatalogCombobox } from '@/components/ui/CatalogCombobox';
 import { FieldLabel, SelectInput, TextInput } from '@/components/ui/FormField';
 import { apiRequest, asData, type JsonMap } from '@/lib/api';
 import { customerName } from '@/lib/format';
+import {
+  searchCatalogColors,
+  searchCatalogMakes,
+  searchCatalogModels,
+  searchCatalogVariants,
+  type CatalogOption,
+} from '@/lib/vehicle-catalog';
 
 const FUEL_TYPES = [
   { value: 'petrol', label: 'Petrol' },
@@ -29,11 +37,47 @@ export function AddVehicleModal(props: {
     registration_number: '',
     maker: '',
     model: '',
+    variant: '',
     year: '',
     fuel_type: 'petrol',
     odometer_reading: '',
     color: '',
   });
+  const [catalogIds, setCatalogIds] = useState({
+    makeUuid: '',
+    modelUuid: '',
+    variantUuid: '',
+    colorUuid: '',
+  });
+
+  const yearFilter = useMemo(() => {
+    const year = Number(form.year);
+    return Number.isFinite(year) && year >= 1900 ? year : undefined;
+  }, [form.year]);
+
+  const searchMakes = useCallback(
+    (query: string) => searchCatalogMakes(props.token, query, yearFilter),
+    [props.token, yearFilter],
+  );
+  const searchModels = useCallback(
+    (query: string) =>
+      catalogIds.makeUuid
+        ? searchCatalogModels(props.token, catalogIds.makeUuid, query, yearFilter)
+        : Promise.resolve([]),
+    [catalogIds.makeUuid, props.token, yearFilter],
+  );
+  const searchVariants = useCallback(
+    (query: string) =>
+      catalogIds.modelUuid
+        ? searchCatalogVariants(props.token, catalogIds.modelUuid, query, yearFilter)
+        : Promise.resolve([]),
+    [catalogIds.modelUuid, props.token, yearFilter],
+  );
+  const searchColors = useCallback(
+    (query: string) =>
+      searchCatalogColors(props.token, query, catalogIds.variantUuid || undefined),
+    [catalogIds.variantUuid, props.token],
+  );
 
   const customersQuery = useQuery({
     queryKey: ['add-vehicle-customers', props.token],
@@ -51,11 +95,13 @@ export function AddVehicleModal(props: {
       registration_number: '',
       maker: '',
       model: '',
+      variant: '',
       year: '',
       fuel_type: 'petrol',
       odometer_reading: '',
       color: '',
     });
+    setCatalogIds({ makeUuid: '', modelUuid: '', variantUuid: '', colorUuid: '' });
     setCustomerUuid(props.customerUuid ?? '');
     setError(undefined);
   }
@@ -83,10 +129,15 @@ export function AddVehicleModal(props: {
           registration_number: form.registration_number.trim().toUpperCase(),
           maker: form.maker.trim(),
           model: form.model.trim(),
+          ...(form.variant.trim() ? { variant: form.variant.trim() } : {}),
           fuel_type: form.fuel_type,
           ...(form.year.trim() ? { year: Number(form.year) } : {}),
           ...(form.odometer_reading.trim() ? { odometer_reading: Number(form.odometer_reading) } : {}),
           ...(form.color.trim() ? { color: form.color.trim() } : {}),
+          ...(catalogIds.makeUuid ? { vehicle_make_uuid: catalogIds.makeUuid } : {}),
+          ...(catalogIds.modelUuid ? { vehicle_model_uuid: catalogIds.modelUuid } : {}),
+          ...(catalogIds.variantUuid ? { vehicle_variant_uuid: catalogIds.variantUuid } : {}),
+          ...(catalogIds.colorUuid ? { vehicle_color_uuid: catalogIds.colorUuid } : {}),
         },
       });
       const created = asData<JsonMap>(payload);
@@ -154,6 +205,105 @@ export function AddVehicleModal(props: {
             />
           </div>
           <div>
+            <FieldLabel htmlFor="vehicle-year">Year (optional)</FieldLabel>
+            <TextInput
+              id="vehicle-year"
+              inputMode="numeric"
+              placeholder="e.g. 2021"
+              value={form.year}
+              onChange={(event) => {
+                const year = event.target.value.replace(/\D/g, '').slice(0, 4);
+                setForm({ ...form, year });
+                setCatalogIds({ makeUuid: '', modelUuid: '', variantUuid: '', colorUuid: '' });
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="form-grid">
+          <CatalogCombobox
+            label="Make"
+            placeholder="Start typing make…"
+            value={form.maker}
+            onValueChange={(maker) => setForm({ ...form, maker })}
+            onSearch={searchMakes}
+            onOptionSelect={(option: CatalogOption | null) => {
+              setCatalogIds({
+                makeUuid: option?.uuid ?? '',
+                modelUuid: '',
+                variantUuid: '',
+                colorUuid: '',
+              });
+              if (option) setForm((current) => ({ ...current, maker: option.name, model: '', variant: '', color: '' }));
+            }}
+          />
+          <CatalogCombobox
+            label="Model"
+            placeholder={catalogIds.makeUuid ? 'Start typing model…' : 'Select make first'}
+            value={form.model}
+            disabled={!catalogIds.makeUuid}
+            onValueChange={(model) => setForm({ ...form, model })}
+            onSearch={searchModels}
+            onOptionSelect={(option: CatalogOption | null) => {
+              setCatalogIds((current) => ({
+                ...current,
+                modelUuid: option?.uuid ?? '',
+                variantUuid: '',
+                colorUuid: '',
+              }));
+              if (option) setForm((current) => ({ ...current, model: option.name, variant: '', color: '' }));
+            }}
+          />
+        </div>
+
+        <div className="form-grid">
+          <CatalogCombobox
+            label="Variant (optional)"
+            placeholder={catalogIds.modelUuid ? 'Start typing variant…' : 'Select model first'}
+            value={form.variant}
+            disabled={!catalogIds.modelUuid}
+            onValueChange={(variant) => setForm({ ...form, variant })}
+            onSearch={searchVariants}
+            onOptionSelect={(option: CatalogOption | null) => {
+              setCatalogIds((current) => ({
+                ...current,
+                variantUuid: option?.uuid ?? '',
+                colorUuid: '',
+              }));
+              if (option) {
+                setForm((current) => ({
+                  ...current,
+                  variant: option.name,
+                  color: '',
+                  ...(option.fuel_type ? { fuel_type: option.fuel_type } : {}),
+                }));
+              }
+            }}
+          />
+          <CatalogCombobox
+            label="Color (optional)"
+            placeholder="Start typing color…"
+            value={form.color}
+            onValueChange={(color) => setForm({ ...form, color })}
+            onSearch={searchColors}
+            onOptionSelect={(option: CatalogOption | null) => {
+              setCatalogIds((current) => ({ ...current, colorUuid: option?.uuid ?? '' }));
+              if (option) setForm((current) => ({ ...current, color: option.name }));
+            }}
+          />
+        </div>
+
+        <div className="form-grid">
+          <div>
+            <FieldLabel htmlFor="vehicle-odometer">Odometer km (optional)</FieldLabel>
+            <TextInput
+              id="vehicle-odometer"
+              inputMode="numeric"
+              value={form.odometer_reading}
+              onChange={(event) => setForm({ ...form, odometer_reading: event.target.value.replace(/\D/g, '') })}
+            />
+          </div>
+          <div>
             <FieldLabel htmlFor="vehicle-fuel">Fuel type</FieldLabel>
             <SelectInput
               id="vehicle-fuel"
@@ -167,61 +317,6 @@ export function AddVehicleModal(props: {
               ))}
             </SelectInput>
           </div>
-        </div>
-
-        <div className="form-grid">
-          <div>
-            <FieldLabel htmlFor="vehicle-maker">Make</FieldLabel>
-            <TextInput
-              id="vehicle-maker"
-              required
-              placeholder="e.g. Maruti"
-              value={form.maker}
-              onChange={(event) => setForm({ ...form, maker: event.target.value })}
-            />
-          </div>
-          <div>
-            <FieldLabel htmlFor="vehicle-model">Model</FieldLabel>
-            <TextInput
-              id="vehicle-model"
-              required
-              placeholder="e.g. Swift"
-              value={form.model}
-              onChange={(event) => setForm({ ...form, model: event.target.value })}
-            />
-          </div>
-        </div>
-
-        <div className="form-grid">
-          <div>
-            <FieldLabel htmlFor="vehicle-year">Year (optional)</FieldLabel>
-            <TextInput
-              id="vehicle-year"
-              inputMode="numeric"
-              placeholder="e.g. 2021"
-              value={form.year}
-              onChange={(event) => setForm({ ...form, year: event.target.value.replace(/\D/g, '').slice(0, 4) })}
-            />
-          </div>
-          <div>
-            <FieldLabel htmlFor="vehicle-odometer">Odometer km (optional)</FieldLabel>
-            <TextInput
-              id="vehicle-odometer"
-              inputMode="numeric"
-              value={form.odometer_reading}
-              onChange={(event) => setForm({ ...form, odometer_reading: event.target.value.replace(/\D/g, '') })}
-            />
-          </div>
-        </div>
-
-        <div>
-          <FieldLabel htmlFor="vehicle-color">Color (optional)</FieldLabel>
-          <TextInput
-            id="vehicle-color"
-            placeholder="e.g. White"
-            value={form.color}
-            onChange={(event) => setForm({ ...form, color: event.target.value })}
-          />
         </div>
 
         {error ? <Alert variant="error">{error}</Alert> : null}

@@ -1,0 +1,4 @@
+make_name,model_name,variant_name,fuel_type,transmission,year_from,year_to,vehicle_category,sort_order,is_active
+Maruti Suzuki,Swift,VXi,petrol,manual,2018,2024,car,1,1
+Maruti Suzuki,Swift,ZXi AMT,petrol,amt,2020,2024,car,2,1
+Hyundai,Creta,1.5 SX,diesel,automatic,2020,2024,car,1,1

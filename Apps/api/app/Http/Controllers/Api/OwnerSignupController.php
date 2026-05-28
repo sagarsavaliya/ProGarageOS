@@ -68,6 +68,24 @@ class OwnerSignupController extends Controller
             );
         } catch (\InvalidArgumentException $e) {
             if ($e->getMessage() === 'PHONE_ALREADY_REGISTERED') {
+                $login = StaffLoginHelper::normalizePhone($data['phone']);
+                $user  = StaffLoginHelper::findByLogin($login);
+
+                if ($user?->requires_pin_setup) {
+                    RateLimiter::hit($key, 900);
+
+                    return response()->json([
+                        'success' => true,
+                        'data'    => [
+                            'resume'               => true,
+                            'login'                => $login,
+                            'business_name'        => $user->tenant?->business_name ?? $data['business_name'],
+                            'message'              => 'Welcome back — verify your WhatsApp number to finish setup.',
+                            'requires_pin_setup'   => true,
+                        ],
+                    ], 200);
+                }
+
                 RateLimiter::hit($key, 900);
                 return response()->json([
                     'success' => false,

@@ -17,6 +17,7 @@ class Vehicle extends Model
         'engine_number', 'registration_date', 'registration_validity', 'fitness_validity',
         'owner_serial', 'ownership_transfer_date', 'fuel_type', 'emission_norms',
         'vehicle_class', 'body_type', 'transmission', 'maker', 'model', 'variant',
+        'vehicle_make_id', 'vehicle_model_id', 'vehicle_variant_id', 'vehicle_color_id',
         'year', 'color', 'nickname', 'odometer_reading', 'gps_estimated_odometer',
         'gps_tracking_consent', 'odometer_review_status', 'gps_last_sync_at',
         'insurance_policy_number', 'insurance_company', 'insurance_expiry',
@@ -59,6 +60,26 @@ class Vehicle extends Model
     public function mileageLogs(): HasMany
     {
         return $this->hasMany(VehicleMileageLog::class)->orderByDesc('recorded_at');
+    }
+
+    public function catalogMake(): BelongsTo
+    {
+        return $this->belongsTo(VehicleMake::class, 'vehicle_make_id');
+    }
+
+    public function catalogModel(): BelongsTo
+    {
+        return $this->belongsTo(VehicleModel::class, 'vehicle_model_id');
+    }
+
+    public function catalogVariant(): BelongsTo
+    {
+        return $this->belongsTo(VehicleVariant::class, 'vehicle_variant_id');
+    }
+
+    public function catalogColor(): BelongsTo
+    {
+        return $this->belongsTo(VehicleColor::class, 'vehicle_color_id');
     }
 
     public function getDisplayNameAttribute(): string

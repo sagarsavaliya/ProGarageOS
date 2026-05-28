@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Vehicle;
 use App\Models\VehicleMileageLog;
+use App\Services\VehicleCatalogResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class VehicleController extends Controller
 {
+    public function __construct(private VehicleCatalogResolver $catalogResolver) {}
     public function index(Request $request): JsonResponse
     {
         $tenantId = $request->user()->tenant_id;
@@ -60,9 +62,15 @@ class VehicleController extends Controller
             'registration_number'   => ['required', 'string', 'max:50'],
             'maker'                 => ['required', 'string', 'max:100'],
             'model'                 => ['required', 'string', 'max:100'],
+            'variant'               => ['nullable', 'string', 'max:100'],
             'fuel_type'             => ['nullable', 'in:petrol,diesel,electric,cng,lpg,hybrid'],
+            'transmission'          => ['nullable', 'in:manual,automatic,cvt,amt'],
             'year'                  => ['nullable', 'integer', 'min:1900', 'max:' . (date('Y') + 1)],
             'color'                 => ['nullable', 'string', 'max:50'],
+            'vehicle_make_uuid'     => ['nullable', 'uuid'],
+            'vehicle_model_uuid'    => ['nullable', 'uuid'],
+            'vehicle_variant_uuid'  => ['nullable', 'uuid'],
+            'vehicle_color_uuid'    => ['nullable', 'uuid'],
             'chassis_number'        => ['nullable', 'string', 'max:100'],
             'engine_number'         => ['nullable', 'string', 'max:100'],
             'odometer_reading'      => ['nullable', 'integer', 'min:0'],
@@ -72,6 +80,7 @@ class VehicleController extends Controller
         $customer = \App\Models\Customer::where('uuid', $data['customer_uuid'])->firstOrFail();
         unset($data['customer_uuid']);
         $data['customer_id'] = $customer->id;
+        $data = $this->catalogResolver->apply($data);
 
         $vehicle = Vehicle::create($data);
 
@@ -83,17 +92,23 @@ class VehicleController extends Controller
         $tenantId = $request->user()->tenant_id;
         $vehicle  = $this->resolveVehicle($request, $uuid, $tenantId);
         $data = $request->validate([
-            'maker'            => ['sometimes', 'string', 'max:100'],
-            'model'            => ['sometimes', 'string', 'max:100'],
-            'variant'          => ['nullable', 'string', 'max:100'],
-            'year'             => ['nullable', 'integer'],
-            'color'            => ['nullable', 'string', 'max:50'],
-            'fuel_type'        => ['nullable', 'in:petrol,diesel,electric,cng,lpg,hybrid'],
-            'odometer_reading' => ['nullable', 'integer', 'min:0'],
-            'nickname'         => ['nullable', 'string', 'max:100'],
+            'maker'                => ['sometimes', 'string', 'max:100'],
+            'model'                => ['sometimes', 'string', 'max:100'],
+            'variant'              => ['nullable', 'string', 'max:100'],
+            'year'                 => ['nullable', 'integer'],
+            'color'                => ['nullable', 'string', 'max:50'],
+            'fuel_type'            => ['nullable', 'in:petrol,diesel,electric,cng,lpg,hybrid'],
+            'transmission'         => ['nullable', 'in:manual,automatic,cvt,amt'],
+            'vehicle_make_uuid'    => ['nullable', 'uuid'],
+            'vehicle_model_uuid'   => ['nullable', 'uuid'],
+            'vehicle_variant_uuid' => ['nullable', 'uuid'],
+            'vehicle_color_uuid'   => ['nullable', 'uuid'],
+            'odometer_reading'     => ['nullable', 'integer', 'min:0'],
+            'nickname'             => ['nullable', 'string', 'max:100'],
             'is_active'            => ['sometimes', 'boolean'],
             'gps_tracking_consent' => ['sometimes', 'boolean'],
         ]);
+        $data = $this->catalogResolver->apply($data);
         $vehicle->update($data);
         return response()->json(['success' => true, 'data' => $this->formatVehicle($vehicle->fresh())]);
     }

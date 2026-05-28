@@ -1,0 +1,6 @@
+make_name,model_name,variant_name,year_from,color_name,is_default,vehicle_category
+Maruti Suzuki,Swift,VXi,2018,white,1,car
+Maruti Suzuki,Swift,VXi,2018,silver,0,car
+Maruti Suzuki,Swift,VXi,2018,red,0,car
+Hyundai,Creta,1.5 SX,2020,black,1,car
+Hyundai,Creta,1.5 SX,2020,grey,0,car

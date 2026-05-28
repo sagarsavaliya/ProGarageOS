@@ -49,6 +49,10 @@ class CustomersRepository {
     String transmission = 'manual',
     int? odometerReading,
     bool? gpsTrackingConsent,
+    String? vehicleMakeUuid,
+    String? vehicleModelUuid,
+    String? vehicleVariantUuid,
+    String? vehicleColorUuid,
   }) async {
     final response = await _dio.post(
       '/vehicles',
@@ -64,6 +68,10 @@ class CustomersRepository {
         'transmission': transmission,
         if (odometerReading != null) 'odometer_reading': odometerReading,
         if (gpsTrackingConsent != null) 'gps_tracking_consent': gpsTrackingConsent,
+        if (vehicleMakeUuid != null) 'vehicle_make_uuid': vehicleMakeUuid,
+        if (vehicleModelUuid != null) 'vehicle_model_uuid': vehicleModelUuid,
+        if (vehicleVariantUuid != null) 'vehicle_variant_uuid': vehicleVariantUuid,
+        if (vehicleColorUuid != null) 'vehicle_color_uuid': vehicleColorUuid,
       },
     );
     final data = (response.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
@@ -135,6 +143,10 @@ class CustomersRepository {
     String? fuelType,
     int? odometerReading,
     bool? gpsTrackingConsent,
+    String? vehicleMakeUuid,
+    String? vehicleModelUuid,
+    String? vehicleVariantUuid,
+    String? vehicleColorUuid,
   }) async {
     final response = await _dio.patch(
       '/vehicles/$uuid',
@@ -147,6 +159,10 @@ class CustomersRepository {
         if (fuelType != null) 'fuel_type': fuelType,
         if (odometerReading != null) 'odometer_reading': odometerReading,
         if (gpsTrackingConsent != null) 'gps_tracking_consent': gpsTrackingConsent,
+        if (vehicleMakeUuid != null) 'vehicle_make_uuid': vehicleMakeUuid,
+        if (vehicleModelUuid != null) 'vehicle_model_uuid': vehicleModelUuid,
+        if (vehicleVariantUuid != null) 'vehicle_variant_uuid': vehicleVariantUuid,
+        if (vehicleColorUuid != null) 'vehicle_color_uuid': vehicleColorUuid,
       },
     );
     final data = (response.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;

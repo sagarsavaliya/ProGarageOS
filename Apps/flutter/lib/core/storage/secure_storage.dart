@@ -12,6 +12,7 @@ const _lockExpiryKey = 'pin_lock_expiry';
 const _onboardingCompletedKey = 'onboarding_completed';
 const _garageSetupPrefix = 'garage_setup_completed_';
 const _gpsDefaultConsentKey = 'gps_default_consent_enabled';
+const _biometricEnabledKey = 'biometric_enabled';
 
 @Riverpod(keepAlive: true)
 SecureStorageService secureStorage(Ref ref) => SecureStorageService();
@@ -80,6 +81,12 @@ class SecureStorageService {
 
   Future<void> setGpsDefaultConsentEnabled(bool value) =>
       _storage.write(key: _gpsDefaultConsentKey, value: value.toString());
+
+  Future<bool> isBiometricEnabled() async =>
+      (await _storage.read(key: _biometricEnabledKey)) == 'true';
+
+  Future<void> setBiometricEnabled(bool value) =>
+      _storage.write(key: _biometricEnabledKey, value: value.toString());
 
   // --- Generic read/write for draft JSON (used by onboarding) ---
   Future<String?> readRaw(String key) => _storage.read(key: key);

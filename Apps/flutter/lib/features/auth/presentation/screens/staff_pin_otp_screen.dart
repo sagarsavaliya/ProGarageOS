@@ -36,6 +36,14 @@ class _StaffPinOtpScreenState extends ConsumerState<StaffPinOtpScreen> {
   String _confirmPin = '';
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.purpose == 'setup') {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _requestOtp());
+    }
+  }
+
+  @override
   void dispose() {
     _otpController.dispose();
     super.dispose();

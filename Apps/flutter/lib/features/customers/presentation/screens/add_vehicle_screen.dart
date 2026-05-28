@@ -8,6 +8,8 @@ import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../settings/presentation/widgets/gps_tracking_info_sheet.dart';
+import '../../../vehicles/data/vehicle_catalog_repository.dart';
+import '../../../vehicles/presentation/widgets/catalog_search_field.dart';
 import '../providers/create_vehicle_provider.dart';
 import '../providers/customers_provider.dart' show customerDetailProvider, customersProvider;
 
@@ -35,8 +37,15 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
   final _odometerController = TextEditingController();
   String _fuelType = 'petrol';
   bool _gpsConsent = false;
+  String? _makeUuid;
+  String? _modelUuid;
+  String? _variantUuid;
+  String? _colorUuid;
+  int _catalogReset = 0;
 
   static const _fuelTypes = ['petrol', 'diesel', 'cng', 'electric', 'hybrid'];
+
+  int? get _yearFilter => int.tryParse(_yearController.text.trim());
 
   @override
   void initState() {
@@ -76,6 +85,10 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
           fuelType: _fuelType,
           odometerReading: odo,
           gpsTrackingConsent: _gpsConsent,
+          vehicleMakeUuid: _makeUuid,
+          vehicleModelUuid: _modelUuid,
+          vehicleVariantUuid: _variantUuid,
+          vehicleColorUuid: _colorUuid,
         );
 
     if (vehicle != null && mounted) {
@@ -92,9 +105,11 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(createVehicleProvider);
+    final catalog = ref.watch(vehicleCatalogRepositoryProvider);
 
     return Scaffold(
       backgroundColor: AppColors.bgPrimary,
@@ -127,39 +142,121 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                 _label('Registration'),
                 _field(_plateController, 'MH12AB1234', mono: true),
                 const SizedBox(height: 14),
-                _label('Make & model'),
-                Row(
-                  children: [
-                    Expanded(child: _field(_makerController, 'Maruti Suzuki')),
-                    const SizedBox(width: 8),
-                    Expanded(child: _field(_modelController, 'Swift')),
-                  ],
+                _label('Year'),
+                _field(
+                  _yearController,
+                  '2020',
+                  keyboard: TextInputType.number,
+                  onChanged: () => setState(() {
+                    _makeUuid = null;
+                    _modelUuid = null;
+                    _variantUuid = null;
+                    _colorUuid = null;
+                    _catalogReset++;
+                  }),
+                ),
+                const SizedBox(height: 14),
+                _label('Make'),
+                CatalogSearchField(
+                  key: ValueKey('make-$_catalogReset'),
+                  hint: 'Start typing make…',
+                  initialValue: _makerController.text,
+                  onSearch: (q) => catalog.searchMakes(query: q, year: _yearFilter),
+                  onSelected: (option) {
+                    setState(() {
+                      if (option == null) {
+                        _makeUuid = null;
+                        return;
+                      }
+                      _makeUuid = option.uuid;
+                      _makerController.text = option.name;
+                      _modelController.clear();
+                      _modelUuid = null;
+                      _variantController.clear();
+                      _variantUuid = null;
+                      _colorController.clear();
+                      _colorUuid = null;
+                      _catalogReset++;
+                    });
+                  },
                 ),
                 const SizedBox(height: 10),
-                _field(_variantController, 'Variant (optional)'),
+                _label('Model'),
+                CatalogSearchField(
+                  key: ValueKey('model-$_catalogReset-${_makeUuid ?? 'none'}'),
+                  hint: _makeUuid == null ? 'Select make first' : 'Start typing model…',
+                  enabled: _makeUuid != null,
+                  initialValue: _modelController.text,
+                  onSearch: (q) => catalog.searchModels(
+                    makeUuid: _makeUuid!,
+                    query: q,
+                    year: _yearFilter,
+                  ),
+                  onSelected: (option) {
+                    setState(() {
+                      if (option == null) {
+                        _modelUuid = null;
+                        return;
+                      }
+                      _modelUuid = option.uuid;
+                      _modelController.text = option.name;
+                      _variantController.clear();
+                      _variantUuid = null;
+                      _colorController.clear();
+                      _colorUuid = null;
+                      _catalogReset++;
+                    });
+                  },
+                ),
+                const SizedBox(height: 10),
+                _label('Variant (optional)'),
+                CatalogSearchField(
+                  key: ValueKey('variant-$_catalogReset-${_modelUuid ?? 'none'}'),
+                  hint: _modelUuid == null ? 'Select model first' : 'Start typing variant…',
+                  enabled: _modelUuid != null,
+                  initialValue: _variantController.text,
+                  onSearch: (q) => catalog.searchVariants(
+                    modelUuid: _modelUuid!,
+                    query: q,
+                    year: _yearFilter,
+                  ),
+                  onSelected: (option) {
+                    setState(() {
+                      if (option == null) {
+                        _variantUuid = null;
+                        return;
+                      }
+                      _variantUuid = option.uuid;
+                      _variantController.text = option.name;
+                      if (option.fuelType != null && option.fuelType!.isNotEmpty) {
+                        _fuelType = option.fuelType!;
+                      }
+                      _colorController.clear();
+                      _colorUuid = null;
+                      _catalogReset++;
+                    });
+                  },
+                ),
                 const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _label('Year'),
-                          _field(_yearController, '2020', keyboard: TextInputType.number),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _label('Color'),
-                          _field(_colorController, 'White'),
-                        ],
-                      ),
-                    ),
-                  ],
+                _label('Color (optional)'),
+                CatalogSearchField(
+                  key: ValueKey('color-$_catalogReset-${_variantUuid ?? 'none'}'),
+                  hint: 'Start typing color…',
+                  initialValue: _colorController.text,
+                  onSearch: (q) => catalog.searchColors(
+                    query: q,
+                    variantUuid: _variantUuid,
+                  ),
+                  onSelected: (option) {
+                    if (option == null) {
+                      setState(() => _colorUuid = null);
+                      return;
+                    }
+                    setState(() {
+                      _colorUuid = option.uuid;
+                      _colorController.text = option.name;
+                    });
+                  },
                 ),
                 const SizedBox(height: 14),
                 _label('Fuel type'),
@@ -240,12 +337,14 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
     String hint, {
     bool mono = false,
     TextInputType? keyboard,
+    VoidCallback? onChanged,
   }) {
     return TextField(
       controller: controller,
       keyboardType: keyboard,
       textCapitalization: mono ? TextCapitalization.characters : TextCapitalization.words,
       style: mono ? AppTextStyles.monoSmall : AppTextStyles.bodyMedium,
+      onChanged: onChanged == null ? null : (_) => onChanged(),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted),

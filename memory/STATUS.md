@@ -20,6 +20,7 @@
 |-------|------------|-----|
 | Invoice detail “failed to load” | API returns vehicle `year` as `"2021"` (string); app cast as number → crash | Safe parsing + API casts year to int |
 | Fleet tap → vehicle blank/error | Screen required customer vehicle list; Fleet didn’t load vehicle directly | Always `GET /vehicles/{uuid}` for detail |
+| Self-signup stuck after back from WhatsApp screen | Account created before PIN verify; retry blocked as “already registered”; Forgot PIN rejected incomplete accounts | API resumes incomplete signup; Forgot PIN routes to setup; signup wizard stays on one screen (verify → PIN → biometrics) |
 
 ---
 
@@ -56,8 +57,15 @@
 - **Staff web:** ✅ Complete — all 16 modules wired to production API (Jobs, Customers, Vehicles, Appointments, Inventory, Billing, Inspection+webcam, Reports, Settings, Notifications, Audit)
 - **Plan:** `memory/tasks/web-app-tasks.md` — **Next: staff sign-off → impersonation APIs → super-admin**
 
+## ✅ Vehicle catalog sprint (May 28)
+- Master tables + CarWale JSON import (`36` makes, `273` models, `1090` variants)
+- Search APIs: `/vehicle-catalog/makes|models|variants|colors`
+- Staff app + web: type-to-search on Add/Edit Vehicle (year filters suggestions)
+- Production deploy: migrate + seed on redeploy
+
 ## 🔲 Tomorrow / next session
 - Device retest: self-signup (`8141302341`) + demo garage (`9876543219`)
+- **Vehicle catalog:** JSON importer ready — `vehicle_master.json` (36 makes, 273 models, 1,090 variants from CarWale). Run migrate + import on deploy.
 - **Verify R2 public URLs:** upload vehicle doc or inspection photo from staff app → confirm opens at `files.progarage.cloud`
 - Rebuild APK after retest fixes — **bump `pubspec.yaml` version first**
 - Staff v1 sign-off → customer app C0

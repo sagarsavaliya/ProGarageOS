@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\ServiceJobController;
 use App\Http\Controllers\Api\StaffController;
 use App\Http\Controllers\Api\TenantController;
 use App\Http\Controllers\Api\VehicleController;
+use App\Http\Controllers\Api\VehicleCatalogController;
 use App\Http\Controllers\Api\OwnerSignupController;
 use App\Http\Controllers\Api\Platform\PlatformTenantController;
 use App\Http\Controllers\Api\Platform\PlatformSubscriptionPlanController;
@@ -127,6 +128,10 @@ Route::middleware(['auth:sanctum', 'throttle:300,1'])->group(function () {
     // Vehicles
     Route::apiResource('vehicles', VehicleController::class)->parameters(['vehicles' => 'uuid']);
     Route::patch('/vehicles/{uuid}/odometer', [VehicleController::class, 'updateOdometer']);
+    Route::get('/vehicle-catalog/makes', [VehicleCatalogController::class, 'makes']);
+    Route::get('/vehicle-catalog/models', [VehicleCatalogController::class, 'models']);
+    Route::get('/vehicle-catalog/variants', [VehicleCatalogController::class, 'variants']);
+    Route::get('/vehicle-catalog/colors', [VehicleCatalogController::class, 'colors']);
     Route::get('/vehicles/{uuid}/documents', [VehicleDocumentController::class, 'index']);
     Route::post('/vehicles/{uuid}/documents', [VehicleDocumentController::class, 'store']);
     Route::delete('/vehicles/{uuid}/documents/{docUuid}', [VehicleDocumentController::class, 'destroy']);

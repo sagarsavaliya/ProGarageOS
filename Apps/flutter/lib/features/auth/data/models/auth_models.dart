@@ -198,11 +198,13 @@ class OwnerSignupResult {
   final String login;
   final String businessName;
   final String message;
+  final bool resume;
 
   const OwnerSignupResult({
     required this.login,
     required this.businessName,
     required this.message,
+    this.resume = false,
   });
 
   factory OwnerSignupResult.fromJson(Map<String, dynamic> json) {
@@ -211,6 +213,7 @@ class OwnerSignupResult {
       login: data['login'] as String? ?? '',
       businessName: data['business_name'] as String? ?? '',
       message: data['message'] as String? ?? 'Account created.',
+      resume: data['resume'] as bool? ?? false,
     );
   }
 }
